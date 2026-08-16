@@ -1,0 +1,288 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Lesson, Course } from '../../types';
+import { getAbyssEmbedUrl, extractAbyssId } from '../../lib/abyss';
+import { 
+  CheckCircle2, 
+  Circle, 
+  Star, 
+  SkipBack, 
+  SkipForward, 
+  Maximize2, 
+  Tv, 
+  Paperclip, 
+  FileText, 
+  ExternalLink, 
+  Edit3, 
+  Save, 
+  Check, 
+  AlertCircle 
+} from 'lucide-react';
+
+interface AbyssPlayerProps {
+  course: Course;
+  currentLesson: Lesson;
+  hasPrevLesson: boolean;
+  hasNextLesson: boolean;
+  onPrevLesson: () => void;
+  onNextLesson: () => void;
+  onToggleComplete: (lessonId: string) => void;
+  onToggleStar: (lessonId: string) => void;
+  onUpdateNotes: (lessonId: string, notes: string) => void;
+  isTheaterMode: boolean;
+  onToggleTheaterMode: () => void;
+  autoPlayNext: boolean;
+  onToggleAutoPlayNext: () => void;
+}
+
+export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
+  course,
+  currentLesson,
+  hasPrevLesson,
+  hasNextLesson,
+  onPrevLesson,
+  onNextLesson,
+  onToggleComplete,
+  onToggleStar,
+  onUpdateNotes,
+  isTheaterMode,
+  onToggleTheaterMode,
+}) => {
+  const [notes, setNotes] = useState<string>(currentLesson.notes || '');
+  const [isSavedNotes, setIsSavedNotes] = useState<boolean>(false);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+
+  const embedUrl = getAbyssEmbedUrl(currentLesson.videoSource);
+  const rawId = extractAbyssId(currentLesson.videoSource);
+
+  // Sync notes when lesson changes
+  useEffect(() => {
+    setNotes(currentLesson.notes || '');
+    setIsSavedNotes(false);
+  }, [currentLesson.id, currentLesson.notes]);
+
+  const handleSaveNotes = () => {
+    onUpdateNotes(currentLesson.id, notes);
+    setIsSavedNotes(true);
+    setTimeout(() => setIsSavedNotes(false), 2000);
+  };
+
+  const handleFullscreen = () => {
+    if (playerContainerRef.current) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        playerContainerRef.current.requestFullscreen();
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 1. Main Video Container */}
+      <div 
+        ref={playerContainerRef}
+        className={`relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 transition-all ${
+          isTheaterMode ? 'ring-2 ring-emerald-500/30' : ''
+        }`}
+      >
+        {embedUrl ? (
+          <iframe
+            key={embedUrl}
+            src={embedUrl}
+            title={currentLesson.title}
+            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-400 bg-slate-950">
+            <AlertCircle className="w-12 h-12 text-amber-500 mb-3" />
+            <p className="font-semibold text-slate-200">Không thể tải video từ mã nhúng Abyss</p>
+            <p className="text-xs text-slate-500 mt-1 max-w-md">
+              Nguồn video hiện tại: <code className="text-emerald-400">{currentLesson.videoSource}</code>
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* 2. Structured 2-Tier Header & Action Toolbar */}
+      <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-5 space-y-4 shadow-xl">
+        
+        {/* Tier 1: Category, ID, Star & Full Title */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                {course.category}
+              </span>
+              {rawId && (
+                <span className="text-[11px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                  ID: {rawId}
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={() => onToggleStar(currentLesson.id)}
+              title={currentLesson.isStarred ? 'Bỏ ghim bài này' : 'Ghim bài giảng cốt lõi'}
+              className="p-1.5 px-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-amber-400 transition-colors flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <Star className={`w-4 h-4 ${currentLesson.isStarred ? 'text-amber-400 fill-amber-400' : ''}`} />
+              <span>{currentLesson.isStarred ? 'Đã ghim' : 'Ghim bài'}</span>
+            </button>
+          </div>
+
+          <h1 className="text-base sm:text-xl font-bold text-white tracking-tight leading-snug">
+            {currentLesson.title}
+          </h1>
+        </div>
+
+        {/* Tier 2: Dedicated Action Toolbar (Buttons never wrap or squeeze) */}
+        <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+          
+          {/* Left: Previous / Next Lesson Navigation */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onPrevLesson}
+              disabled={!hasPrevLesson}
+              title="Bài trước (Phím P)"
+              className="px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <SkipBack className="w-4 h-4" />
+              <span>Bài trước</span>
+            </button>
+
+            <button
+              onClick={onNextLesson}
+              disabled={!hasNextLesson}
+              title="Bài kế tiếp (Phím N)"
+              className="px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <span>Bài tiếp theo</span>
+              <SkipForward className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Right: Mark Completed, Theater Mode & Fullscreen */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onToggleComplete(currentLesson.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm ${
+                currentLesson.isCompleted
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                  : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
+              }`}
+            >
+              {currentLesson.isCompleted ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 fill-emerald-400/20" />
+                  <span>Đã Hoàn Thành</span>
+                </>
+              ) : (
+                <>
+                  <Circle className="w-4 h-4 text-slate-400" />
+                  <span>Đánh Dấu Xong</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onToggleTheaterMode}
+              title="Chế độ rạp chiếu phim (Phím T)"
+              className={`p-2 px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm ${
+                isTheaterMode
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                  : 'bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border-slate-800'
+              }`}
+            >
+              <Tv className="w-4 h-4" />
+              <span className="hidden sm:inline">Rạp phim</span>
+            </button>
+
+            <button
+              onClick={handleFullscreen}
+              title="Toàn màn hình (Phím F)"
+              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors shadow-sm"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* 3. Lesson Attachments & Quick Notes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        {/* Attachments & Resource Links */}
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Paperclip className="w-4 h-4 text-emerald-400" />
+            <h3 className="text-sm font-bold text-slate-200">Tài Liệu Đính Kèm</h3>
+          </div>
+
+          {currentLesson.attachments && currentLesson.attachments.length > 0 ? (
+            <div className="space-y-2">
+              {currentLesson.attachments.map((att) => (
+                <a
+                  key={att.id}
+                  href={att.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-white transition-all group"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="font-medium">{att.name}</span>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic">
+              Không có tài liệu đính kèm cho bài học này.
+            </p>
+          )}
+        </div>
+
+        {/* Quick Lesson Note */}
+        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <Edit3 className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-bold text-slate-200">Ghi Chú Nhanh</h3>
+            </div>
+            {isSavedNotes && (
+              <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> Đã lưu
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ghi chú lại các ý chính hoặc mốc thời gian quan trọng..."
+              rows={3}
+              className="w-full text-xs p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:border-emerald-500/60 transition-colors resize-none"
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={handleSaveNotes}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Lưu ghi chú</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};

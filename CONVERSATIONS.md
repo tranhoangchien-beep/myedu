@@ -142,10 +142,13 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
     * **Thao tác hàng loạt (Floating Batch Actions Toolbar)**:
       - Checkbox chọn nhiều khóa học (kèm nút Chọn tất cả).
       - Thanh công cụ nổi thông minh: Xóa hàng loạt, Đổi danh mục hàng loạt, Xuất JSON riêng cho các khóa được chọn.
-13. **Kiến Trúc Hợp Nhất Trải Nghiệm Học Tập & Quản Trị (Super Workspace with View Switcher)**:
+13. **Kiến Trúc Hợp Nhất Trải Nghiệm Học Tập & Quản Trị (Super Workspace with View Switcher & Pagination)**:
     * **Bộ Chuyển Đổi Chế Độ Xem (View Mode Switcher: Dạng Thẻ ↔ Dạng Bảng)**:
       - Đặt ngay trên thanh tiêu đề của Thư viện khóa học trên Trang Chủ: Cho phép chuyển đổi 1-click giữa **`[ 🎴 Dạng Thẻ ]`** (Card Gallery trực quan, truyền cảm hứng học tập) và **`[ 📋 Dạng Bảng ]`** (Table quản trị nhỏ gọn, tốc độ, thao tác hàng loạt).
       - Tự động lưu và ghi nhớ chế độ xem ưa thích vào `localStorage` (`myedu_layout_mode_v1`).
+    * **Phân Trang Thông Minh Đồng Nhất Cho Cả Dạng Thẻ & Dạng Bảng (Smart Pagination & Page Size Selector)**:
+      - Tùy chọn xem: **`8`** | **`12`** | **`24`** | **`48`** | **`Tất cả`** khóa học trên 1 trang.
+      - Thanh điều hướng phân trang: `« Trước`, các số trang `[1] [2]`, `Sau »` kèm hiển thị dải khóa học (ví dụ: `Hiển thị 1 - 12 trên 21 khóa học`).
     * **Tích Hợp Toàn Bộ Năng Lực Quản Trị Trực Tiếp Trong Dạng Bảng**:
       - Nút `[Vào Học]`, `[Sửa]`, `[Nhân bản 1-click]`, `[Nạp thêm bài]`, `[Xóa]`.
       - Checkbox chọn nhiều hàng và **Thanh công cụ nổi thao tác hàng loạt** (Đổi danh mục, Xuất JSON, Xóa đã chọn).

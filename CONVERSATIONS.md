@@ -99,6 +99,11 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
 7. **Thanh Công Cụ Soạn Thảo Bài Viết Trực Quan (`RichTextEditor.tsx`) & Parser `MarkdownRenderer.tsx`**:
    * Thanh công cụ hỗ trợ `H1-H3`, `In đậm`, `In nghiêng`, `Danh sách`, `Code Snippet`, `Trích dẫn`, `Đường kẻ ngang`, `Mẫu bài học chuẩn`.
    * Tăng kích thước font chữ Article Reader (`text-base` / `text-lg`), khoảng cách dòng thoáng đãng chuẩn Typography, định dạng in đậm/tiêu đề rõ ràng.
+8. **Tái Thiết Kế Giao Diện Quản Trị / Soạn Thảo 2 Cột Chuyên Nghiệp (2-Column Curriculum Studio)**:
+   * **Khắc phục lỗi bôi đen**: Thuộc tính `draggable` chỉ gán trực tiếp lên icon tay nắm `⠿`, cho phép chọn/bôi đen văn bản tự nhiên 100% trong khung soạn thảo mà không bị kéo card.
+   * **Cột 1 (Bên Trái - 35%)**: Danh sách Chương & Bài học trực quan dạng Treeview với tay nắm kéo thả `⠿`, nút thêm chương, thêm bài học nhanh.
+   * **Cột 2 (Bên Phải - 65%)**: Không gian soạn thảo chuyên sâu cho bài học đang chọn (Tiêu đề, Switcher định dạng Video/Bài viết/Cả hai, Trình soạn thảo Rich Text Markdown toàn màn hình, Quản lý tài liệu đính kèm).
+
 
 
 

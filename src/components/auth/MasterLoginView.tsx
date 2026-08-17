@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { GraduationCap, Lock, User, Eye, EyeOff, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
-import { verifyAdminCredentials, setAuthenticatedSession } from '../../lib/auth';
+import React, { useState, useEffect } from 'react';
+import { GraduationCap, Lock, User, Eye, EyeOff, ArrowRight, ShieldCheck, AlertCircle, ShieldAlert } from 'lucide-react';
+import { verifyAdminCredentials, setAuthenticatedSession, getLockoutRemainingSeconds } from '../../lib/auth';
 
 interface MasterLoginViewProps {
   onLoginSuccess: () => void;
@@ -13,9 +13,26 @@ export const MasterLoginView: React.FC<MasterLoginViewProps> = ({ onLoginSuccess
   const [remember, setRemember] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState<number>(() => getLockoutRemainingSeconds());
+
+  // Timer countdown if locked out
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const interval = setInterval(() => {
+      const remaining = getLockoutRemainingSeconds();
+      setLockoutSeconds(remaining);
+      if (remaining <= 0) {
+        setErrorMsg(null);
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutSeconds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (lockoutSeconds > 0) return;
+
     if (!username.trim() || !password) {
       setErrorMsg('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.');
       return;
@@ -25,15 +42,19 @@ export const MasterLoginView: React.FC<MasterLoginViewProps> = ({ onLoginSuccess
     setErrorMsg(null);
 
     try {
-      const isValid = await verifyAdminCredentials(username, password);
-      if (isValid) {
-        setAuthenticatedSession(remember);
+      const result = await verifyAdminCredentials(username, password);
+      if (result.success) {
+        await setAuthenticatedSession(remember);
         onLoginSuccess();
       } else {
-        setErrorMsg('Tên đăng nhập hoặc mật khẩu không chính xác.');
+        setErrorMsg(result.errorMsg || 'Tên đăng nhập hoặc mật khẩu không chính xác.');
+        const remaining = getLockoutRemainingSeconds();
+        if (remaining > 0) {
+          setLockoutSeconds(remaining);
+        }
       }
     } catch {
-      setErrorMsg('Đã xảy ra lỗi hệ thống khi xác thực.');
+      setErrorMsg('Đã xảy ra lỗi hệ thống khi xác thực PBKDF2.');
     } finally {
       setIsSubmitting(false);
     }
@@ -136,11 +157,16 @@ export const MasterLoginView: React.FC<MasterLoginViewProps> = ({ onLoginSuccess
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || lockoutSeconds > 0}
               className="w-full py-3.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 group active:scale-[0.99]"
             >
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : lockoutSeconds > 0 ? (
+                <span className="flex items-center gap-2 text-rose-300 font-mono">
+                  <ShieldAlert className="w-4 h-4 text-rose-400 animate-pulse" />
+                  Tạm khóa đăng nhập ({lockoutSeconds}s)
+                </span>
               ) : (
                 <>
                   <span>Đăng nhập</span>

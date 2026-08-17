@@ -418,14 +418,20 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
   // Execute Batch Delete
   const handleExecuteBulkDelete = () => {
+    const count = selectedCourseIds.length;
+    if (count === 0) {
+      setIsBulkDeleteConfirmOpen(false);
+      return;
+    }
     if (onBatchDeleteCourses) {
       onBatchDeleteCourses(selectedCourseIds);
     } else {
-      selectedCourseIds.forEach(id => onDeleteCourse(id));
+      const remaining = courses.filter(c => !selectedCourseIds.includes(c.id));
+      onRestoreCourses(remaining);
     }
     setSelectedCourseIds([]);
     setIsBulkDeleteConfirmOpen(false);
-    setBackupSuccess(`Đã xóa thành công ${selectedCourseIds.length} khóa học!`);
+    setBackupSuccess(`Đã xóa thành công ${count} khóa học!`);
     setTimeout(() => setBackupSuccess(''), 3000);
   };
 

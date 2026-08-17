@@ -577,6 +577,32 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleBatchDeleteCourses = (courseIds: string[]) => {
+    if (!courseIds || courseIds.length === 0) return;
+    const updated = courses.filter(c => !courseIds.includes(c.id));
+    updateCoursesState(updated);
+
+    if (activeCourseId && courseIds.includes(activeCourseId)) {
+      setActiveCourseId(null);
+      setActiveLessonId(null);
+      setCurrentView('home');
+      window.location.hash = '#/';
+    }
+
+    if (continueProgress && courseIds.includes(continueProgress.courseId)) {
+      setContinueProgress(null);
+      localStorage.removeItem('myedu_continue_progress_v1');
+    }
+  };
+
+  const handleBatchUpdateCategory = (courseIds: string[], newCat: string) => {
+    if (!courseIds || courseIds.length === 0) return;
+    const updated = courses.map(c => 
+      courseIds.includes(c.id) ? { ...c, category: newCat } : c
+    );
+    updateCoursesState(updated);
+  };
+
   const handleSaveCourse = (savedCourse: Course) => {
     const exists = courses.some(c => c.id === savedCourse.id);
     let updatedCourses: Course[];
@@ -720,14 +746,8 @@ export const App: React.FC = () => {
               onDeleteCourse={handleDeleteCourse}
               onDuplicateCourse={handleDuplicateCourse}
               onAddNewCourse={handleAddNewCourse}
-              onBatchDeleteCourses={(ids) => {
-                const updated = courses.filter(c => !ids.includes(c.id));
-                updateCoursesState(updated);
-              }}
-              onBatchUpdateCategory={(ids, newCat) => {
-                const updated = courses.map(c => ids.includes(c.id) ? { ...c, category: newCat } : c);
-                updateCoursesState(updated);
-              }}
+              onBatchDeleteCourses={handleBatchDeleteCourses}
+              onBatchUpdateCategory={handleBatchUpdateCategory}
             />
           </div>
         )}
@@ -846,6 +866,8 @@ export const App: React.FC = () => {
             onDeleteInstructor={handleDeleteInstructor}
             onRestoreCourses={handleRestoreCourses}
             onSelectCourseAndLesson={(cId, lId) => handleSelectCourseAndLesson(cId, lId)}
+            onBatchDeleteCourses={handleBatchDeleteCourses}
+            onBatchUpdateCategory={handleBatchUpdateCategory}
           />
         )}
 

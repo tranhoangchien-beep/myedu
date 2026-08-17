@@ -87,4 +87,12 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
    * Chuyển đổi từ dạng Popup Modal sang **Page View Toàn Màn Hình (`CourseStudioView`)** với link riêng `http://localhost:5500/#/studio`.
    * Tách bạch 100% giữa **Không Gian Học Tập (`#/`)** và **Xưởng Soạn Bài / Quản Trị (`#/studio`)**.
    * Navbar chỉ còn nút **`⚙️ Quản Trị`** chuyển sang `#/studio`, và ở Studio có nút **`⬅ Về Trang Học Tập`**.
+3. **Đồng Bộ Searchable Combobox (`SearchableSelect.tsx`)**:
+   * Tích hợp ô tìm kiếm tức thì và tạo nhanh (Creatable on the fly) cho Danh mục, Tác giả và Nguồn mua.
+4. **Hệ Thống Bài Học Đa Định Dạng (Multi-Format Lessons)**:
+   * Hỗ trợ 3 loại bài học: `🎬 Video Abyss`, `📝 Bài Viết / Tài Liệu Đọc (Markdown Reader)`, `🎬+📝 Cả Hai`.
+   * Tích hợp giao diện **Article Reader** riêng biệt cho bài đọc lý thuyết.
+5. **Khu Vực Quản Lý Tài Liệu Đính Kèm (Attachments Manager)**:
+   * Quản lý không giới hạn Slide PDF, Drive, GitHub Repo, Link tài liệu kèm theo từng bài học trực tiếp trong modal tạo/sửa khóa học.
+
 

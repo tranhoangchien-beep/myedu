@@ -40,3 +40,15 @@
 - **1-Click Continue Watching:** Top hero banner / quick resume card right on homepage.
 - **Keyboard Shortcuts:** Space (Play/Pause), Left/Right Arrow (Seek), F (Fullscreen), N (Next), P (Prev).
 - **PWA Ready:** Manifest and responsive touch support for iPad and Smartphone.
+
+---
+
+## 5. Quy Trình Vận Hành 5 Team & Kiểm Soát Chất Lượng (5-Team Governance)
+- **1. Thư Ký / Trợ Lý Trưởng:** Tiếp nhận chỉ đạo của Chủ dự án, phân bổ nhiệm vụ, duy trì nhật ký `CONVERSATIONS.md` và kiểm soát tiến độ.
+- **2. Team Phát Triển:** Chịu trách nhiệm mã nguồn React, Vite, Tailwind CSS, Player đa nền tảng và Cloud Sync. Mọi hàm CRUD bắt buộc gắn cờ đồng bộ Cloud Firestore tức thì.
+- **3. Team Dữ Liệu:** Chuẩn hóa cấu trúc khóa học TypeScript, Schema validation, bóc tách link Abyss. Tuyệt đối KHÔNG hardcode tự nhồi dữ liệu mẫu khi người dùng đã xóa.
+- **4. Team Bảo Mật:** Thực thi mã hóa PBKDF2 100,000 vòng, chống Brute-force rate limiting 60s, kiểm soát Firestore Security Rules và quyền riêng tư (Zero-bot / Noindex).
+- **5. Team Kiểm Thử QA & Trải Nghiệm UX:** 
+  - **QA:** Chốt chặn kiểm định độc lập. Bắt buộc test thực tế: *Thêm/Sửa/Xóa ➔ F5 ➔ Ẩn danh ➔ Mobile* trước khi xuất xưởng.
+  - **UX:** Đảm bảo công thái học 1 chạm, chống xao nhãng, theme nền tối `#0b0f19` êm mắt khi học đêm.
+

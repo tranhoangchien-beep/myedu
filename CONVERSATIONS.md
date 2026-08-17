@@ -161,6 +161,6 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
     * **Bỏ hoàn toàn các icon lặp thừa**:
       - Sửa nút `+ Tạo Khóa Học Mới` thành `Tạo Khóa Học Mới` (đã có icon `<Plus>` bên cạnh, không bị trùng `+ +`).
       - Loại bỏ các emoji thừa (`👨‍🏫`, `🏷️`, `🌐`) ở text button trong subtab Phân loại & Giảng viên (vì đã có icon SVG Lucide tương ứng).
-    * **Tính Năng Kéo Thả Sắp Xếp Chương Học (Chapter Reordering via Drag-and-Drop)**:
-      - Thêm icon tay nắm kéo thả (`GripVertical`) vào tiêu đề từng **Chương Học** ở thanh mục lục bên trái trong `CourseEditorModal`.
-      - Giờ đây người dùng có thể dễ dàng nắm kéo và thả đổi vị trí giữa các Chương học tương tự như bài giảng!
+    * **Tính Năng Kéo Thả Sắp Xếp Chương Học Hoàn Chỉnh (Chapter Reordering via HTML5 Drag API)**:
+      - Tích hợp HTML5 Drag API chuẩn xác cho thẻ **Chương Học** (với `effectAllowed = 'move'`, `draggedChapterIdxRef` và `e.preventDefault()` đồng bộ).
+      - Cho phép người dùng nắm kéo trực tiếp thanh Tiêu đề Chương học (hoặc icon `GripVertical`) để hoán đổi vị trí thứ tự Chương học một cách dễ dàng và mượt mà.

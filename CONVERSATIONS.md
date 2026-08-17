@@ -214,3 +214,9 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
      * **Khôi phục Hero Banner Xem Tiếp tinh gọn**: Giữ nguyên cơ chế ghi nhớ bài học gần nhất 1 chạm `[▶ Vào Học Tiếp]` hoạt động ổn định và chính xác 100%.
      * **Kiểm định Zero-Defect**: Build pass 100% không lỗi, triển khai tức thì lên Vercel Production.
 
+205. **Chuẩn Hóa & Nạp Khóa Học Đầu Tư Chứng Chỉ Quỹ 101 - Thành Công TC**:
+     * **Chuẩn hóa dữ liệu theo Data Contract TypeScript**: Đầy đủ **9 chương** và **67 bài giảng** chuyên sâu về Khái niệm căn bản, Các loại quỹ đầu tư, So sánh Quỹ mở & ETF, Phương pháp chọn quỹ & phân bổ danh mục, Phân tích kỹ thuật & tâm lý bắt đáy, Lập kế hoạch tài chính cá nhân tự do tài chính.
+     * **Bóc tách 100% mã nhúng Abyss Iframe & Bài đọc tài liệu**: Chuẩn hóa toàn bộ 66 video Abyss và 1 bài đọc tài liệu đính kèm 2 video YouTube chất lượng cao.
+     * **Tích hợp Giảng viên `Thành Công TC` & Danh mục `Tài chính`**: Tự động hợp nhất vào kho lưu trữ tập trung `DEFAULT_INSTRUCTORS` và `DEFAULT_CATEGORIES`.
+
+

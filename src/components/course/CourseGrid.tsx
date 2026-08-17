@@ -9,6 +9,7 @@ interface CourseGridProps {
   searchQuery: string;
   categories: string[];
   sources: string[];
+  instructors?: string[];
   selectedCategory: string;
   selectedSource: string;
   selectedInstructor: string;
@@ -28,6 +29,7 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
   searchQuery,
   categories,
   sources,
+  instructors = [],
   selectedCategory,
   selectedSource,
   selectedInstructor,
@@ -92,11 +94,12 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* 1. Integrated Filter Hub (Category Pills Wrapped + Source & Instructor) */}
+      {/* 1. Integrated Cascading Filter Hub */}
       <FilterHub
         courses={courses}
         categories={categories}
         sources={sources}
+        instructors={instructors}
         selectedCategory={selectedCategory}
         selectedSource={selectedSource}
         selectedInstructor={selectedInstructor}
@@ -109,50 +112,51 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
       {/* 2. Course Grid Header */}
       <div className="flex items-center justify-between pt-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
-            Danh Sách Khóa Học
+          <h2 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
+            {selectedCategory === 'Tất cả' ? 'Toàn Bộ Khóa Học' : selectedCategory}
           </h2>
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400">
-            {filteredCourses.length} khóa phù hợp
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-emerald-400 font-bold">
+            {filteredCourses.length} khóa
           </span>
         </div>
+
+        {/* Quick Add Button */}
+        <button
+          onClick={onAddNewCourse}
+          className="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span className="hidden sm:inline">Tạo Khóa Mới</span>
+        </button>
       </div>
 
-      {/* 3. Cards Grid */}
+      {/* 3. Courses Grid List */}
       {filteredCourses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 bg-slate-900/50 border border-slate-800/80 rounded-2xl text-center space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-500">
-            <Search className="w-8 h-8" />
+        <div className="py-16 text-center space-y-4 bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8">
+          <div className="w-12 h-12 rounded-2xl bg-slate-800 text-slate-500 mx-auto flex items-center justify-center">
+            <Search className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-white">Không tìm thấy khóa học nào</h3>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-sm">
-            {searchQuery
-              ? `Không có kết quả nào phù hợp với từ khóa "${searchQuery}".`
-              : `Hiện chưa có khóa học nào khớp với bộ lọc đang chọn.`}
-          </p>
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              onClick={onResetFilters}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors"
-            >
-              Đặt lại toàn bộ lọc
-            </button>
-            <button
-              onClick={onAddNewCourse}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-colors"
-            >
-              + Tạo khóa học mới
-            </button>
+          <div>
+            <h3 className="text-base font-bold text-slate-200">Không tìm thấy khóa học phù hợp</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Không có khóa học nào khớp với các tiêu chí lọc hoặc từ khóa tìm kiếm của bạn.
+            </p>
           </div>
+          <button
+            onClick={onResetFilters}
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold transition-colors"
+          >
+            Đặt lại tất cả bộ lọc
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredCourses.map((course) => (
             <CourseCard
               key={course.id}
               course={course}
               onSelectCourse={onSelectCourse}
-              onOpenBulkImport={() => onOpenBulkImport(course.id)}
+              onOpenBulkImport={onOpenBulkImport}
               onEditCourse={onEditCourse}
               onDeleteCourse={onDeleteCourse}
             />

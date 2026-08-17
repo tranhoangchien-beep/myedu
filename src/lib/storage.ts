@@ -4,6 +4,7 @@ const STORAGE_KEY_COURSES = 'myedu_courses_v1';
 const STORAGE_KEY_CONTINUE = 'myedu_continue_progress_v1';
 const STORAGE_KEY_CATEGORIES = 'myedu_categories_v1';
 const STORAGE_KEY_SOURCES = 'myedu_sources_v1';
+const STORAGE_KEY_INSTRUCTORS = 'myedu_instructors_v1';
 const STORAGE_KEY_STATS = 'myedu_user_stats_v1';
 
 export const DEFAULT_CATEGORIES: string[] = [
@@ -25,6 +26,29 @@ export const DEFAULT_SOURCES: string[] = [
   'Google Drive',
   'YouTube',
   'Khác'
+];
+
+export const DEFAULT_INSTRUCTORS: string[] = [
+  'Andrew Ng & Hoàng Minh',
+  'Alex Đặng (Tech Lead)',
+  'Sarah Jenkins (Senior Product Designer)',
+  'Đặng Lê Quân (Growth Strategist)',
+  'Vũ Minh Tuấn (Principal Cloud Architect)',
+  'TS. Phan Thanh Hải (Chief Data Scientist)',
+  'Lê Tuấn Khang (Founder & Angel Investor)',
+  'Victoria Lee (Senior IELTS Examiner)',
+  'Nguyễn Hoàng Nam (Productivity Coach)',
+  'Minh Hoàng (Content Specialist)',
+  'Lê Quang Huy (AI Researcher)',
+  'Phạm Thành Nam (Mobile Architect)',
+  'ThS. Vũ Hoàng Điệp (CFA Charterholder)',
+  'Nguyễn Hải Đăng (Lead Data Engineer)',
+  'Trịnh Minh Châu (Creative Director)',
+  'Sensei Takahashi & Mai Hương',
+  'Chris Voss & Đỗ Tuấn Anh',
+  'Bùi Đức Thắng (Performance Marketer)',
+  'Võ Quốc Khánh (Security Specialist)',
+  'TS. Phạm Minh Tâm'
 ];
 
 export const INITIAL_SAMPLE_COURSES: Course[] = [
@@ -1106,6 +1130,27 @@ export function saveSources(sources: string[]): void {
     localStorage.setItem(STORAGE_KEY_SOURCES, JSON.stringify(sources));
   } catch (error) {
     console.error('Failed to save sources', error);
+  }
+}
+
+export function getStoredInstructors(): string[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY_INSTRUCTORS);
+    if (!data) {
+      localStorage.setItem(STORAGE_KEY_INSTRUCTORS, JSON.stringify(DEFAULT_INSTRUCTORS));
+      return DEFAULT_INSTRUCTORS;
+    }
+    return JSON.parse(data);
+  } catch {
+    return DEFAULT_INSTRUCTORS;
+  }
+}
+
+export function saveInstructors(instructors: string[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_INSTRUCTORS, JSON.stringify(instructors));
+  } catch (error) {
+    console.error('Failed to save instructors', error);
   }
 }
 

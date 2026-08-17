@@ -9,6 +9,8 @@ import {
   saveCategories,
   getStoredSources,
   saveSources,
+  getStoredInstructors,
+  saveInstructors,
   getStoredUserStats,
   recordLessonCompletionStats
 } from './lib/storage';
@@ -29,6 +31,7 @@ export const App: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [sources, setSources] = useState<string[]>([]);
+  const [instructors, setInstructors] = useState<string[]>([]);
   const [continueProgress, setContinueProgress] = useState<ContinueProgress | null>(null);
   const [userStats, setUserStats] = useState<UserStats>(getStoredUserStats());
 
@@ -65,6 +68,8 @@ export const App: React.FC = () => {
     setCategories(loadedCategories);
     const loadedSources = getStoredSources();
     setSources(loadedSources);
+    const loadedInstructors = getStoredInstructors();
+    setInstructors(loadedInstructors);
     const loadedProgress = getContinueProgress();
     setContinueProgress(loadedProgress);
   }, []);
@@ -109,6 +114,51 @@ export const App: React.FC = () => {
   const updateCoursesState = (newCourses: Course[]) => {
     setCourses(newCourses);
     saveCourses(newCourses);
+  };
+
+  // Cascading Filter Handlers
+  const handleSelectCategory = (cat: string) => {
+    setSelectedCategory(cat);
+
+    if (cat !== 'Tất cả') {
+      // Validate if current source still exists in this category
+      if (selectedSource !== 'Tất cả') {
+        const hasSource = courses.some(
+          c => c.category?.trim().toLowerCase() === cat.trim().toLowerCase() && 
+               c.sourcePlatform?.trim().toLowerCase() === selectedSource.trim().toLowerCase()
+        );
+        if (!hasSource) setSelectedSource('Tất cả');
+      }
+
+      // Validate if current instructor still exists in this category
+      if (selectedInstructor !== 'Tất cả') {
+        const hasInstructor = courses.some(
+          c => c.category?.trim().toLowerCase() === cat.trim().toLowerCase() && 
+               c.instructor?.trim().toLowerCase() === selectedInstructor.trim().toLowerCase()
+        );
+        if (!hasInstructor) setSelectedInstructor('Tất cả');
+      }
+    }
+  };
+
+  const handleSelectSource = (source: string) => {
+    setSelectedSource(source);
+
+    if (source !== 'Tất cả') {
+      if (selectedInstructor !== 'Tất cả') {
+        const hasInstructor = courses.some(c => {
+          const matchCat = selectedCategory === 'Tất cả' || c.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
+          const matchSrc = c.sourcePlatform?.trim().toLowerCase() === source.trim().toLowerCase();
+          const matchInst = c.instructor?.trim().toLowerCase() === selectedInstructor.trim().toLowerCase();
+          return matchCat && matchSrc && matchInst;
+        });
+        if (!hasInstructor) setSelectedInstructor('Tất cả');
+      }
+    }
+  };
+
+  const handleSelectInstructor = (instructor: string) => {
+    setSelectedInstructor(instructor);
   };
 
   // Reset all filters
@@ -193,6 +243,43 @@ export const App: React.FC = () => {
     updateCoursesState(updatedCourses);
   };
 
+  // Dynamic Instructor Handlers
+  const handleAddInstructor = (newInst: string) => {
+    const updated = [...instructors, newInst];
+    setInstructors(updated);
+    saveInstructors(updated);
+  };
+
+  const handleRenameInstructor = (oldInst: string, newInst: string) => {
+    const updatedInstructors = instructors.map(i => i === oldInst ? newInst : i);
+    setInstructors(updatedInstructors);
+    saveInstructors(updatedInstructors);
+
+    const updatedCourses = courses.map(c => 
+      c.instructor === oldInst ? { ...c, instructor: newInst } : c
+    );
+    updateCoursesState(updatedCourses);
+
+    if (selectedInstructor === oldInst) {
+      setSelectedInstructor(newInst);
+    }
+  };
+
+  const handleDeleteInstructor = (instToDelete: string) => {
+    const updatedInstructors = instructors.filter(i => i !== instToDelete);
+    setInstructors(updatedInstructors);
+    saveInstructors(updatedInstructors);
+
+    const updatedCourses = courses.map(c => 
+      c.instructor === instToDelete ? { ...c, instructor: undefined } : c
+    );
+    updateCoursesState(updatedCourses);
+
+    if (selectedInstructor === instToDelete) {
+      setSelectedInstructor('Tất cả');
+    }
+  };
+
   // Find active course & active lesson
   const activeCourse = useMemo(() => {
     return courses.find(c => c.id === activeCourseId) || null;
@@ -218,310 +305,268 @@ export const App: React.FC = () => {
     if (currentView === 'player' && activeCourse && activeLesson) {
       document.title = `${activeLesson.title} - ${activeCourse.title} | MyEdu`;
     } else if (currentView === 'favorites') {
-      document.title = 'Bài Giảng Đã Ghim | MyEdu';
+      document.title = 'Bài Học Đã Ghim | MyEdu';
     } else if (currentView === 'studio') {
       document.title = 'Trung Tâm Quản Trị Khóa Học | MyEdu';
     } else {
-      document.title = 'MyEdu - Không Gian Học Tập Cá Nhân';
+      document.title = 'MyEdu - Nền Tảng Học Tập Cá Nhân Siêu Tinh Gọn';
     }
   }, [currentView, activeCourse, activeLesson]);
 
-  // Flatten lessons in active course to calculate prev/next
-  const flattenedLessons = useMemo(() => {
+  // Calculate Flattened Lessons for Next/Prev Navigation
+  const flatLessons = useMemo(() => {
     if (!activeCourse) return [];
-    const list: Lesson[] = [];
-    activeCourse.chapters.forEach(ch => {
-      ch.lessons.forEach(l => list.push(l));
-    });
-    return list;
+    return activeCourse.chapters.flatMap(ch => ch.lessons);
   }, [activeCourse]);
 
   const currentLessonIndex = useMemo(() => {
-    if (!activeLesson) return -1;
-    return flattenedLessons.findIndex(l => l.id === activeLesson.id);
-  }, [flattenedLessons, activeLesson]);
+    if (!activeLesson || flatLessons.length === 0) return -1;
+    return flatLessons.findIndex(l => l.id === activeLesson.id);
+  }, [flatLessons, activeLesson]);
 
   const hasPrevLesson = currentLessonIndex > 0;
-  const hasNextLesson = currentLessonIndex >= 0 && currentLessonIndex < flattenedLessons.length - 1;
+  const hasNextLesson = currentLessonIndex !== -1 && currentLessonIndex < flatLessons.length - 1;
 
-  // Starred count
-  const starredCount = useMemo(() => {
-    let count = 0;
-    courses.forEach(c => {
-      c.chapters.forEach(ch => {
-        ch.lessons.forEach(l => {
-          if (l.isStarred) count += 1;
-        });
-      });
-    });
-    return count;
-  }, [courses]);
-
-  // Action: Open a course and lesson with URL Hash sync
-  const handleSelectCourseAndLesson = useCallback((courseId: string, lessonId?: string) => {
-    const targetCourse = courses.find(c => c.id === courseId);
-    if (!targetCourse) return;
-
-    const firstLesson = targetCourse.chapters[0]?.lessons[0];
-    const targetLessonId = lessonId || firstLesson?.id;
-
-    setActiveCourseId(courseId);
-    setActiveLessonId(targetLessonId || null);
-    setCurrentView('player');
-
-    // Update URL hash
-    const newHash = targetLessonId 
-      ? `#/course/${courseId}/lesson/${targetLessonId}`
-      : `#/course/${courseId}`;
-    if (window.location.hash !== newHash) {
-      window.location.hash = newHash;
-    }
-
-    // Update continue progress
-    const targetLesson = lessonId
-      ? targetCourse.chapters.flatMap(ch => ch.lessons).find(l => l.id === lessonId)
-      : firstLesson;
-
-    if (targetLesson) {
-      const newProgress: ContinueProgress = {
-        courseId: targetCourse.id,
-        courseTitle: targetCourse.title,
-        lessonId: targetLesson.id,
-        lessonTitle: targetLesson.title,
-        category: targetCourse.category,
-        videoSource: targetLesson.videoSource,
-        timestamp: new Date().toISOString(),
-      };
-      setContinueProgress(newProgress);
-      saveContinueProgress(newProgress);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [courses]);
-
-  // Action: Next Lesson
-  const handleNextLesson = useCallback(() => {
-    if (hasNextLesson && currentLessonIndex !== -1) {
-      const next = flattenedLessons[currentLessonIndex + 1];
-      if (next && activeCourseId) {
-        handleSelectCourseAndLesson(activeCourseId, next.id);
-      }
-    }
-  }, [hasNextLesson, currentLessonIndex, flattenedLessons, activeCourseId, handleSelectCourseAndLesson]);
-
-  // Action: Previous Lesson
+  // Next / Prev Handlers
   const handlePrevLesson = useCallback(() => {
-    if (hasPrevLesson && currentLessonIndex !== -1) {
-      const prev = flattenedLessons[currentLessonIndex - 1];
-      if (prev && activeCourseId) {
-        handleSelectCourseAndLesson(activeCourseId, prev.id);
-      }
+    if (hasPrevLesson && activeCourse) {
+      const prev = flatLessons[currentLessonIndex - 1];
+      setActiveLessonId(prev.id);
+      window.location.hash = `#/course/${activeCourse.id}/lesson/${prev.id}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [hasPrevLesson, currentLessonIndex, flattenedLessons, activeCourseId, handleSelectCourseAndLesson]);
+  }, [hasPrevLesson, flatLessons, currentLessonIndex, activeCourse]);
 
-  // Action: Toggle Lesson Complete
-  const handleToggleComplete = useCallback((lessonId: string, courseIdParam?: string) => {
-    const cId = courseIdParam || activeCourseId;
-    if (!cId) return;
-
-    let isNowCompleted = false;
-    const updated = courses.map(course => {
-      if (course.id !== cId) return course;
-      return {
-        ...course,
-        chapters: course.chapters.map(ch => ({
-          ...ch,
-          lessons: ch.lessons.map(l => {
-            if (l.id === lessonId) {
-              isNowCompleted = !l.isCompleted;
-              return { ...l, isCompleted: isNowCompleted };
-            }
-            return l;
-          })
-        }))
-      };
-    });
-    updateCoursesState(updated);
-
-    // Update streak and today's completed count
-    const updatedStats = recordLessonCompletionStats(isNowCompleted);
-    setUserStats(updatedStats);
-  }, [activeCourseId, courses]);
-
-  // Action: Toggle Lesson Star
-  const handleToggleStar = useCallback((lessonId: string, courseIdParam?: string) => {
-    const cId = courseIdParam || activeCourseId;
-    if (!cId) return;
-
-    const updated = courses.map(course => {
-      if (course.id !== cId) return course;
-      return {
-        ...course,
-        chapters: course.chapters.map(ch => ({
-          ...ch,
-          lessons: ch.lessons.map(l => {
-            if (l.id === lessonId) {
-              return { ...l, isStarred: !l.isStarred };
-            }
-            return l;
-          })
-        }))
-      };
-    });
-    updateCoursesState(updated);
-  }, [activeCourseId, courses]);
-
-  // Action: Update Notes for Lesson
-  const handleUpdateNotes = useCallback((lessonId: string, notes: string) => {
-    if (!activeCourseId) return;
-
-    const updated = courses.map(course => {
-      if (course.id !== activeCourseId) return course;
-      return {
-        ...course,
-        chapters: course.chapters.map(ch => ({
-          ...ch,
-          lessons: ch.lessons.map(l => {
-            if (l.id === lessonId) {
-              return { ...l, notes };
-            }
-            return l;
-          })
-        }))
-      };
-    });
-    updateCoursesState(updated);
-  }, [activeCourseId, courses]);
-
-  // Action: Save or Update Course from Editor Modal
-  const handleSaveCourse = (course: Course) => {
-    const exists = courses.some(c => c.id === course.id);
-    let updated: Course[];
-    if (exists) {
-      updated = courses.map(c => c.id === course.id ? course : c);
-    } else {
-      updated = [course, ...courses];
+  const handleNextLesson = useCallback(() => {
+    if (hasNextLesson && activeCourse) {
+      const next = flatLessons[currentLessonIndex + 1];
+      setActiveLessonId(next.id);
+      window.location.hash = `#/course/${activeCourse.id}/lesson/${next.id}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    updateCoursesState(updated);
+  }, [hasNextLesson, flatLessons, currentLessonIndex, activeCourse]);
 
-    // Auto add category to categories list if not present
-    if (course.category && !categories.some(c => c.toLowerCase() === course.category.toLowerCase())) {
-      const newCats = [...categories, course.category];
-      setCategories(newCats);
-      saveCategories(newCats);
-    }
-    // Auto add source to sources list if not present
-    if (course.sourcePlatform && !sources.some(s => s.toLowerCase() === course.sourcePlatform?.toLowerCase())) {
-      const newSrcs = [...sources, course.sourcePlatform];
-      setSources(newSrcs);
-      saveSources(newSrcs);
-    }
-  };
-
-  // Action: Open Editor to Create New Course
-  const handleAddNewCourse = () => {
-    setCourseToEdit(null);
-    setIsCourseEditorOpen(true);
-  };
-
-  // Action: Open Editor to Edit Existing Course
-  const handleEditCourse = (course: Course) => {
-    setCourseToEdit(course);
-    setIsCourseEditorOpen(true);
-  };
-
-  // Action: Save New Course from Bulk Modal
-  const handleSaveNewCourseFromBulk = (newCourse: Course) => {
-    handleSaveCourse(newCourse);
-    handleSelectCourseAndLesson(newCourse.id);
-  };
-
-  // Action: Add Chapter & Lessons to Existing Course
-  const handleAddChapterToCourse = (courseId: string, newChapter: Chapter) => {
-    const updated = courses.map(course => {
-      if (course.id !== courseId) return course;
-      return {
-        ...course,
-        chapters: [...course.chapters, newChapter],
-        updatedAt: new Date().toISOString(),
-      };
-    });
-    updateCoursesState(updated);
-  };
-
-  // Action: Delete Course
-  const handleDeleteCourse = (courseId: string) => {
-    const updated = courses.filter(c => c.id !== courseId);
-    updateCoursesState(updated);
-    if (activeCourseId === courseId) {
-      setCurrentView('home');
-      setActiveCourseId(null);
-      setActiveLessonId(null);
-    }
-  };
-
-  // Action: Restore Backup
-  const handleRestoreCourses = (restored: Course[]) => {
-    updateCoursesState(restored);
-  };
-
-  // Keyboard Shortcuts Listener
+  // Keyboard Shortcuts (Space, F, N, P, Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing inside an input or textarea
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
 
-      if (currentView === 'player') {
-        if (e.key === 'n' || e.key === 'N') {
-          handleNextLesson();
-        } else if (e.key === 'p' || e.key === 'P') {
-          handlePrevLesson();
-        } else if (e.key === 'z' || e.key === 'Z') {
-          setIsZenMode(prev => !prev);
-        }
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setIsShortcutsOpen(prev => !prev);
       }
 
-      if (e.key === 'Escape') {
-        if (isZenMode) {
-          setIsZenMode(false);
-          return;
+      if (currentView === 'player') {
+        if (e.key === 'n' || e.key === 'N') {
+          e.preventDefault();
+          handleNextLesson();
+        } else if (e.key === 'p' || e.key === 'P') {
+          e.preventDefault();
+          handlePrevLesson();
+        } else if (e.key === 'z' || e.key === 'Z') {
+          e.preventDefault();
+          setIsZenMode(prev => !prev);
+        } else if (e.key === 'Escape') {
+          if (isZenMode) {
+            setIsZenMode(false);
+          } else {
+            setCurrentView('home');
+            window.location.hash = '#/';
+          }
         }
-        if (isBulkModalOpen) setIsBulkModalOpen(false);
-        if (isCourseEditorOpen) setIsCourseEditorOpen(false);
-        if (isShortcutsOpen) setIsShortcutsOpen(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, handleNextLesson, handlePrevLesson, isZenMode, isBulkModalOpen, isCourseEditorOpen, isShortcutsOpen]);
+  }, [currentView, isZenMode, handleNextLesson, handlePrevLesson]);
+
+  // Navigate to player with selected course & lesson
+  const handleSelectCourseAndLesson = (courseId: string, lessonId?: string) => {
+    const course = courses.find(c => c.id === courseId);
+    if (!course) return;
+
+    setActiveCourseId(courseId);
+    const targetLessonId = lessonId || course.lastWatchedLessonId || course.chapters[0]?.lessons[0]?.id;
+    setActiveLessonId(targetLessonId);
+
+    // Update continue watching progress
+    const targetLesson = course.chapters.flatMap(ch => ch.lessons).find(l => l.id === targetLessonId) || course.chapters[0]?.lessons[0];
+    if (targetLesson) {
+      const progress: ContinueProgress = {
+        courseId: course.id,
+        courseTitle: course.title,
+        lessonId: targetLesson.id,
+        lessonTitle: targetLesson.title,
+        category: course.category,
+        videoSource: targetLesson.videoSource,
+        timestamp: new Date().toISOString(),
+      };
+      setContinueProgress(progress);
+      saveContinueProgress(progress);
+    }
+
+    setCurrentView('player');
+    window.location.hash = `#/course/${course.id}/lesson/${targetLessonId}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Toggle Lesson Completion
+  const handleToggleComplete = (lessonId: string, specificCourseId?: string) => {
+    const targetCourseId = specificCourseId || activeCourseId;
+    if (!targetCourseId) return;
+
+    let justMarkedComplete = false;
+
+    const updatedCourses = courses.map((c) => {
+      if (c.id === targetCourseId) {
+        const updatedChapters = c.chapters.map((ch) => ({
+          ...ch,
+          lessons: ch.lessons.map((l) => {
+            if (l.id === lessonId) {
+              const nextStatus = !l.isCompleted;
+              if (nextStatus) justMarkedComplete = true;
+              return { ...l, isCompleted: nextStatus };
+            }
+            return l;
+          }),
+        }));
+        return { ...c, chapters: updatedChapters };
+      }
+      return c;
+    });
+
+    updateCoursesState(updatedCourses);
+
+    // Record stats streak if completed
+    if (justMarkedComplete) {
+      const updatedStats = recordLessonCompletionStats(true);
+      setUserStats(updatedStats);
+    }
+  };
+
+  // Toggle Lesson Star / Bookmark
+  const handleToggleStar = (lessonId: string, specificCourseId?: string) => {
+    const targetCourseId = specificCourseId || activeCourseId;
+    if (!targetCourseId) return;
+
+    const updatedCourses = courses.map((c) => {
+      if (c.id === targetCourseId) {
+        const updatedChapters = c.chapters.map((ch) => ({
+          ...ch,
+          lessons: ch.lessons.map((l) => (l.id === lessonId ? { ...l, isStarred: !l.isStarred } : l)),
+        }));
+        return { ...c, chapters: updatedChapters };
+      }
+      return c;
+    });
+
+    updateCoursesState(updatedCourses);
+  };
+
+  // Update Notes for current lesson
+  const handleUpdateNotes = (notes: string) => {
+    if (!activeCourseId || !activeLessonId) return;
+
+    const updatedCourses = courses.map((c) => {
+      if (c.id === activeCourseId) {
+        const updatedChapters = c.chapters.map((ch) => ({
+          ...ch,
+          lessons: ch.lessons.map((l) => (l.id === activeLessonId ? { ...l, notes } : l)),
+        }));
+        return { ...c, chapters: updatedChapters };
+      }
+      return c;
+    });
+
+    updateCoursesState(updatedCourses);
+  };
+
+  // Course CRUD handlers
+  const handleAddNewCourse = () => {
+    setCourseToEdit(null);
+    setIsCourseEditorOpen(true);
+  };
+
+  const handleEditCourse = (course: Course) => {
+    setCourseToEdit(course);
+    setIsCourseEditorOpen(true);
+  };
+
+  const handleDeleteCourse = (courseId: string) => {
+    const updated = courses.filter(c => c.id !== courseId);
+    updateCoursesState(updated);
+
+    if (activeCourseId === courseId) {
+      setActiveCourseId(null);
+      setActiveLessonId(null);
+      setCurrentView('home');
+      window.location.hash = '#/';
+    }
+
+    if (continueProgress?.courseId === courseId) {
+      setContinueProgress(null);
+      localStorage.removeItem('myedu_continue_progress_v1');
+    }
+  };
+
+  const handleSaveCourse = (savedCourse: Course) => {
+    const exists = courses.some(c => c.id === savedCourse.id);
+    let updatedCourses: Course[];
+    if (exists) {
+      updatedCourses = courses.map(c => c.id === savedCourse.id ? savedCourse : c);
+    } else {
+      updatedCourses = [savedCourse, ...courses];
+    }
+    updateCoursesState(updatedCourses);
+  };
+
+  // Bulk Import Handlers
+  const handleSaveNewCourseFromBulk = (newCourse: Course) => {
+    const updated = [newCourse, ...courses];
+    updateCoursesState(updated);
+    handleSelectCourseAndLesson(newCourse.id);
+  };
+
+  const handleAddChapterToCourse = (targetCourseId: string, newChapter: Chapter) => {
+    const updated = courses.map(c => {
+      if (c.id === targetCourseId) {
+        return {
+          ...c,
+          chapters: [...c.chapters, newChapter],
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return c;
+    });
+    updateCoursesState(updated);
+  };
+
+  const handleRestoreCourses = (restoredCourses: Course[]) => {
+    updateCoursesState(restoredCourses);
+  };
+
+  // Count total starred lessons across all courses
+  const starredCount = useMemo(() => {
+    return courses.reduce((acc, course) => {
+      return acc + course.chapters.reduce((cAcc, ch) => {
+        return cAcc + ch.lessons.filter(l => l.isStarred).length;
+      }, 0);
+    }, 0);
+  }, [courses]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-slate-950">
       
-      {/* Zen Mode Floating Exit Bar */}
-      {isZenMode && currentView === 'player' && (
-        <div className="sticky top-2 z-50 flex justify-center px-4 animate-fade-in pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-900/90 border border-teal-500/40 shadow-2xl backdrop-blur-md text-xs">
-            <span className="flex items-center gap-1.5 font-bold text-teal-300">
-              <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
-              Zen Focus Mode Đang Bật
-            </span>
-            <span className="text-slate-400 hidden sm:inline">&bull; Ẩn xao nhãng</span>
-            <button
-              onClick={() => setIsZenMode(false)}
-              className="px-2.5 py-0.5 rounded-full bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 font-bold text-[11px] transition-all"
-            >
-              Thoát (Phím Z / Esc)
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Top Navigation (Hidden in Zen Mode) */}
+      {/* Dynamic Global Navbar */}
       {!isZenMode && (
         <Navbar
           currentView={currentView}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
           onNavigateHome={() => {
             setCurrentView('home');
             window.location.hash = '#/';
@@ -532,8 +577,6 @@ export const App: React.FC = () => {
             window.location.hash = '#/favorites';
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
           onOpenStudio={() => {
             setCurrentView('studio');
             window.location.hash = '#/studio';
@@ -560,18 +603,19 @@ export const App: React.FC = () => {
               />
             )}
 
-            {/* Courses Grid with Integrated Wrapped Filter Hub */}
+            {/* Courses Grid with Integrated Cascading Filter Hub */}
             <CourseGrid
               courses={courses}
               searchQuery={searchQuery}
               categories={categories}
               sources={sources}
+              instructors={instructors}
               selectedCategory={selectedCategory}
               selectedSource={selectedSource}
               selectedInstructor={selectedInstructor}
-              onSelectCategory={setSelectedCategory}
-              onSelectSource={setSelectedSource}
-              onSelectInstructor={setSelectedInstructor}
+              onSelectCategory={handleSelectCategory}
+              onSelectSource={handleSelectSource}
+              onSelectInstructor={handleSelectInstructor}
               onResetFilters={handleResetFilters}
               onSelectCourse={(cId) => handleSelectCourseAndLesson(cId)}
               onOpenBulkImport={(cId) => {
@@ -603,7 +647,7 @@ export const App: React.FC = () => {
                     window.location.hash = '#/';
                   }}
                   onSelectCategory={(cat) => {
-                    setSelectedCategory(cat);
+                    handleSelectCategory(cat);
                     setCurrentView('home');
                     window.location.hash = '#/';
                   }}
@@ -691,6 +735,7 @@ export const App: React.FC = () => {
             courses={courses}
             categories={categories}
             sources={sources}
+            instructors={instructors}
             onBackToLearning={() => {
               setCurrentView('home');
               window.location.hash = '#/';
@@ -709,6 +754,9 @@ export const App: React.FC = () => {
             onAddSource={handleAddSource}
             onRenameSource={handleRenameSource}
             onDeleteSource={handleDeleteSource}
+            onAddInstructor={handleAddInstructor}
+            onRenameInstructor={handleRenameInstructor}
+            onDeleteInstructor={handleDeleteInstructor}
             onRestoreCourses={handleRestoreCourses}
             onSelectCourseAndLesson={(cId, lId) => handleSelectCourseAndLesson(cId, lId)}
           />

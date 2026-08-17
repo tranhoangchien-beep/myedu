@@ -22,6 +22,7 @@ import { BulkImportModal } from './components/course/BulkImportModal';
 import { CourseEditorModal } from './components/admin/CourseEditorModal';
 import { CourseStudioModal } from './components/admin/CourseStudioModal';
 import { ShortcutModal } from './components/common/ShortcutModal';
+import { Breadcrumb } from './components/layout/Breadcrumb';
 
 export const App: React.FC = () => {
   // Main Data States
@@ -68,6 +69,40 @@ export const App: React.FC = () => {
     const loadedProgress = getContinueProgress();
     setContinueProgress(loadedProgress);
   }, []);
+
+  // Hash Router Listener & Deep Linking (Back/Forward & Direct URL support)
+  useEffect(() => {
+    const parseHashRoute = () => {
+      const hash = window.location.hash || '';
+      if (hash.startsWith('#/favorites')) {
+        setCurrentView('favorites');
+      } else if (hash.startsWith('#/course/')) {
+        const parts = hash.replace('#/course/', '').split('/lesson/');
+        const cId = parts[0];
+        const lId = parts[1];
+        if (cId) {
+          setActiveCourseId(cId);
+          if (lId) {
+            setActiveLessonId(lId);
+          }
+          setCurrentView('player');
+        }
+      } else if (hash === '#/' || hash === '' || hash === '#') {
+        setCurrentView('home');
+      }
+    };
+
+    if (courses.length > 0) {
+      parseHashRoute();
+    }
+
+    window.addEventListener('hashchange', parseHashRoute);
+    window.addEventListener('popstate', parseHashRoute);
+    return () => {
+      window.removeEventListener('hashchange', parseHashRoute);
+      window.removeEventListener('popstate', parseHashRoute);
+    };
+  }, [courses]);
 
   // Sync courses to storage whenever modified
   const updateCoursesState = (newCourses: Course[]) => {
@@ -171,6 +206,23 @@ export const App: React.FC = () => {
     return activeCourse.chapters[0]?.lessons[0] || null;
   }, [activeCourse, activeLessonId]);
 
+  // Find active chapter for breadcrumb
+  const activeChapter = useMemo(() => {
+    if (!activeCourse || !activeLesson) return null;
+    return activeCourse.chapters.find(ch => ch.lessons.some(l => l.id === activeLesson.id)) || null;
+  }, [activeCourse, activeLesson]);
+
+  // Dynamic Document Title Sync
+  useEffect(() => {
+    if (currentView === 'player' && activeCourse && activeLesson) {
+      document.title = `${activeLesson.title} - ${activeCourse.title} | MyEdu`;
+    } else if (currentView === 'favorites') {
+      document.title = 'Bài Giảng Đã Ghim | MyEdu';
+    } else {
+      document.title = 'MyEdu - Không Gian Học Tập Cá Nhân';
+    }
+  }, [currentView, activeCourse, activeLesson]);
+
   // Flatten lessons in active course to calculate prev/next
   const flattenedLessons = useMemo(() => {
     if (!activeCourse) return [];
@@ -202,7 +254,7 @@ export const App: React.FC = () => {
     return count;
   }, [courses]);
 
-  // Action: Open a course and lesson
+  // Action: Open a course and lesson with URL Hash sync
   const handleSelectCourseAndLesson = useCallback((courseId: string, lessonId?: string) => {
     const targetCourse = courses.find(c => c.id === courseId);
     if (!targetCourse) return;
@@ -213,6 +265,14 @@ export const App: React.FC = () => {
     setActiveCourseId(courseId);
     setActiveLessonId(targetLessonId || null);
     setCurrentView('player');
+
+    // Update URL hash
+    const newHash = targetLessonId 
+      ? `#/course/${courseId}/lesson/${targetLessonId}`
+      : `#/course/${courseId}`;
+    if (window.location.hash !== newHash) {
+      window.location.hash = newHash;
+    }
 
     // Update continue progress
     const targetLesson = lessonId
@@ -462,10 +522,12 @@ export const App: React.FC = () => {
           currentView={currentView}
           onNavigateHome={() => {
             setCurrentView('home');
+            window.location.hash = '#/';
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           onNavigateFavorites={() => {
             setCurrentView('favorites');
+            window.location.hash = '#/favorites';
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           searchQuery={searchQuery}
@@ -479,7 +541,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         
         {/* VIEW 1: Home Course Catalog */}
         {currentView === 'home' && (
@@ -519,10 +581,34 @@ export const App: React.FC = () => {
 
         {/* VIEW 2: Player Workspace */}
         {currentView === 'player' && activeCourse && activeLesson && (
-          <div className="space-y-6">
+          <div className="space-y-4">
+            
+            {/* Interactive Hierarchical Breadcrumb */}
+            {!isZenMode && (
+              <div className="pb-1 border-b border-slate-800/80">
+                <Breadcrumb
+                  category={activeCourse.category}
+                  courseTitle={activeCourse.title}
+                  courseId={activeCourse.id}
+                  chapterTitle={activeChapter?.title}
+                  lessonTitle={activeLesson.title}
+                  onNavigateHome={() => {
+                    setCurrentView('home');
+                    window.location.hash = '#/';
+                  }}
+                  onSelectCategory={(cat) => {
+                    setSelectedCategory(cat);
+                    setCurrentView('home');
+                    window.location.hash = '#/';
+                  }}
+                  onSelectCourse={(cId) => handleSelectCourseAndLesson(cId)}
+                />
+              </div>
+            )}
+
             {isZenMode ? (
               // Zen Focus Mode: Distraction-free max container at center
-              <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+              <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pt-2">
                 <AbyssPlayer
                   course={activeCourse}
                   currentLesson={activeLesson}

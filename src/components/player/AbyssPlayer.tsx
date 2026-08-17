@@ -183,6 +183,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+            referrerPolicy="no-referrer"
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-400 bg-slate-950">
@@ -325,6 +326,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                     href={att.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    referrerPolicy="no-referrer"
                     className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-white transition-all group"
                   >
                     <div className="flex items-center gap-2">

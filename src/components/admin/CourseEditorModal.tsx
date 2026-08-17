@@ -22,7 +22,6 @@ import {
   PanelLeftOpen,
   BookMarked,
   AlertTriangle,
-  CheckCircle2,
   Check
 } from 'lucide-react';
 import { extractAbyssId } from '../../lib/abyss';
@@ -67,8 +66,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   // Initial Snapshot for Unsaved Changes tracking
   const [initialSnapshot, setInitialSnapshot] = useState<string>('');
 
-  // Save Success Notification state
-  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string>('');
+  // Save state for button feedback
+  const [isSavedRecently, setIsSavedRecently] = useState<boolean>(false);
 
   // Studio Mode: 'info' (Thông tin) | 'curriculum' (Giáo trình)
   const [studioSection, setStudioSection] = useState<'info' | 'curriculum'>('curriculum');
@@ -113,7 +112,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       prevIsOpenRef.current = true;
       prevCourseIdRef.current = currentCourseId;
       setShowUnsavedConfirmModal(false);
-      setSaveSuccessMessage('');
+      setIsSavedRecently(false);
 
       if (courseToEdit) {
         // Editing existing course -> Default to 'curriculum' tab
@@ -239,8 +238,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isOpen, isDirty]);
 
-  // Save Function (Supports Save & Stay OR Save & Close)
-  const handleSaveCourse = (andClose: boolean = false) => {
+  // Direct Save function (Always stays in workspace)
+  const handleSaveCourse = () => {
     if (!title.trim()) {
       alert('Vui lòng nhập tên khóa học ở mục Thông Tin!');
       setStudioSection('info');
@@ -281,21 +280,17 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       chapters: savedCourse.chapters
     }));
 
-    if (andClose) {
-      onClose();
-    } else {
-      // Show instant feedback toast
-      setSaveSuccessMessage('Đã lưu tất cả thay đổi vào máy!');
-      setTimeout(() => setSaveSuccessMessage(''), 2500);
-    }
+    // Show button save confirmation feedback
+    setIsSavedRecently(true);
+    setTimeout(() => setIsSavedRecently(false), 2000);
   };
 
-  // Keyboard shortcut: Ctrl+S / Cmd+S to save without closing
+  // Keyboard shortcut: Ctrl+S / Cmd+S to save
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        handleSaveCourse(false);
+        handleSaveCourse();
       }
     };
 
@@ -524,45 +519,29 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden animate-fade-in">
       <div className="relative w-full max-w-7xl h-[92vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
         
-        {/* Top Header Bar with Tab Switchers, Unsaved Indicator & Save Actions */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-lg shadow-emerald-500/20">
+        {/* Top Header Bar: Clean & Zero Layout Shift */}
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 gap-4 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-lg shadow-emerald-500/20 flex-shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="font-extrabold text-base sm:text-lg text-white tracking-tight truncate max-w-md">
                   {title || (courseToEdit ? 'Chỉnh Sửa Khóa Học' : 'Tạo Khóa Học Mới')}
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-bold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-bold flex-shrink-0">
                   {totalLessonsCount} bài
                 </span>
-
-                {/* Save Success Toast */}
-                {saveSuccessMessage && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-fade-in">
-                    <Check className="w-3.5 h-3.5" />
-                    <span>{saveSuccessMessage}</span>
-                  </span>
-                )}
-
-                {/* Unsaved Changes Visual Pill */}
-                {isDirty && !saveSuccessMessage && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <span>Chưa lưu thay đổi (Ctrl+S)</span>
-                  </span>
-                )}
               </div>
-              <p className="text-xs text-slate-400">
-                Giao diện 2 cột chuyên nghiệp: Mục lục bên trái & Soạn thảo chi tiết bên phải
+              <p className="text-xs text-slate-400 truncate">
+                Mục lục bên trái & Soạn thảo chi tiết bài giảng bên phải
               </p>
             </div>
           </div>
 
-          {/* Section Mode Navigation + Save Actions */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Section Navigation & Safe Close Button */}
+          <div className="flex items-center gap-3 flex-shrink-0">
             <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800">
               <button
                 type="button"
@@ -590,28 +569,6 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                 <span>Thông Tin</span>
               </button>
             </div>
-
-            {/* Save & Stay in Workspace Button */}
-            <button
-              type="button"
-              onClick={() => handleSaveCourse(false)}
-              className="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/25 transition-all"
-              title="Lưu thay đổi vào máy và tiếp tục soạn thảo (Ctrl+S)"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>Lưu Thay Đổi</span>
-            </button>
-
-            {/* Save & Close Button */}
-            <button
-              type="button"
-              onClick={() => handleSaveCourse(true)}
-              className="px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
-              title="Lưu tất cả thay đổi và quay về danh sách"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Lưu & Đóng</span>
-            </button>
 
             {/* Safe Close Button */}
             <button
@@ -831,7 +788,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                 )}
               </div>
 
-              {/* COLUMN 2: Active Lesson Workspace & Rich Editor (Takes full remaining width) */}
+              {/* COLUMN 2: Active Lesson Workspace & Rich Editor */}
               <div className="flex-1 bg-slate-900 flex flex-col h-full overflow-y-auto custom-scrollbar p-5 sm:p-6 space-y-6">
                 
                 {/* Expand sidebar hint if collapsed */}
@@ -855,7 +812,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                 {activeLesson ? (
                   <div className="space-y-6 max-w-4xl mx-auto w-full">
                     
-                    {/* Header Row: Title & Format Selector */}
+                    {/* Header Row: Title & Format Selector + DIRECT LESSON SAVE BUTTON */}
                     <div className="space-y-3 p-5 rounded-3xl bg-slate-950/70 border border-slate-800 shadow-md">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         
@@ -901,19 +858,45 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                           </button>
                         </div>
 
-                        {/* Estimated time */}
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                            <span>Thời lượng:</span>
-                          </label>
-                          <input
-                            type="number"
-                            value={activeLesson.durationMinutes || 15}
-                            onChange={(e) => handleUpdateActiveLesson('durationMinutes', parseInt(e.target.value) || 0)}
-                            className="w-20 px-2.5 py-1 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white text-center font-bold"
-                          />
-                          <span className="text-xs text-slate-500">phút</span>
+                        {/* Estimated time & Direct Save Button for this Lesson */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <label className="text-xs text-slate-400 flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Thời lượng:</span>
+                            </label>
+                            <input
+                              type="number"
+                              value={activeLesson.durationMinutes || 15}
+                              onChange={(e) => handleUpdateActiveLesson('durationMinutes', parseInt(e.target.value) || 0)}
+                              className="w-16 px-2 py-1 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white text-center font-bold"
+                            />
+                            <span className="text-xs text-slate-500">phút</span>
+                          </div>
+
+                          {/* DIRECT SAVE BUTTON PLACED RIGHT ON THE LESSON */}
+                          <button
+                            type="button"
+                            onClick={handleSaveCourse}
+                            className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md ${
+                              isSavedRecently
+                                ? 'bg-teal-600 text-white shadow-teal-600/30 ring-1 ring-teal-400'
+                                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/25'
+                            }`}
+                            title="Lưu tất cả nội dung khóa học & bài giảng này vào máy (Ctrl+S)"
+                          >
+                            {isSavedRecently ? (
+                              <>
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Đã Lưu!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Save className="w-3.5 h-3.5" />
+                                <span>Lưu Bài Học</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
 
@@ -1060,10 +1043,25 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           {studioSection === 'info' && (
             <div className="flex-1 overflow-y-auto p-6 max-w-4xl mx-auto w-full space-y-6 custom-scrollbar">
               <div className="p-6 rounded-3xl bg-slate-950/70 border border-slate-800/80 space-y-5 shadow-xl">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
-                  <Settings className="w-4 h-4 text-emerald-400" />
-                  <span>Thông Tin Cơ Bản Khóa Học</span>
-                </h3>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Settings className="w-4 h-4 text-emerald-400" />
+                    <span>Thông Tin Cơ Bản Khóa Học</span>
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveCourse}
+                    className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md ${
+                      isSavedRecently
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    }`}
+                  >
+                    {isSavedRecently ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                    <span>{isSavedRecently ? 'Đã Lưu!' : 'Lưu Thông Tin'}</span>
+                  </button>
+                </div>
 
                 {/* Title */}
                 <div>
@@ -1190,7 +1188,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed">
-                Bạn đã thay đổi thông tin hoặc nội dung giáo trình của khóa học nhưng chưa bấm <strong>"Lưu Thay Đổi"</strong>. Bạn có chắc chắn muốn thoát và hủy bỏ toàn bộ chỉnh sửa này không?
+                Bạn đã thay đổi thông tin hoặc nội dung giáo trình của khóa học nhưng chưa bấm <strong>"Lưu Bài Học"</strong>. Bạn có chắc chắn muốn thoát và hủy bỏ toàn bộ chỉnh sửa này không?
               </div>
 
               <div className="flex items-center justify-end gap-2.5 pt-2">

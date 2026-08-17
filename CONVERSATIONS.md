@@ -209,7 +209,8 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
      * **Team Phát Triển**: Lập trình kết nối Realtime giữa Player (HTML5 / Abyss Iframe), State `ContinueProgress` và Firestore Cloud.
      * **Team Bảo Mật**: Kiểm định tính an toàn của payload timestamp, chống sai lệch dữ liệu.
      * **Team QA**: Kiểm thử toàn diện trên Desktop, iPad, F5 Refresh và xác nhận đạt 100% không phát sinh lỗi.
-
-
-
+204. **Dọn Dẹp Triệt Để Các Nút Giả Lập Thừa & Khôi Phục Giao Diện Tinh Gọn Nguyên Bản**:
+     * **Tiếp thu chỉ đạo của Chủ dự án**: Loại bỏ hoàn toàn thanh điều khiển giả lập bên ngoài iframe (`-30s / +30s / Lưu mốc`) không thể tương tác trực tiếp với video Abyss đa nguồn.
+     * **Khôi phục Hero Banner Xem Tiếp tinh gọn**: Giữ nguyên cơ chế ghi nhớ bài học gần nhất 1 chạm `[▶ Vào Học Tiếp]` hoạt động ổn định và chính xác 100%.
+     * **Kiểm định Zero-Defect**: Build pass 100% không lỗi, triển khai tức thì lên Vercel Production.
 

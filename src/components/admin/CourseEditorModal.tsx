@@ -11,17 +11,17 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
-  ChevronUp,
+  ChevronLeft,
   Video,
   Layers,
   Paperclip,
   FolderOpen,
   GripVertical,
   Settings,
-  PlusCircle,
-  Play,
   Clock,
-  ExternalLink
+  PanelLeftClose,
+  PanelLeftOpen,
+  BookMarked
 } from 'lucide-react';
 import { extractAbyssId } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
@@ -62,15 +62,19 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [tagsInput, setTagsInput] = useState<string>('');
   const [chapters, setChapters] = useState<Chapter[]>([]);
 
-  // Studio Mode: 'info' (Thông tin chung) | 'curriculum' (Mục lục & Soạn thảo 2 cột)
+  // Studio Mode: 'info' (Thông tin) | 'curriculum' (Giáo trình)
+  // When creating new course -> 'info' first. When editing existing course -> 'curriculum' first.
   const [studioSection, setStudioSection] = useState<'info' | 'curriculum'>('curriculum');
 
   // Selected Active Lesson for 2-column workspace
   const [activeSelection, setActiveSelection] = useState<{ chId: string; lessonId: string } | null>(null);
 
+  // Collapse / Expand states
+  const [collapsedChapterIds, setCollapsedChapterIds] = useState<Record<string, boolean>>({});
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+
   // Drag and Drop state (ONLY triggered on the Grip handle)
   const [draggedLessonInfo, setDraggedLessonInfo] = useState<{ chIdx: number; lIdx: number } | null>(null);
-  const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
 
   // Auto-collect unique instructors across existing courses
   const existingInstructors = useMemo(() => {
@@ -88,6 +92,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
   useEffect(() => {
     if (courseToEdit) {
+      // Editing existing course -> Default to 'curriculum' tab
+      setStudioSection('curriculum');
       setTitle(courseToEdit.title);
       setDescription(courseToEdit.description || '');
       setCategory(courseToEdit.category || categories[0] || 'Chung');
@@ -96,6 +102,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       setThumbnailUrl(courseToEdit.thumbnailUrl || '');
       setTagsInput(courseToEdit.tags?.join(', ') || '');
       setChapters(courseToEdit.chapters || []);
+      setCollapsedChapterIds({});
 
       const firstCh = courseToEdit.chapters[0];
       const firstLes = firstCh?.lessons[0];
@@ -105,7 +112,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
         setActiveSelection(null);
       }
     } else {
-      // New course defaults
+      // Creating NEW course -> Default to 'info' tab
+      setStudioSection('info');
       setTitle('');
       setDescription('');
       setCategory(categories[0] || 'AI & Machine Learning');
@@ -113,6 +121,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       setSourcePlatform(sources[0] || 'Udemy');
       setThumbnailUrl('');
       setTagsInput('');
+      setCollapsedChapterIds({});
       const defaultChId = `ch-${Date.now()}`;
       const defaultLesId = `les-${Date.now()}-1`;
       setChapters([
@@ -144,6 +153,12 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   // Active Lesson & Chapter computed
   const activeChapter = chapters.find(ch => ch.id === activeSelection?.chId) || chapters[0];
   const activeLesson = activeChapter?.lessons.find(l => l.id === activeSelection?.lessonId) || activeChapter?.lessons[0] || null;
+
+  // Chapter Collapse Toggle
+  const toggleChapterCollapse = (chId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setCollapsedChapterIds(prev => ({ ...prev, [chId]: !prev[chId] }));
+  };
 
   // Chapter CRUD
   const handleAddChapter = () => {
@@ -210,6 +225,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       }
       return ch;
     }));
+    // Auto expand chapter if collapsed
+    setCollapsedChapterIds(prev => ({ ...prev, [chId]: false }));
     setActiveSelection({ chId, lessonId: newLesId });
   };
 
@@ -320,7 +337,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert('Vui lòng nhập tên khóa học ở mục Thông Tin Cơ Bản!');
+      alert('Vui lòng nhập tên khóa học ở mục Thông Tin!');
       setStudioSection('info');
       return;
     }
@@ -375,33 +392,33 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
             </div>
           </div>
 
-          {/* Section Mode Navigation (Curriculum vs General Info) + Save */}
+          {/* Section Mode Navigation (Tối giản tên tab: Giáo Trình & Thông Tin) + Save */}
           <div className="flex items-center gap-2.5">
             <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800">
               <button
                 type="button"
                 onClick={() => setStudioSection('curriculum')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
                   studioSection === 'curriculum'
                     ? 'bg-emerald-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>Giáo Trình 2 Cột</span>
+                <span>Giáo Trình</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setStudioSection('info')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
                   studioSection === 'info'
                     ? 'bg-emerald-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <Settings className="w-3.5 h-3.5" />
-                <span>Thông Tin Khóa Học</span>
+                <span>Thông Tin</span>
               </button>
             </div>
 
@@ -428,138 +445,228 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           
           {/* SECTION 1: 2-COLUMN CURRICULUM WORKSPACE */}
           {studioSection === 'curriculum' && (
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden h-full">
+            <div className="flex-1 flex overflow-hidden h-full">
               
-              {/* COLUMN 1: Curriculum Tree Sidebar (35% width) */}
-              <div className="md:col-span-4 lg:col-span-4 border-r border-slate-800 bg-slate-950/70 flex flex-col h-full overflow-hidden">
-                
+              {/* COLUMN 1: Curriculum Tree Sidebar (Collapsible) */}
+              <div 
+                className={`border-r border-slate-800 bg-slate-950/70 flex flex-col h-full overflow-hidden transition-all duration-300 ${
+                  isSidebarCollapsed ? 'w-14 items-center' : 'w-full md:w-80 lg:w-96 flex-shrink-0'
+                }`}
+              >
                 {/* Column 1 Header */}
-                <div className="p-3.5 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <FolderOpen className="w-4 h-4 text-teal-400" />
-                    <span>Mục Lục ({chapters.length} chương)</span>
-                  </span>
+                <div className="p-3 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between w-full">
+                  {!isSidebarCollapsed ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="w-4 h-4 text-teal-400" />
+                        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                          Mục Lục ({chapters.length} chương)
+                        </span>
+                      </div>
 
-                  <button
-                    type="button"
-                    onClick={handleAddChapter}
-                    className="px-2.5 py-1 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>+ Thêm Chương</span>
-                  </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleAddChapter}
+                          className="px-2.5 py-1 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Thêm Chương</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsSidebarCollapsed(true)}
+                          title="Thu gọn mục lục"
+                          className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                        >
+                          <PanelLeftClose className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsSidebarCollapsed(false)}
+                      title="Mở rộng mục lục"
+                      className="p-1.5 mx-auto rounded-lg text-teal-400 hover:text-white hover:bg-slate-800"
+                    >
+                      <PanelLeftOpen className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Chapters & Lessons Tree List */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
-                  {chapters.map((chapter, chIdx) => (
-                    <div 
-                      key={chapter.id}
-                      className="border border-slate-800/80 rounded-2xl bg-slate-900/60 overflow-hidden shadow-sm"
-                    >
-                      {/* Chapter Title Row */}
-                      <div className="p-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between gap-2 group">
-                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                          <FolderOpen className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                          <input
-                            type="text"
-                            value={chapter.title}
-                            onChange={(e) => handleUpdateChapterTitle(chapter.id, e.target.value)}
-                            placeholder="Tên chương..."
-                            className="text-xs font-bold text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-emerald-500 px-1 py-0.5 flex-1 focus:outline-none"
-                          />
-                        </div>
+                {!isSidebarCollapsed ? (
+                  <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar w-full">
+                    {chapters.map((chapter, chIdx) => {
+                      const isCollapsed = collapsedChapterIds[chapter.id] === true;
 
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
-                            type="button"
-                            onClick={(e) => handleAddLesson(chapter.id, e)}
-                            title="Thêm bài học vào chương này"
-                            className="p-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[11px]"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-
-                          {chapters.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleDeleteChapter(chapter.id, e)}
-                              title="Xóa chương này"
-                              className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Lessons in Chapter */}
-                      <div className="p-1.5 space-y-1">
-                        {chapter.lessons.map((lesson, lIdx) => {
-                          const isActive = activeSelection?.chId === chapter.id && activeSelection?.lessonId === lesson.id;
-                          const lessonType = lesson.type || 'video';
-
-                          return (
-                            <div
-                              key={lesson.id}
-                              onClick={() => setActiveSelection({ chId: chapter.id, lessonId: lesson.id })}
-                              onDragOver={(e) => e.preventDefault()}
-                              onDrop={() => handleLessonDrop(chIdx, lIdx)}
-                              className={`group/lesson flex items-center justify-between p-2 rounded-xl text-xs transition-all cursor-pointer border ${
-                                isActive
-                                  ? 'bg-emerald-500/15 border-emerald-500/60 text-white font-bold shadow-sm ring-1 ring-emerald-500/20'
-                                  : 'bg-slate-950/40 border-slate-800/60 text-slate-300 hover:bg-slate-800/50 hover:border-slate-700'
-                              }`}
-                            >
-                              {/* Left: Drag Handle ONLY + Type Icon + Title */}
-                              <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-                                
-                                {/* DRAG HANDLE: Drag ONLY starts from this icon */}
-                                <div
-                                  draggable
-                                  onDragStart={(e) => handleLessonDragStart(chIdx, lIdx, e)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="cursor-grab active:cursor-grabbing p-1 text-slate-600 hover:text-emerald-400 flex-shrink-0"
-                                  title="Kéo thả để sắp xếp vị trí bài học"
-                                >
-                                  <GripVertical className="w-3.5 h-3.5" />
-                                </div>
-
-                                <div className="flex-shrink-0">
-                                  {lessonType === 'article' ? (
-                                    <FileText className="w-3.5 h-3.5 text-teal-400" />
-                                  ) : lessonType === 'mixed' ? (
-                                    <Layers className="w-3.5 h-3.5 text-amber-400" />
-                                  ) : (
-                                    <Play className="w-3.5 h-3.5 text-emerald-400 fill-current" />
-                                  )}
-                                </div>
-
-                                <span className="truncate text-xs">{lesson.title}</span>
-                              </div>
-
-                              {/* Right: Delete button */}
+                      return (
+                        <div 
+                          key={chapter.id}
+                          className="border border-slate-800/80 rounded-2xl bg-slate-900/60 overflow-hidden shadow-sm"
+                        >
+                          {/* Chapter Title Row with Expand/Collapse button */}
+                          <div className="p-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between gap-2 group">
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
                               <button
                                 type="button"
-                                onClick={(e) => handleDeleteLesson(chapter.id, lesson.id, e)}
-                                className="opacity-0 group-hover/lesson:opacity-100 p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-opacity"
-                                title="Xóa bài này"
+                                onClick={(e) => toggleChapterCollapse(chapter.id, e)}
+                                className="p-0.5 text-slate-400 hover:text-white flex-shrink-0"
+                                title={isCollapsed ? 'Mở rộng chương' : 'Thu gọn chương'}
                               >
-                                <Trash2 className="w-3 h-3" />
+                                {isCollapsed ? (
+                                  <ChevronRight className="w-3.5 h-3.5 text-teal-400" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5 text-emerald-400" />
+                                )}
                               </button>
-                            </div>
-                          );
-                        })}
-                      </div>
 
-                    </div>
-                  ))}
-                </div>
+                              <input
+                                type="text"
+                                value={chapter.title}
+                                onChange={(e) => handleUpdateChapterTitle(chapter.id, e.target.value)}
+                                placeholder="Tên chương..."
+                                className="text-xs font-bold text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-emerald-500 px-1 py-0.5 flex-1 focus:outline-none"
+                              />
+
+                              <span className="text-[10px] text-slate-500 font-normal">
+                                ({chapter.lessons.length})
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={(e) => handleAddLesson(chapter.id, e)}
+                                title="Thêm bài học vào chương này"
+                                className="p-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[11px]"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+
+                              {chapters.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteChapter(chapter.id, e)}
+                                  title="Xóa chương này"
+                                  className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Lessons in Chapter (Collapsible) */}
+                          {!isCollapsed && (
+                            <div className="p-1.5 space-y-1">
+                              {chapter.lessons.map((lesson, lIdx) => {
+                                const isActive = activeSelection?.chId === chapter.id && activeSelection?.lessonId === lesson.id;
+                                const lessonType = lesson.type || 'video';
+
+                                return (
+                                  <div
+                                    key={lesson.id}
+                                    onClick={() => setActiveSelection({ chId: chapter.id, lessonId: lesson.id })}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={() => handleLessonDrop(chIdx, lIdx)}
+                                    className={`group/lesson flex items-center justify-between p-2 rounded-xl text-xs transition-all cursor-pointer border ${
+                                      isActive
+                                        ? 'bg-emerald-500/15 border-emerald-500/60 text-white font-bold shadow-sm ring-1 ring-emerald-500/20'
+                                        : 'bg-slate-950/40 border-slate-800/60 text-slate-300 hover:bg-slate-800/50 hover:border-slate-700'
+                                    }`}
+                                  >
+                                    {/* Left: Drag Handle ONLY + Type Icon + Title */}
+                                    <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                                      
+                                      {/* DRAG HANDLE: Drag ONLY starts from this icon */}
+                                      <div
+                                        draggable
+                                        onDragStart={(e) => handleLessonDragStart(chIdx, lIdx, e)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="cursor-grab active:cursor-grabbing p-1 text-slate-600 hover:text-emerald-400 flex-shrink-0"
+                                        title="Kéo thả để sắp xếp vị trí bài học"
+                                      >
+                                        <GripVertical className="w-3.5 h-3.5" />
+                                      </div>
+
+                                      <div className="flex-shrink-0">
+                                        {lessonType === 'article' ? (
+                                          <FileText className="w-3.5 h-3.5 text-teal-400" />
+                                        ) : lessonType === 'mixed' ? (
+                                          <Layers className="w-3.5 h-3.5 text-amber-400" />
+                                        ) : (
+                                          <Video className="w-3.5 h-3.5 text-emerald-400" />
+                                        )}
+                                      </div>
+
+                                      <span className="truncate text-xs">{lesson.title}</span>
+                                    </div>
+
+                                    {/* Right: Delete button */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleDeleteLesson(chapter.id, lesson.id, e)}
+                                      className="opacity-0 group-hover/lesson:opacity-100 p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-opacity"
+                                      title="Xóa bài này"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* Collapsed Icon Bar */
+                  <div className="p-2 space-y-3 flex flex-col items-center">
+                    {chapters.map((ch, idx) => (
+                      <div 
+                        key={ch.id}
+                        onClick={() => {
+                          setIsSidebarCollapsed(false);
+                          if (ch.lessons[0]) {
+                            setActiveSelection({ chId: ch.id, lessonId: ch.lessons[0].id });
+                          }
+                        }}
+                        title={`${ch.title} (${ch.lessons.length} bài)`}
+                        className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xs font-bold text-teal-400 hover:border-emerald-500 cursor-pointer shadow-sm"
+                      >
+                        {idx + 1}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* COLUMN 2: Active Lesson Workspace & Rich Editor (65% width) */}
-              <div className="md:col-span-8 lg:col-span-8 bg-slate-900 flex flex-col h-full overflow-y-auto custom-scrollbar p-6 space-y-6">
+              {/* COLUMN 2: Active Lesson Workspace & Rich Editor (Takes full remaining width) */}
+              <div className="flex-1 bg-slate-900 flex flex-col h-full overflow-y-auto custom-scrollbar p-5 sm:p-6 space-y-6">
                 
+                {/* Expand sidebar hint if collapsed */}
+                {isSidebarCollapsed && (
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setIsSidebarCollapsed(false)}
+                      className="text-xs font-bold text-teal-400 hover:text-teal-300 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800"
+                    >
+                      <PanelLeftOpen className="w-3.5 h-3.5" />
+                      <span>Mở lại Mục Lục Bài Học</span>
+                    </button>
+
+                    <span className="text-xs text-slate-500">
+                      Chế độ Soạn thảo Mở rộng Toàn màn hình
+                    </span>
+                  </div>
+                )}
+
                 {activeLesson ? (
                   <div className="space-y-6 max-w-4xl mx-auto w-full">
                     
@@ -671,7 +778,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                         <RichTextEditor
                           value={activeLesson.content || ''}
                           onChange={(val) => handleUpdateActiveLesson('content', val)}
-                          placeholder="Soạn thảo nội dung bài học chi tiết tại đây (H1-H3, in đậm, khối code, danh sách, trích dẫn)... Bôi đen văn bản tự nhiên không lo kéo thả!"
+                          placeholder="Soạn thảo nội dung bài học chi tiết tại đây (H1-H3, in đậm, khối code, danh sách, trích dẫn)..."
                           minHeight="260px"
                           label="Soạn Thảo Bài Viết / Hướng Dẫn Chi Tiết"
                         />
@@ -694,14 +801,14 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                           className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white text-xs font-bold flex items-center gap-1.5 border border-emerald-500/30 transition-all shadow-sm"
                         >
                           <Plus className="w-3.5 h-3.5" />
-                          <span>+ Thêm File/Link</span>
+                          <span>Thêm File/Link</span>
                         </button>
                       </div>
 
                       {/* Attachments List */}
                       {(!activeLesson.attachments || activeLesson.attachments.length === 0) ? (
                         <p className="text-xs text-slate-500 italic py-2">
-                          Chưa có tài liệu đính kèm cho bài này. Bấm "+ Thêm File/Link" để chèn Slide PDF, Google Drive, Repo GitHub hoặc link bài tập.
+                          Chưa có tài liệu đính kèm cho bài này. Bấm "Thêm File/Link" để chèn Slide PDF, Google Drive, Repo GitHub hoặc link bài tập.
                         </p>
                       ) : (
                         <div className="space-y-2.5">
@@ -753,7 +860,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3">
-                    <BookOpen className="w-12 h-12 text-slate-600" />
+                    <BookMarked className="w-12 h-12 text-slate-600" />
                     <p className="text-sm">Hãy chọn một bài học từ cột mục lục bên trái để bắt đầu soạn thảo.</p>
                   </div>
                 )}

@@ -181,3 +181,9 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
     * **Khắc phục triệt để lỗi Video tự phát lại khi Bật/Tắt Zen Mode**: Tối ưu hóa cấu trúc DOM trong `App.tsx`, giữ nguyên vị trí thẻ `<AbyssPlayer />` cố định trong Virtual DOM khi thay đổi layout grid giữa Zen Mode và Split Mode. Video / iframe giờ đây chạy liên tục không bao giờ bị ngắt hay tự động phát lại từ đầu!
     * **Hỗ trợ nhúng TikTok Video**: Bổ sung bộ lọc regex hỗ trợ tự động nhận diện ID từ mã nhúng `<blockquote class="tiktok-embed" data-video-id="...">` hoặc link TikTok `tiktok.com/@user/video/ID` $\rightarrow$ sinh đường dẫn embed chuẩn `https://www.tiktok.com/embed/v2/ID`.
     * **Tự động hóa Google Drive & Loom**: Tự động chuyển link Google Drive `/view` thành `/preview` và link Loom `/share/` thành `/embed/` để phát mượt mà không cần thao tác thủ công.
+20. **Tính Năng Nhập Nhanh Hàng Loạt Video Trực Tiếp Từ Abyss.to (Quick Abyss Bulk Embed)**:
+    * **Phân tích thông minh định dạng Copy 3 thành phần của Abyss (`Filename.mp4|URL|Iframe`)**:
+      - Tự động tách tên file `7 Xác định mục tiêu tài chính.mp4` thành tên bài học chuẩn: `Bài 7: Xác định mục tiêu tài chính` (loại bỏ sạch đuôi file `.mp4`, `.mkv`, `.mov`).
+      - Tự động bóc tách link nhúng Abyss Player (`https://player.abyssplayer.com/58_ZxuvA0`).
+    * **Tự động đảo ngược thứ tự danh sách (7 $\rightarrow$ 1 thành 1 $\rightarrow$ 7)**: Hỗ trợ tùy chọn tự động lật ngược lại thứ tự bài giảng để nhập đúng thứ tự tự nhiên (Bài 1, Bài 2, ..., Bài 7).
+    * **Tích hợp cửa sổ Nhập Nhanh `QuickBulkEmbedModal`**: Thêm nút **`⚡ Nhập Abyss`** ngay cạnh thanh mục lục trong modal Chỉnh sửa khóa học (`CourseEditorModal`), cho phép chọn Chương đích và nạp hàng loạt bài giảng chỉ với 1 cú click!

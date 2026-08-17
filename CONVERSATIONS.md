@@ -113,9 +113,7 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
    * Hiển thị Badge trực quan nhấp nháy `● Chưa lưu thay đổi` trên thanh tiêu đề.
    * **Chặn đóng cửa sổ bất ngờ**: Khi bấm nút Đóng `(X)`, popup cảnh báo xuất hiện để xác nhận `[Ở Lại Chỉnh Sửa]` hoặc `[Thoát & Hủy Bỏ]`.
    * **Chặn Reload / Đóng Tab Trình Duyệt (`beforeunload`)**: Kích hoạt hộp thoại cảnh báo của trình duyệt khi người dùng vô tình F5 hoặc tắt tab lúc đang soạn bài dở.
-
-
-
-
-
-
+10. **Tự Động Nạp Bộ Dữ Liệu Kiểm Thử Vàng (Golden Test Suite)**:
+    * Khởi tạo và tự động đồng bộ 4 khóa học mẫu chuẩn hóa cao cấp (`course-ai-generative-mastery`, `course-react-nextjs-fullstack`, `course-uiux-design-handbook`, `course-growth-marketing-funnel`).
+    * Bao phủ 100% các định dạng: Video Abyss đa dạng URL/Iframe, bài viết Markdown chuyên sâu có thanh công cụ/code block, bài học hỗn hợp, đầy đủ 4 loại tài liệu đính kèm (PDF, Google Drive, GitHub, Link ngoài).
+    * Tích hợp cơ chế tự động di chuyển (Auto-migration) nâng cấp `localStorage` cũ lên bộ dữ liệu mới mà không bị lỗi tương thích.

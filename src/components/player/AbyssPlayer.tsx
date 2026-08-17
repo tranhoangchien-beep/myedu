@@ -58,8 +58,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const embedUrl = getAbyssEmbedUrl(currentLesson.videoSource);
-  const rawId = extractAbyssId(currentLesson.videoSource);
+  const embedUrl = currentLesson.videoSource ? getAbyssEmbedUrl(currentLesson.videoSource) : null;
+  const rawId = currentLesson.videoSource ? extractAbyssId(currentLesson.videoSource) : null;
 
   // Sync notes when lesson changes
   useEffect(() => {
@@ -165,36 +165,101 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
     );
   };
 
+  const lessonType = currentLesson.type || (currentLesson.videoSource ? 'video' : 'article');
+
   return (
     <div className="space-y-4">
-      {/* 1. Main Video Container */}
-      <div 
-        ref={playerContainerRef}
-        className={`relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 transition-all ${
-          isZenMode ? 'ring-2 ring-teal-500/50 shadow-emerald-950/40' : ''
-        }`}
-      >
-        {embedUrl ? (
-          <iframe
-            key={embedUrl}
-            src={embedUrl}
-            title={currentLesson.title}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-400 bg-slate-950">
-            <AlertCircle className="w-12 h-12 text-amber-500 mb-3" />
-            <p className="font-semibold text-slate-200">Không thể tải video từ mã nhúng Abyss</p>
-            <p className="text-xs text-slate-500 mt-1 max-w-md">
-              Nguồn video hiện tại: <code className="text-emerald-400">{currentLesson.videoSource}</code>
-            </p>
+      {/* 1. Main Media Area: Video Player OR Article Reader */}
+      {lessonType === 'article' ? (
+        // Pure Article Reader
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-teal-400">
+                  Bài Đọc / Tài Liệu Văn Bản
+                </span>
+                <h2 className="text-base sm:text-lg font-bold text-white leading-tight">
+                  {currentLesson.title}
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-teal-400" />
+                <span>{currentLesson.durationMinutes ? `~${currentLesson.durationMinutes} phút đọc` : 'Tài liệu đọc'}</span>
+              </span>
+
+              <button
+                onClick={() => onToggleComplete(currentLesson.id)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm ${
+                  currentLesson.isCompleted
+                    ? 'bg-emerald-600 text-white shadow-emerald-600/20'
+                    : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{currentLesson.isCompleted ? 'Đã hoàn thành' : 'Đánh dấu xong'}</span>
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Article Text / Markdown Body */}
+          <div className="prose prose-invert max-w-none text-slate-200 text-sm leading-relaxed space-y-3 bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80">
+            {currentLesson.content ? (
+              renderFormattedNotes(currentLesson.content)
+            ) : (
+              <p className="text-slate-500 italic">Chưa có nội dung chi tiết cho bài đọc này.</p>
+            )}
+          </div>
+        </div>
+      ) : (
+        // Video Player (for 'video' and 'mixed' types)
+        <div 
+          ref={playerContainerRef}
+          className={`relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 transition-all ${
+            isZenMode ? 'ring-2 ring-teal-500/50 shadow-emerald-950/40' : ''
+          }`}
+        >
+          {embedUrl ? (
+            <iframe
+              key={embedUrl}
+              src={embedUrl}
+              title={currentLesson.title}
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-400 bg-slate-950">
+              <AlertCircle className="w-12 h-12 text-amber-500 mb-3" />
+              <p className="font-semibold text-slate-200">Không thể tải video từ mã nhúng Abyss</p>
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                Nguồn video hiện tại: <code className="text-emerald-400">{currentLesson.videoSource}</code>
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mixed Format: Render Extra Article Reading Content under Video */}
+      {lessonType === 'mixed' && currentLesson.content && (
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-xl">
+          <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
+            <FileText className="w-4 h-4" />
+            <span>Nội Dung Bài Đọc Bổ Trợ</span>
+          </div>
+          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 text-xs text-slate-200 space-y-2 leading-relaxed">
+            {renderFormattedNotes(currentLesson.content)}
+          </div>
+        </div>
+      )}
 
       {/* 2. Structured 2-Tier Header & Action Toolbar */}
       <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">

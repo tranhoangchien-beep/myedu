@@ -10,7 +10,9 @@ export interface Attachment {
 export interface Lesson {
   id: string;
   title: string;
-  videoSource: string; // Abyss ID or full embed URL or iframe tag
+  type?: 'video' | 'article' | 'mixed'; // Default 'video'
+  videoSource?: string; // Abyss ID or full embed URL or iframe tag (optional if pure article)
+  content?: string; // Markdown or article text content for reading lessons
   durationMinutes?: number;
   attachments?: Attachment[];
   isCompleted?: boolean;
@@ -46,7 +48,7 @@ export interface ContinueProgress {
   lessonId: string;
   lessonTitle: string;
   category: CategoryType;
-  videoSource: string;
+  videoSource?: string;
   timestamp: string;
 }
 

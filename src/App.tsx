@@ -723,7 +723,10 @@ export const App: React.FC = () => {
         courseToEdit={courseToEdit}
         categories={categories}
         sources={sources}
+        allCourses={courses}
         onSaveCourse={handleSaveCourse}
+        onAddCategory={handleAddCategory}
+        onAddSource={handleAddSource}
         onOpenCategoryManager={() => {
           setIsCourseEditorOpen(false);
           setCurrentView('studio');

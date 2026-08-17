@@ -8,7 +8,10 @@ import {
   Play, 
   Clock, 
   PlusCircle,
-  FolderOpen
+  FolderOpen,
+  FileText,
+  Layers,
+  Paperclip
 } from 'lucide-react';
 
 interface LessonSidebarProps {
@@ -102,10 +105,22 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
                     onClick={() => onSelectLesson(lesson.id)}
                     title={lesson.title}
                   >
-                    {/* Left: Play Icon / Title */}
+                    {/* Left: Format Icon / Title */}
                     <div className="flex items-start gap-2.5 flex-1 min-w-0 pr-2">
                       <div className="flex-shrink-0 mt-0.5">
-                        {isActive ? (
+                        {lesson.type === 'article' ? (
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                            isActive ? 'bg-teal-500/20 text-teal-300 font-bold animate-pulse' : 'bg-slate-800 text-teal-400'
+                          }`}>
+                            <FileText className="w-2.5 h-2.5" />
+                          </div>
+                        ) : lesson.type === 'mixed' ? (
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                            isActive ? 'bg-amber-500/20 text-amber-300 font-bold animate-pulse' : 'bg-slate-800 text-amber-400'
+                          }`}>
+                            <Layers className="w-2.5 h-2.5" />
+                          </div>
+                        ) : isActive ? (
                           <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center animate-pulse">
                             <Play className="w-2.5 h-2.5 fill-current" />
                           </div>
@@ -120,12 +135,25 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
                         <p className={`font-medium line-clamp-2 leading-snug ${isActive ? 'text-emerald-300 font-bold' : ''}`}>
                           {lesson.title}
                         </p>
-                        {lesson.durationMinutes && (
-                          <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-1">
-                            <Clock className="w-2.5 h-2.5" />
-                            {lesson.durationMinutes} phút
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          {lesson.type === 'article' && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                              Bài đọc
+                            </span>
+                          )}
+                          {lesson.durationMinutes && (
+                            <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" />
+                              {lesson.durationMinutes} phút
+                            </span>
+                          )}
+                          {lesson.attachments && lesson.attachments.length > 0 && (
+                            <span className="text-[10px] text-slate-500 flex items-center gap-0.5" title={`${lesson.attachments.length} tài liệu đính kèm`}>
+                              <Paperclip className="w-2.5 h-2.5 text-emerald-400" />
+                              {lesson.attachments.length}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 

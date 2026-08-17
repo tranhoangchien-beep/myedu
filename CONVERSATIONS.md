@@ -115,9 +115,10 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
    * **Chặn Reload / Đóng Tab Trình Duyệt (`beforeunload`)**: Kích hoạt hộp thoại cảnh báo của trình duyệt khi người dùng vô tình F5 hoặc tắt tab lúc đang soạn bài dở.
    * **Bảo toàn 100% dữ liệu khi chuyển giữa các bài học**: Cô lập vòng đời khởi tạo bằng `useRef`, đảm bảo sửa bài 1 -> chuyển qua bài 2 -> quay lại bài 1 mọi nội dung vẫn được giữ nguyên vẹn trong bộ nhớ form.
    * **Khắc phục lỗi cuộn chuột**: Khóa vị trí cuộn `scrollTop` và sử dụng `onMouseDown preventDefault` trên thanh công cụ Rich Text để khi bấm In đậm/Tiêu đề/Danh sách, con trỏ và màn hình không bao giờ bị nhảy lên trên cùng.
-   * **Tách biệt 2 cơ chế Lưu chuyên nghiệp**:
-     - **`[💾 Lưu Thay Đổi]` (Phím tắt `Ctrl + S` / `Cmd + S`)**: Lưu tức thì dữ liệu vào LocalStorage, xóa cờ `isDirty`, hiện thông báo `✓ Đã lưu tất cả thay đổi vào máy!` và **GIỮ NGUYÊN CỬA SỔ LÀM VIỆC** để tiếp tục soạn thảo các bài khác.
-     - **`[✓ Lưu & Đóng]`**: Lưu và đóng cửa sổ khi người dùng đã hoàn thành toàn bộ khóa học.
+   * **Tối giản & Bố trí Nút Lưu Ngay Từng Bài Học (Zero Layout Shift)**:
+     - **Thanh Header cố định**: Không còn các huy hiệu co giãn làm giật/nhảy nút bấm trên thanh tiêu đề.
+     - **Nút `[💾 Lưu Bài Học]` trực tiếp trong khung soạn thảo**: Đặt ngay cạnh thời lượng & định dạng của bài học đang chọn. Bấm lưu (hoặc `Ctrl + S`) sẽ lưu ngay tức thì, nút chuyển sang `✓ Đã Lưu!` trong 2s, cửa sổ giữ nguyên vị trí, không gián đoạn mạch làm việc.
+
 
 
 10. **Tự Động Nạp Bộ Dữ Liệu Kiểm Thử Vàng (Golden Test Suite - 20 Khóa Học Toàn Diện Đa Ngành)**:

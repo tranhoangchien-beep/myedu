@@ -30,6 +30,7 @@ export const DEFAULT_SOURCES: string[] = [
 ];
 
 export const DEFAULT_INSTRUCTORS: string[] = [
+  'Thành Công TC',
   '8xTrading',
   'Andrew Ng & Hoàng Minh',
   'Alex Đặng (Tech Lead)',
@@ -54,6 +55,773 @@ export const DEFAULT_INSTRUCTORS: string[] = [
 ];
 
 export const INITIAL_SAMPLE_COURSES: Course[] = [
+  {
+    id: 'course-thanhcongtc-dau-tu-chung-chi-quy-101',
+    title: 'Đầu tư chứng chỉ quỹ 101',
+    description: 'Khóa học toàn diện từ căn bản đến nâng cao về thị trường chứng khoán, trái phiếu, cổ phiếu, quỹ mở, quỹ ETF, phương pháp chọn quỹ chất lượng và lập kế hoạch tài chính cá nhân tự do tài chính.',
+    category: 'Tài chính',
+    instructor: 'Thành Công TC',
+    sourcePlatform: 'Khác',
+    tags: ['Đầu tư', 'Chứng chỉ quỹ', 'Tài chính', 'Quỹ mở', 'ETF', 'Fmarket', 'Tự do tài chính'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-17T10:00:00Z',
+    updatedAt: '2026-08-17T17:20:00Z',
+    lastWatchedLessonId: 'les-tc-001',
+    chapters: [
+      {
+        id: 'ch-tc-intro',
+        title: 'Phần GIỚI THIỆU',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-tc-001',
+            title: 'Bài 1: Giới thiệu bản thân',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Ld3tfGRGA" allowfullscreen></iframe>',
+            durationMinutes: 15,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-002',
+            title: 'Bài 2: Đề cương hướng dẫn học',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/bGOgQoLE0" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-003',
+            title: 'Bài 3: Tại sao đầu tư vào thị trường chứng khoán',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/WRsSW3eB_" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-004',
+            title: 'Bonus course: Theo dõi chi tiêu',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/i7DxTi-UQ" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-005',
+            title: 'Tài liệu: Video xem thêm về Quản lý chi tiêu & Đầu tư',
+            type: 'article',
+            content: '# Tài Liệu Xem Thêm: Quản Lý Chi Tiêu & Tối Ưu Tiền Nhàn Rỗi\n\nBên dưới là 2 video trên kênh **Thành Công TC** về việc theo dõi chi tiêu, các bạn có thể xem trong thời gian rảnh nhé 😉\n\n- **3 CÁCH có nhiều tiền NHÀN RỖI hơn để ĐẦU TƯ**: [Xem video](https://youtu.be/LkZfTzamg2M)\n- **3 MẸO QUẢN LÝ CHI TIÊU HIỆU QUẢ | Tài chính cá nhân**: [Xem video](https://youtu.be/qV7VvIOXpzr)',
+            durationMinutes: 15,
+            isCompleted: false,
+            isStarred: false,
+            attachments: [
+              {
+                id: 'att-tc-1',
+                name: '3 CÁCH có nhiều tiền NHÀN RỖI hơn để ĐẦU TƯ (YouTube)',
+                url: 'https://youtu.be/LkZfTzamg2M',
+                type: 'link'
+              },
+              {
+                id: 'att-tc-2',
+                name: '3 MẸO QUẢN LÝ CHI TIÊU HIỆU QUẢ (YouTube)',
+                url: 'https://youtu.be/qV7VvIOXpzr',
+                type: 'link'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'ch-tc-1',
+        title: 'Chương 1: Những Khái Niệm Căn Bản Trong Thị Trường Chứng Khoán',
+        order: 2,
+        lessons: [
+          {
+            id: 'les-tc-101',
+            title: 'Bài 1: Tại sao thị trường chứng khoán ra đời?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/sBYhUYRW9" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-102',
+            title: 'Bài 2: Trái phiếu là gì?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/q3nr2YX9T" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-103',
+            title: 'Bài 3: Cổ phiếu là gì?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/N4KPyDxt-" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-104',
+            title: 'Bài 4: Quỹ đầu tư là gì?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/ASrvhRQ9w" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-105',
+            title: 'Bài 5: Công việc của một phân tích viên',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Klh6JWJYl" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-106',
+            title: 'Bài 6: Tại sao bạn nên quan tâm quỹ đầu tư?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Z7Y_eOgpT" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-107',
+            title: 'Bài 7: Dấu hiệu những người nên đầu tư vào quỹ',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/5eSXj-DA9" allowfullscreen></iframe>',
+            durationMinutes: 18,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-108',
+            title: 'Bài 8: Những kiểu người không cần đầu tư vào quỹ',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/YES9NoA9Uj" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-109',
+            title: 'Bài 9: Q&A Quỹ đầu tư có bị phá sản không?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/kqfpgoSDY" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      },
+      {
+        id: 'ch-tc-2',
+        title: 'Chương 2: Có Bao Nhiêu Loại Quỹ Đầu Tư? Ưu & Nhược Điểm',
+        order: 3,
+        lessons: [
+          {
+            id: 'les-tc-201',
+            title: 'Bài 1: Các chỉ số trong thị trường chứng khoán',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/1LdlzP8ja" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-202',
+            title: 'Bài 2: Những loại quỹ đầu tư phổ biến ở Việt Nam',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/kbDEiyTCtB" allowfullscreen></iframe>',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-203',
+            title: 'Bài 3: Quỹ đầu tư trái phiếu. Ưu và nhược điểm',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/mKiw1lDye" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-204',
+            title: 'Bài 4: Tại sao quỹ trái phiếu lại lợi nhuận thấp hơn trái phiếu',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/qifFwPSqv" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-205',
+            title: 'Bài 5: Quỹ đầu tư cổ phiếu. Ưu và nhược điểm',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/hFVBWKu1c" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-206',
+            title: 'Bài 6: Q&A Lý do khiến giá chứng chỉ quỹ tăng/giảm',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/prI2vd4IU" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-207',
+            title: 'Bài 7: Cách tính giá NAV của chứng chỉ quỹ',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/gHSg1_A2i" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-208',
+            title: 'Bài 8: Tại sao giá NAV chứng chỉ quỹ không quan trọng',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/qC_w_TMy1" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-209',
+            title: 'Bài 9: Q&A Đầu tư quỹ có nhận được cổ tức không?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/GvYLkiRCO" allowfullscreen></iframe>',
+            durationMinutes: 18,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-210',
+            title: 'Bài 10: Tại sao không nên đầu tư vào Quỹ đầu tư chia cổ tức',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/0pnFRpD_o" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-211',
+            title: 'Bài 11: Excel chứng minh tại sao không nên đầu tư quỹ chia cổ tức',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/tMfjhalna" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: true
+          }
+        ]
+      },
+      {
+        id: 'ch-tc-3',
+        title: 'Chương 3: Tại Sao Quỹ Mở Lại Hiệu Quả Hơn ETF Ở Việt Nam',
+        order: 4,
+        lessons: [
+          {
+            id: 'les-tc-301',
+            title: 'Bài 1: So sánh Quỹ mở hay ETFs',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/R85umhTS1" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-302',
+            title: 'Bài 2: Thuyết thị trường hiệu quả',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/EObWoR_UP" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-303',
+            title: 'Bài 3: Yếu tố ảnh hưởng đến thị trường hiệu quả',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/KgIFVSxN6" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-304',
+            title: 'Bài 4: Nghiên cứu 1: Giải mã bí ẩn quỹ đầu tư thua thị trường',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/ARckUeToz" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-305',
+            title: 'Bài 5: Nghiên cứu 2: Tại sao nên đầu tư chứng chỉ quỹ ở thị trường Việt Nam',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/MbTwbc5sh" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: true
+          }
+        ]
+      },
+      {
+        id: 'ch-tc-4',
+        title: 'Chương 4: Chọn Quỹ Đầu Tư Phù Hợp & Cách Phân Bổ Hợp Lý',
+        order: 5,
+        lessons: [
+          {
+            id: 'les-tc-401',
+            title: 'Bài 1: Phân bổ vốn hợp lý khi đầu tư quỹ',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/jtoCRKTeg" allowfullscreen></iframe>',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-402',
+            title: 'Bài 2: Những yếu tố ảnh hưởng đến danh mục đầu tư',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/i6rbpYDj3" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-403',
+            title: 'Bài 3: Khi nào cơ cấu danh mục đầu tư',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/A7uSTbhc_" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-404',
+            title: 'Bài 4: Thời gian mua bán quỹ',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/qqWnsjS_B" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-405',
+            title: 'Bài 5: Ngày phân bổ và giá khớp lệnh',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/GpzmMB0Mb" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-406',
+            title: 'Bài 6: Cung và cầu ảnh hưởng đến giá NAV không?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/JmJhpADfz" allowfullscreen></iframe>',
+            durationMinutes: 18,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-407',
+            title: 'Bài 7: Bắt đáy hàng ngày bằng cách nhìn thị trường?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/IY_10qKX2" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-408',
+            title: 'Bài 8: Cách mua chứng chỉ quỹ',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/xKrit_i16" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-409',
+            title: 'Bài 9: Tại sao TC chọn fmarket',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/2JwyijeIv" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: true
+          }
+        ]
+      },
+      {
+        id: 'ch-tc-5',
+        title: 'Chương 5: Các Bước Cần Làm Để Tìm Quỹ Đầu Tư Tốt Và Chất Lượng',
+        order: 6,
+        lessons: [
+          {
+            id: 'les-tc-501',
+            title: 'Bài 1: Những thông tin bạn cần biết của một quỹ đầu tư',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/kS0n2V_LA" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-502',
+            title: 'Bài 2: Fund tracking',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/78HpxeURL" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-503',
+            title: 'Bài 3: Có nên đầu tư vào quỹ mới IPO không?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/SPtKfXTyX" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-504',
+            title: 'Bài 4: Max Drawdown',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/EbeN-e-cZ" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-505',
+            title: 'Bài 5: Độ lệch chuẩn',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/3hzxV5p7t" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-506',
+            title: 'Bài 6: Sharpe Ratio',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/j6G_VKghY" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-507',
+            title: 'Bài 7: Phân tích quỹ nâng cao',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/yUlMlsELF" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-508',
+            title: 'Bài 8: So sánh 2 quỹ VESAF & DCDS',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/eJJnEyI0E" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-509',
+            title: 'Bài 9: Những chứng chỉ quỹ thay thế cho ETF VN30',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/m4U67fj1x" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      },
+      {
+        id: 'ch-tc-6',
+        title: 'Chương 6: Chiến Lược Đầu Tư & Những Điều Cần Biết',
+        order: 7,
+        lessons: [
+          {
+            id: 'les-tc-601',
+            title: 'Bài 1: Chiến thuật đầu tư hiệu quả nhất',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/M0uVTRqm8" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-602',
+            title: 'Bài 2: Giới thiệu phân tích kỹ thuật trong đầu tư chứng chỉ quỹ',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/B3Uwb1y20" allowfullscreen></iframe>',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-603',
+            title: 'Bài 3: Hướng dẫn sử dụng biểu đồ phân tích kỹ thuật',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/-KRykxfuK" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-604',
+            title: 'Bài 4: Những chỉ báo Phân tích kĩ thuật giúp bắt đáy hiệu quả (Trendline)',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/4fRcxbv7X" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-605',
+            title: 'Bài 5: Những chỉ báo Phân tích kĩ thuật giúp bắt đáy hiệu quả (Hỗ trợ/kháng cự)',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/eNwl4UT0i" allowfullscreen></iframe>',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-606',
+            title: 'Bài 6: Những chỉ báo Phân tích kĩ thuật giúp bắt đáy hiệu quả (SMA)',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/l4VLIw5aWH" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-607',
+            title: 'Bài 7: Những chỉ báo Phân tích kĩ thuật giúp bắt đáy hiệu quả (RSI)',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/1sj7eXDyB" allowfullscreen></iframe>',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-608',
+            title: 'Bài 8: Phân tích cơ bản chỉ số P/E bắt đáy thị trường hiệu quả',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Aqehd96S_" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-609',
+            title: 'Bài 9: Những việc nên/không nên làm khi thị trường SẬP',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/bqjFKGPFb" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-610',
+            title: 'Bài 10: Bắt đáy và những thứ bạn cần biết',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/X3tbZ9bGe" allowfullscreen></iframe>',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-611',
+            title: 'Bài 11: Những tâm lý khi đầu tư phần 1',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/nIE40iXgC" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-612',
+            title: 'Bài 12: Những tâm lý khi đầu tư phần 2',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/w5bfmQJF7" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-613',
+            title: 'Bài 13: Những tâm lý khi đầu tư phần 3',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/7V0QVqNU3" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      },
+      {
+        id: 'ch-tc-7',
+        title: 'Chương 7: Các Chiến Lược Đầu Tư Khác',
+        order: 8,
+        lessons: [
+          {
+            id: 'les-tc-701',
+            title: 'Bài 1: Sell In May and Go away',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/XonOV0baf" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-702',
+            title: 'Bài 2: Ngày nào trong tuần/tháng nào trong năm đầu tư đẹp nhất',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/YUduCKZMc" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-703',
+            title: 'Bài 3: Có 100tr thì phân bổ như thế nào?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/M_rlFxFAU" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-704',
+            title: 'Bài 4: Q&A Thời điểm tốt nhất tham gia quỹ đầu tư',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/__RpxiWir" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-705',
+            title: 'Bài 5: Q&A Khi nào nên chốt lời đầu tư quỹ?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/g8bWfPsST" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      },
+      {
+        id: 'ch-tc-8',
+        title: 'Chương 8: Lên Kế Hoạch Đầu Tư',
+        order: 9,
+        lessons: [
+          {
+            id: 'les-tc-801',
+            title: 'Bài 1: Thế nào là một kế hoạch tốt?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/EkoeP-QVv" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-802',
+            title: 'Bài 2: Checklist trước khi đầu tư',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/E5Vo3i54A" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-803',
+            title: 'Bài 3: Quy luật 4%',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/I3c-_W8s5" allowfullscreen></iframe>',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-804',
+            title: 'Bài 4: Xác định số tiền tự do tài chính',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Up-ZNvgCk" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-805',
+            title: 'Bài 5: Lên kế hoạch đầu tư',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/oQ4u4dqiy" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-806',
+            title: 'Bài 6 + 7: Case study: Mua nhà hay Nghỉ hưu',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/iTXQ7cDyy" allowfullscreen></iframe>',
+            durationMinutes: 35,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-tc-807',
+            title: 'Bài 8: Gửi tiết kiệm ở đâu?',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/XXqbk-FZZ" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-808',
+            title: 'Bài 9: Xây dựng quỹ tiết kiệm khẩn cấp',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/f4NmzUwpu" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-tc-809',
+            title: 'Bài 10: Checklist những việc trong quá trình đầu tư',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/X4xpc6ryl" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      }
+    ]
+  },
   {
     id: 'course-8xtrading-footprint-trading',
     title: '[8xTrading] - Khóa Học Footprint Trading',

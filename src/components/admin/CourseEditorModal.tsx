@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Course, Chapter, Lesson, Attachment } from '../../types';
 import { 
   X, 
@@ -81,6 +81,10 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   // Modal alert confirmation for unsaved changes
   const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
 
+  // Refs to guarantee initialization only runs once when modal opens
+  const prevIsOpenRef = useRef<boolean>(false);
+  const prevCourseIdRef = useRef<string | null>(null);
+
   // Auto-collect unique instructors across existing courses
   const existingInstructors = useMemo(() => {
     const set = new Set<string>();
@@ -96,7 +100,13 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   }, [allCourses]);
 
   useEffect(() => {
-    if (isOpen) {
+    // Only re-initialize when modal transitions from closed -> open, or editing a different course ID
+    const currentCourseId = courseToEdit ? courseToEdit.id : '__new__';
+    const isOpeningNow = isOpen && (!prevIsOpenRef.current || prevCourseIdRef.current !== currentCourseId);
+
+    if (isOpeningNow) {
+      prevIsOpenRef.current = true;
+      prevCourseIdRef.current = currentCourseId;
       setShowUnsavedConfirmModal(false);
 
       if (courseToEdit) {
@@ -109,10 +119,13 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
         setSourcePlatform(courseToEdit.sourcePlatform || sources[0] || 'Khác');
         setThumbnailUrl(courseToEdit.thumbnailUrl || '');
         setTagsInput(courseToEdit.tags?.join(', ') || '');
-        setChapters(courseToEdit.chapters || []);
+        
+        // Deep copy chapters to ensure complete mutation isolation
+        const clonedChapters: Chapter[] = JSON.parse(JSON.stringify(courseToEdit.chapters || []));
+        setChapters(clonedChapters);
         setCollapsedChapterIds({});
 
-        const firstCh = courseToEdit.chapters[0];
+        const firstCh = clonedChapters[0];
         const firstLes = firstCh?.lessons[0];
         if (firstCh && firstLes) {
           setActiveSelection({ chId: firstCh.id, lessonId: firstLes.id });
@@ -120,7 +133,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           setActiveSelection(null);
         }
 
-        // Save initial snapshot
+        // Save initial snapshot for dirty comparison
         setInitialSnapshot(JSON.stringify({
           title: courseToEdit.title,
           description: courseToEdit.description || '',
@@ -129,7 +142,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           sourcePlatform: courseToEdit.sourcePlatform || sources[0] || 'Khác',
           thumbnailUrl: courseToEdit.thumbnailUrl || '',
           tagsInput: courseToEdit.tags?.join(', ') || '',
-          chapters: courseToEdit.chapters || []
+          chapters: clonedChapters
         }));
       } else {
         // Creating NEW course -> Default to 'info' tab
@@ -180,7 +193,12 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
         }));
       }
     }
-  }, [courseToEdit, isOpen, categories, sources]);
+
+    if (!isOpen) {
+      prevIsOpenRef.current = false;
+      prevCourseIdRef.current = null;
+    }
+  }, [isOpen, courseToEdit]);
 
   // Compute if form has unsaved modifications
   const currentSnapshot = useMemo(() => {
@@ -231,7 +249,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     onClose();
   };
 
-  // Active Lesson & Chapter computed
+  // Active Lesson & Chapter computed safely
   const activeChapter = chapters.find(ch => ch.id === activeSelection?.chId) || chapters[0];
   const activeLesson = activeChapter?.lessons.find(l => l.id === activeSelection?.lessonId) || activeChapter?.lessons[0] || null;
 
@@ -261,26 +279,28 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
         }
       ],
     };
-    setChapters([...chapters, newChapter]);
+    setChapters(prev => [...prev, newChapter]);
     setActiveSelection({ chId: newId, lessonId: newLesId });
   };
 
   const handleUpdateChapterTitle = (chId: string, newTitle: string) => {
-    setChapters(chapters.map(ch => ch.id === chId ? { ...ch, title: newTitle } : ch));
+    setChapters(prev => prev.map(ch => ch.id === chId ? { ...ch, title: newTitle } : ch));
   };
 
   const handleDeleteChapter = (chId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Bạn có chắc chắn muốn xóa chương này cùng toàn bộ bài học bên trong?')) {
-      const remaining = chapters.filter(ch => ch.id !== chId);
-      setChapters(remaining);
-      const nextCh = remaining[0];
-      const nextLes = nextCh?.lessons[0];
-      if (nextCh && nextLes) {
-        setActiveSelection({ chId: nextCh.id, lessonId: nextLes.id });
-      } else {
-        setActiveSelection(null);
-      }
+      setChapters(prev => {
+        const remaining = prev.filter(ch => ch.id !== chId);
+        const nextCh = remaining[0];
+        const nextLes = nextCh?.lessons[0];
+        if (nextCh && nextLes) {
+          setActiveSelection({ chId: nextCh.id, lessonId: nextLes.id });
+        } else {
+          setActiveSelection(null);
+        }
+        return remaining;
+      });
     }
   };
 
@@ -300,7 +320,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       attachments: [],
     };
 
-    setChapters(chapters.map(ch => {
+    setChapters(prev => prev.map(ch => {
       if (ch.id === chId) {
         return { ...ch, lessons: [...ch.lessons, newLesson] };
       }
@@ -315,7 +335,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     if (!activeSelection) return;
     const { chId, lessonId } = activeSelection;
 
-    setChapters(chapters.map(ch => {
+    setChapters(prev => prev.map(ch => {
       if (ch.id === chId) {
         return {
           ...ch,
@@ -336,18 +356,24 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       return;
     }
 
-    const updatedLessons = targetChapter.lessons.filter(l => l.id !== lessonId);
-    const updatedChapters = chapters.map(ch => ch.id === chId ? { ...ch, lessons: updatedLessons } : ch);
-    setChapters(updatedChapters);
+    setChapters(prev => {
+      const updatedChapters = prev.map(ch => {
+        if (ch.id === chId) {
+          return { ...ch, lessons: ch.lessons.filter(l => l.id !== lessonId) };
+        }
+        return ch;
+      });
 
-    // If deleted lesson was active, select another lesson
-    if (activeSelection?.lessonId === lessonId) {
-      const nextLesson = updatedLessons[0] || updatedChapters[0]?.lessons[0];
-      const nextCh = updatedLessons.length > 0 ? targetChapter : updatedChapters[0];
-      if (nextCh && nextLesson) {
-        setActiveSelection({ chId: nextCh.id, lessonId: nextLesson.id });
+      // If deleted lesson was active, select another lesson
+      if (activeSelection?.lessonId === lessonId) {
+        const nextChapter = updatedChapters.find(ch => ch.id === chId) || updatedChapters[0];
+        const nextLesson = nextChapter?.lessons[0];
+        if (nextChapter && nextLesson) {
+          setActiveSelection({ chId: nextChapter.id, lessonId: nextLesson.id });
+        }
       }
-    }
+      return updatedChapters;
+    });
   };
 
   // Drag and drop (Handle Only)
@@ -360,34 +386,39 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     if (!draggedLessonInfo) return;
     const { chIdx: srcChIdx, lIdx: srcLIdx } = draggedLessonInfo;
 
-    if (srcChIdx === targetChIdx) {
-      if (srcLIdx !== targetLIdx) {
-        const targetChapter = chapters[srcChIdx];
-        const updatedLessons = [...targetChapter.lessons];
-        const [moved] = updatedLessons.splice(srcLIdx, 1);
-        updatedLessons.splice(targetLIdx, 0, moved);
+    setChapters(prev => {
+      if (srcChIdx === targetChIdx) {
+        if (srcLIdx !== targetLIdx) {
+          const targetChapter = prev[srcChIdx];
+          const updatedLessons = [...targetChapter.lessons];
+          const [moved] = updatedLessons.splice(srcLIdx, 1);
+          updatedLessons.splice(targetLIdx, 0, moved);
 
-        const updatedChapters = [...chapters];
-        updatedChapters[srcChIdx] = { ...targetChapter, lessons: updatedLessons };
-        setChapters(updatedChapters);
+          const updatedChapters = [...prev];
+          updatedChapters[srcChIdx] = { ...targetChapter, lessons: updatedLessons };
+          return updatedChapters;
+        }
+        return prev;
+      } else {
+        const srcChapter = prev[srcChIdx];
+        const destChapter = prev[targetChIdx];
+        if (srcChapter && destChapter) {
+          const srcLessons = [...srcChapter.lessons];
+          const [movedLesson] = srcLessons.splice(srcLIdx, 1);
+
+          const destLessons = [...destChapter.lessons];
+          destLessons.splice(targetLIdx, 0, movedLesson);
+
+          const updatedChapters = [...prev];
+          updatedChapters[srcChIdx] = { ...srcChapter, lessons: srcLessons };
+          updatedChapters[targetChIdx] = { ...destChapter, lessons: destLessons };
+          setActiveSelection({ chId: destChapter.id, lessonId: movedLesson.id });
+          return updatedChapters;
+        }
+        return prev;
       }
-    } else {
-      const srcChapter = chapters[srcChIdx];
-      const destChapter = chapters[targetChIdx];
-      if (srcChapter && destChapter) {
-        const srcLessons = [...srcChapter.lessons];
-        const [movedLesson] = srcLessons.splice(srcLIdx, 1);
+    });
 
-        const destLessons = [...destChapter.lessons];
-        destLessons.splice(targetLIdx, 0, movedLesson);
-
-        const updatedChapters = [...chapters];
-        updatedChapters[srcChIdx] = { ...srcChapter, lessons: srcLessons };
-        updatedChapters[targetChIdx] = { ...destChapter, lessons: destLessons };
-        setChapters(updatedChapters);
-        setActiveSelection({ chId: destChapter.id, lessonId: movedLesson.id });
-      }
-    }
     setDraggedLessonInfo(null);
   };
 
@@ -868,6 +899,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                     {(activeLesson.type === 'article' || activeLesson.type === 'mixed') && (
                       <div className="space-y-2">
                         <RichTextEditor
+                          key={activeLesson.id}
                           value={activeLesson.content || ''}
                           onChange={(val) => handleUpdateActiveLesson('content', val)}
                           placeholder="Soạn thảo nội dung bài học chi tiết tại đây (H1-H3, in đậm, khối code, danh sách, trích dẫn)..."

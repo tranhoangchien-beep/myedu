@@ -31,17 +31,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
   placeholder = 'Soạn thảo nội dung bài học...',
-  minHeight = '220px',
+  minHeight = '240px',
   label,
 }) => {
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Helper to insert markdown syntax at cursor position or wrap selection
+  // Helper to insert markdown syntax at cursor position or wrap selection without jumping scroll
   const insertSyntax = (before: string, after: string = '', defaultPlaceholder: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    // Save exact scroll positions before formatting
+    const prevScrollTop = textarea.scrollTop;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = value.substring(start, end) || defaultPlaceholder;
@@ -50,20 +52,25 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const newValue = value.substring(0, start) + replacement + value.substring(end);
     onChange(newValue);
 
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(
-        start + before.length,
-        start + before.length + selectedText.length
-      );
-    }, 50);
+    // Restore cursor selection and lock scroll position exactly where it was
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus({ preventScroll: true });
+        textareaRef.current.setSelectionRange(
+          start + before.length,
+          start + before.length + selectedText.length
+        );
+        textareaRef.current.scrollTop = prevScrollTop;
+      }
+    });
   };
 
-  // Helper to insert a block line (e.g. Header, list item, hr)
+  // Helper to insert a block line (e.g. Header, list item, hr) without jumping scroll
   const insertBlock = (prefix: string, defaultText: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    const prevScrollTop = textarea.scrollTop;
     const start = textarea.selectionStart;
     const beforeCursor = value.substring(0, start);
     const afterCursor = value.substring(start);
@@ -74,10 +81,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const newValue = beforeCursor + textToInsert + afterCursor;
     onChange(newValue);
 
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + textToInsert.length, start + textToInsert.length);
-    }, 50);
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus({ preventScroll: true });
+        textareaRef.current.setSelectionRange(start + textToInsert.length, start + textToInsert.length);
+        textareaRef.current.scrollTop = prevScrollTop;
+      }
+    });
   };
 
   // Insert standard lesson template
@@ -133,7 +143,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
           <div className="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-800">
             <button
               type="button"
-              onClick={() => insertBlock('#', 'Tiêu đề lớn')}
+              onMouseDown={(e) => { e.preventDefault(); insertBlock('#', 'Tiêu đề lớn'); }}
               title="Tiêu đề H1"
               className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 font-bold text-[11px]"
             >
@@ -141,7 +151,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
             </button>
             <button
               type="button"
-              onClick={() => insertBlock('##', 'Tiêu đề vừa')}
+              onMouseDown={(e) => { e.preventDefault(); insertBlock('##', 'Tiêu đề vừa'); }}
               title="Tiêu đề H2"
               className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 font-bold text-[11px]"
             >
@@ -149,7 +159,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
             </button>
             <button
               type="button"
-              onClick={() => insertBlock('###', 'Tiêu đề nhỏ')}
+              onMouseDown={(e) => { e.preventDefault(); insertBlock('###', 'Tiêu đề nhỏ'); }}
               title="Tiêu đề H3"
               className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 font-bold text-[11px]"
             >
@@ -162,7 +172,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
           {/* Text Style buttons */}
           <button
             type="button"
-            onClick={() => insertSyntax('**', '**', 'chữ in đậm')}
+            onMouseDown={(e) => { e.preventDefault(); insertSyntax('**', '**', 'chữ in đậm'); }}
             title="In đậm (Bold)"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -171,7 +181,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
 
           <button
             type="button"
-            onClick={() => insertSyntax('*', '*', 'chữ in nghiêng')}
+            onMouseDown={(e) => { e.preventDefault(); insertSyntax('*', '*', 'chữ in nghiêng'); }}
             title="In nghiêng (Italic)"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -183,7 +193,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
           {/* List buttons */}
           <button
             type="button"
-            onClick={() => insertBlock('-', 'Mục danh sách')}
+            onMouseDown={(e) => { e.preventDefault(); insertBlock('-', 'Mục danh sách'); }}
             title="Danh sách gạch đầu dòng"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -192,7 +202,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
 
           <button
             type="button"
-            onClick={() => insertBlock('1.', 'Bước đầu tiên')}
+            onMouseDown={(e) => { e.preventDefault(); insertBlock('1.', 'Bước đầu tiên'); }}
             title="Danh sách đánh số"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -201,7 +211,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
 
           <button
             type="button"
-            onClick={() => insertBlock('>', 'Trích dẫn quan trọng...')}
+            onMouseDown={(e) => { e.preventDefault(); insertBlock('>', 'Trích dẫn quan trọng...'); }}
             title="Trích dẫn (Quote)"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -210,7 +220,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
 
           <button
             type="button"
-            onClick={() => insertBlock('```typescript\n// Code mẫu tại đây\n', '\n```')}
+            onMouseDown={(e) => { e.preventDefault(); insertBlock('```typescript\n// Code mẫu tại đây\n', '\n```'); }}
             title="Khối mã code snippet"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -219,7 +229,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
 
           <button
             type="button"
-            onClick={() => insertSyntax('[', '](https://...)', 'Tiêu đề liên kết')}
+            onMouseDown={(e) => { e.preventDefault(); insertSyntax('[', '](https://...)', 'Tiêu đề liên kết'); }}
             title="Chèn link liên kết"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -228,7 +238,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
 
           <button
             type="button"
-            onClick={() => insertBlock('---')}
+            onMouseDown={(e) => { e.preventDefault(); insertBlock('---'); }}
             title="Đường kẻ ngang phân cách"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -237,7 +247,7 @@ Tóm tắt lại các kiến thức trọng tâm đã học trong bài này.`;
 
           <button
             type="button"
-            onClick={insertLessonTemplate}
+            onMouseDown={(e) => { e.preventDefault(); insertLessonTemplate(); }}
             title="Chèn khung bài giảng mẫu"
             className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold flex items-center gap-1 transition-all"
           >

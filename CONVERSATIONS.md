@@ -187,3 +187,11 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
       - Tự động bóc tách link nhúng Abyss Player (`https://player.abyssplayer.com/58_ZxuvA0`).
     * **Tự động đảo ngược thứ tự danh sách (7 $\rightarrow$ 1 thành 1 $\rightarrow$ 7)**: Hỗ trợ tùy chọn tự động lật ngược lại thứ tự bài giảng để nhập đúng thứ tự tự nhiên (Bài 1, Bài 2, ..., Bài 7).
     * **Tích hợp cửa sổ Nhập Nhanh `QuickBulkEmbedModal`**: Thêm nút **`⚡ Nhập Abyss`** ngay cạnh thanh mục lục trong modal Chỉnh sửa khóa học (`CourseEditorModal`), cho phép chọn Chương đích và nạp hàng loạt bài giảng chỉ với 1 cú click!
+21. **Tích Hợp Cổng Đăng Nhập Bảo Mật Cấp Cao Master QTV (Gmail Minimalist Style)**:
+    * **Bảo mật tuyệt đối cấp độ mã hóa Hash (Salted SHA-256)**:
+      - Mã hóa một chiều muối ngẫu nhiên (Salted SHA-256) đối với Username & Password. Mật khẩu phẳng tuyệt đối KHÔNG bao giờ được lưu dưới dạng plain-text trong client code hay storage (`auth.ts`).
+      - Sử dụng Web Crypto API (`crypto.subtle.digest('SHA-256', ...)`) để xác thực an toàn.
+    * **Khóa Cổng Toàn Bộ Ứng Dụng (Authentication Gate)**: Master QTV bắt buộc phải đăng nhập thành công mới được phép truy cập và sử dụng bất kỳ tính năng nào của hệ thống MyEdu.
+    * **Thiết Kế Đăng Nhập Tinh Tế Chuẩn Gmail Dark Theme**:
+      - Cửa sổ đăng nhập căn giữa với logo MyEdu phát sáng, thẻ thông tin thiết kế tối giản, sắc nét.
+      - Ô nhập Username, Mật khẩu có nút ẩn/hiện (`Eye`/`EyeOff`), tùy chọn duy trì phiên đăng nhập và nút Đăng xuất (`LogOut`) trên Navbar.

@@ -119,11 +119,16 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
      - **Thanh Header cố định**: Không còn các huy hiệu co giãn làm giật/nhảy nút bấm trên thanh tiêu đề.
      - **Nút `[💾 Lưu Bài Học]` trực tiếp trong khung soạn thảo**: Đặt ngay cạnh thời lượng & định dạng của bài học đang chọn. Bấm lưu (hoặc `Ctrl + S`) sẽ lưu ngay tức thì, nút chuyển sang `✓ Đã Lưu!` trong 2s, cửa sổ giữ nguyên vị trí, không gián đoạn mạch làm việc.
 
-
-
 10. **Tự Động Nạp Bộ Dữ Liệu Kiểm Thử Vàng (Golden Test Suite - 20 Khóa Học Toàn Diện Đa Ngành)**:
-    * Khởi tạo và tự động đồng bộ **20 khóa học mẫu cao cấp** bao phủ 100% tất cả 8 danh mục và các nền tảng: AI & Machine Learning, Lập trình Fullstack & Mobile (Flutter, DevOps, Security), Phân tích Dữ liệu & Data Engineering, Kinh doanh & Tài chính Doanh nghiệp, Thiết kế UI/UX & Nhận diện Thương hiệu, Ngoại ngữ (Tiếng Anh, Tiếng Nhật N3), Kỹ năng sống (Deep Work, Đàm phán, Stoicism), Marketing & Ads Performance.
-    * Đầy đủ các định dạng: Video Abyss đa dạng (URL, Iframe, Short ID), bài viết Markdown chuyên sâu (bảng biểu, code block, công thức), bài học hỗn hợp (Mixed), đầy đủ 4 loại tài liệu đính kèm (PDF, Google Drive, GitHub, Link Colab/Notion/Figma).
-    * Tích hợp cơ chế tự động di chuyển (Auto-migration) nâng cấp `localStorage` cũ lên bộ dữ liệu 20 khóa học mới mà không cần thao tác thủ công.
+    * Khởi tạo và tự động đồng bộ **20 khóa học mẫu cao cấp** bao phủ 100% các lĩnh vực: AI & Prompt, Fullstack Next.js, UI/UX Design, Growth Marketing, Machine Learning Scikit-Learn, Flutter Mobile, Tài chính Doanh nghiệp, Data Engineering PySpark, Branding Identity, Tiếng Nhật Thương mại JLPT, Kỹ năng Đàm phán Leadership, Performance Ads Facebook/TikTok, An ninh mạng Pentest, Triết học Khắc kỷ Stoicism...
+    * Đầy đủ các định dạng: Video Abyss đa dạng (URL, Iframe, Short ID), bài viết Markdown chuyên sâu (bảng biểu, code block, công thức Math LaTeX), bài học hỗn hợp (Mixed), đầy đủ 4 loại tài liệu đính kèm (PDF, Google Drive, GitHub, Link Colab/Notion).
 
-
+11. **Quản Trị Giảng Viên / Tác Giả & Bộ Lọc Liên Kết Hai Chiều (Cascading Linked Filters)**:
+    * **Quản trị Giảng viên trong Course Studio**:
+      - Bổ sung tab con thứ 3 `👨‍🏫 Tác Giả / Giảng Viên` trong Trung Tâm Quản Trị.
+      - Hỗ trợ thêm giảng viên mới, sửa tên giảng viên (tự động đồng bộ hàng loạt vào tất cả khóa học liên quan), xóa giảng viên khỏi danh sách kèm cảnh báo số lượng khóa học.
+    * **Bộ lọc liên kết thông minh 3 chiều (Faceted / Cascading Filters)**:
+      - Khi chọn **Danh mục A**: Nguồn mua và Giảng viên sẽ tự động co lại, chỉ hiển thị đúng các nguồn và giảng viên có dạy trong danh mục A kèm số lượng khóa học tương ứng (`Udemy (2)`, `Coursera (1)`).
+      - Khi chọn **Nguồn B**: Danh mục và Giảng viên chỉ hiển thị các tùy chọn có khóa học trên nguồn B.
+      - Khi chọn **Giảng viên C**: Danh mục và Nguồn tự động thu hẹp theo các khóa của giảng viên C.
+      - Loại bỏ hoàn toàn tình trạng danh sách hàng nghìn giảng viên/nguồn không liên quan, tăng tốc độ tìm kiếm khóa học lên gấp nhiều lần.

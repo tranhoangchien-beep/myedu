@@ -197,3 +197,10 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
     * **Loại Bỏ Lỗi Vượt Rào DevTools (Cryptographically Signed Session Token)**:
       - Token đăng nhập không còn là chuỗi tĩnh mà là Token động được ký số **HMAC-SHA256** chứa timestamp, nonce ngẫu nhiên 16-byte và thời gian hết hạn (7 ngày đối với Remember Me).
       - Mọi hành vi sửa thủ công token trong DevTools Console sẽ lập tức bị chữ ký HMAC từ chối và hủy phiên làm việc.
+
+200. **Tích Hợp Google Cloud Firestore Realtime Sync Cho Project `myedu-9c611`**:
+     * **Cấu hình trực tiếp Firebase Web SDK v12.17+**: Kết nối chính thức với Firebase Project `myedu-9c611` qua `src/lib/firebase.ts`.
+     * **Đồng bộ đa thiết bị không ma sát (Zero-Friction Realtime Sync)**: Tự động phát hiện và đồng bộ 2 chiều (Laptop $\leftrightarrow$ iPad/Mobile) qua Firestore Realtime Listener `onSnapshot`.
+     * **Bảo toàn cơ chế Offline-First**: Kết hợp lưu trữ đệm `localStorage` với Cloud Firestore. Mất mạng vẫn học bình thường, khi có mạng tự động đồng bộ lên đám mây.
+     * **Chi phí 0 VNĐ vĩnh viễn**: Hoạt động 100% trong hạn mức miễn phí trọn đời (Spark Free Tier) của Google Cloud.
+

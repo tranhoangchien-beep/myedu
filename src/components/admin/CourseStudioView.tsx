@@ -40,7 +40,14 @@ import {
   ChevronLeft,
   ChevronRight,
   HardDrive,
-  ShieldCheck
+  ShieldCheck,
+  Flame,
+  Zap,
+  GraduationCap,
+  Star,
+  BrainCircuit,
+  Smile,
+  CheckCheck
 } from 'lucide-react';
 import { INITIAL_SAMPLE_COURSES } from '../../lib/storage';
 
@@ -72,6 +79,33 @@ interface CourseStudioViewProps {
 
 type SortOption = 'updated-desc' | 'title-asc' | 'progress-desc' | 'progress-asc' | 'lessons-desc';
 type StatusFilter = 'all' | 'in-progress' | 'not-started' | 'completed';
+
+// Helper: Deterministic vibrant gradient generator for playful cards
+const VIBRANT_GRADIENTS = [
+  'from-emerald-500 via-teal-500 to-cyan-500',
+  'from-purple-600 via-fuchsia-500 to-pink-500',
+  'from-amber-500 via-orange-500 to-rose-500',
+  'from-blue-600 via-indigo-500 to-purple-500',
+  'from-pink-500 via-rose-500 to-amber-400',
+  'from-cyan-500 via-teal-400 to-emerald-500',
+  'from-violet-600 via-purple-600 to-indigo-600',
+  'from-rose-500 via-red-500 to-orange-400',
+];
+
+const getVibrantGradient = (text: string) => {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = text.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % VIBRANT_GRADIENTS.length;
+  return VIBRANT_GRADIENTS[index];
+};
+
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   courses,
@@ -127,22 +161,23 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   const [failedImageUrls, setFailedImageUrls] = useState<Record<string, boolean>>({});
 
   // Taxonomies Sub-tab state
-  const [taxonomySubTab, setTaxonomySubTab] = useState<'categories' | 'sources' | 'instructors'>('categories');
+  const [taxonomySubTab, setTaxonomySubTab] = useState<'categories' | 'sources' | 'instructors'>('instructors');
   
-  // Category state
-  const [newCatInput, setNewCatInput] = useState<string>('');
+  // Taxonomies Quick-Filter & Quick-Add Dual Inputs
+  const [catSearchOrAdd, setCatSearchOrAdd] = useState<string>('');
   const [editingCatIndex, setEditingCatIndex] = useState<number | null>(null);
   const [editingCatValue, setEditingCatValue] = useState<string>('');
+  const [catUsageFilter, setCatUsageFilter] = useState<'all' | 'active' | 'empty'>('all');
 
-  // Source state
-  const [newSourceInput, setNewSourceInput] = useState<string>('');
+  const [sourceSearchOrAdd, setSourceSearchOrAdd] = useState<string>('');
   const [editingSourceIndex, setEditingSourceIndex] = useState<number | null>(null);
   const [editingSourceValue, setEditingSourceValue] = useState<string>('');
+  const [sourceUsageFilter, setSourceUsageFilter] = useState<'all' | 'active' | 'empty'>('all');
 
-  // Instructor state
-  const [newInstInput, setNewInstInput] = useState<string>('');
+  const [instSearchOrAdd, setInstSearchOrAdd] = useState<string>('');
   const [editingInstIndex, setEditingInstIndex] = useState<number | null>(null);
   const [editingInstValue, setEditingInstValue] = useState<string>('');
+  const [instUsageFilter, setInstUsageFilter] = useState<'all' | 'active' | 'empty'>('all');
 
   // Backup states
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -225,7 +260,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
     }
   }, [courses, categories, sources, instructors]);
 
-  // 3. FILTER & SORT COURSES
+  // 3. FILTER & SORT COURSES FOR TABLE
   const filteredAndSortedCourses = useMemo(() => {
     return courses
       .filter((c) => {
@@ -304,6 +339,68 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
     return filteredAndSortedCourses.slice(startIdx, startIdx + pageSize);
   }, [filteredAndSortedCourses, currentPage, pageSize]);
 
+  // 5. TAXONOMIES DUAL SEARCH & ADD FILTERED LISTS
+  
+  // Category List filtered
+  const filteredCategories = useMemo(() => {
+    return categories.filter((cat) => {
+      const q = catSearchOrAdd.trim().toLowerCase();
+      if (q && !cat.toLowerCase().includes(q)) return false;
+
+      const count = courses.filter(c => c.category === cat).length;
+      if (catUsageFilter === 'active' && count === 0) return false;
+      if (catUsageFilter === 'empty' && count > 0) return false;
+
+      return true;
+    });
+  }, [categories, catSearchOrAdd, catUsageFilter, courses]);
+
+  const isCatExisting = useMemo(() => {
+    const trimmed = catSearchOrAdd.trim().toLowerCase();
+    if (!trimmed) return false;
+    return categories.some(c => c.toLowerCase() === trimmed);
+  }, [categories, catSearchOrAdd]);
+
+  // Source List filtered
+  const filteredSources = useMemo(() => {
+    return sources.filter((src) => {
+      const q = sourceSearchOrAdd.trim().toLowerCase();
+      if (q && !src.toLowerCase().includes(q)) return false;
+
+      const count = courses.filter(c => c.sourcePlatform === src).length;
+      if (sourceUsageFilter === 'active' && count === 0) return false;
+      if (sourceUsageFilter === 'empty' && count > 0) return false;
+
+      return true;
+    });
+  }, [sources, sourceSearchOrAdd, sourceUsageFilter, courses]);
+
+  const isSourceExisting = useMemo(() => {
+    const trimmed = sourceSearchOrAdd.trim().toLowerCase();
+    if (!trimmed) return false;
+    return sources.some(s => s.toLowerCase() === trimmed);
+  }, [sources, sourceSearchOrAdd]);
+
+  // Instructor List filtered
+  const filteredInstructors = useMemo(() => {
+    return instructors.filter((inst) => {
+      const q = instSearchOrAdd.trim().toLowerCase();
+      if (q && !inst.toLowerCase().includes(q)) return false;
+
+      const count = courses.filter(c => c.instructor === inst).length;
+      if (instUsageFilter === 'active' && count === 0) return false;
+      if (instUsageFilter === 'empty' && count > 0) return false;
+
+      return true;
+    });
+  }, [instructors, instSearchOrAdd, instUsageFilter, courses]);
+
+  const isInstructorExisting = useMemo(() => {
+    const trimmed = instSearchOrAdd.trim().toLowerCase();
+    if (!trimmed) return false;
+    return instructors.some(i => i.toLowerCase() === trimmed);
+  }, [instructors, instSearchOrAdd]);
+
   // Batch Selection Handlers
   const handleToggleSelectAll = () => {
     if (selectedCourseIds.length === paginatedCourses.length) {
@@ -364,17 +461,17 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
     setTimeout(() => setBackupSuccess(''), 3000);
   };
 
-  // Category Handlers
-  const handleAddCategorySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = newCatInput.trim();
+  // Category Handlers (Dual Search & Add)
+  const handleAddCategorySubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = catSearchOrAdd.trim();
     if (!trimmed) return;
-    if (categories.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
-      alert('Danh mục này đã tồn tại!');
-      return;
-    }
+    if (isCatExisting) return;
+
     onAddCategory(trimmed);
-    setNewCatInput('');
+    setCatSearchOrAdd('');
+    setBackupSuccess(`✨ Đã thêm danh mục mới: "${trimmed}"`);
+    setTimeout(() => setBackupSuccess(''), 2500);
   };
 
   const handleSaveEditCategory = (oldCat: string) => {
@@ -397,17 +494,17 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
     }
   };
 
-  // Source Handlers
-  const handleAddSourceSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = newSourceInput.trim();
+  // Source Handlers (Dual Search & Add)
+  const handleAddSourceSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = sourceSearchOrAdd.trim();
     if (!trimmed) return;
-    if (sources.some(s => s.toLowerCase() === trimmed.toLowerCase())) {
-      alert('Nguồn này đã tồn tại!');
-      return;
-    }
+    if (isSourceExisting) return;
+
     onAddSource(trimmed);
-    setNewSourceInput('');
+    setSourceSearchOrAdd('');
+    setBackupSuccess(`✨ Đã thêm nguồn mới: "${trimmed}"`);
+    setTimeout(() => setBackupSuccess(''), 2500);
   };
 
   const handleSaveEditSource = (oldSource: string) => {
@@ -430,17 +527,17 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
     }
   };
 
-  // Instructor Handlers
-  const handleAddInstructorSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = newInstInput.trim();
+  // Instructor Handlers (Dual Search & Add)
+  const handleAddInstructorSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = instSearchOrAdd.trim();
     if (!trimmed) return;
-    if (instructors.some(i => i.toLowerCase() === trimmed.toLowerCase())) {
-      alert('Tác giả / Giảng viên này đã tồn tại!');
-      return;
-    }
+    if (isInstructorExisting) return;
+
     if (onAddInstructor) onAddInstructor(trimmed);
-    setNewInstInput('');
+    setInstSearchOrAdd('');
+    setBackupSuccess(`👨‍🏫 Đã thêm chuyên gia mới: "${trimmed}"`);
+    setTimeout(() => setBackupSuccess(''), 2500);
   };
 
   const handleSaveEditInstructor = (oldInst: string) => {
@@ -1086,127 +1183,417 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
           </div>
         )}
 
-        {/* TAB 2: TAXONOMIES (CATEGORIES, SOURCES & INSTRUCTORS) */}
+        {/* TAB 2: VIBRANT & PLAYFUL TAXONOMIES (CATEGORIES, SOURCES & INSTRUCTORS) */}
         {activeTab === 'taxonomies' && (
           <div className="space-y-6">
             
-            {/* Sub-tabs for taxonomies */}
+            {/* Sub-tabs with Playful Glow Badges */}
             <div className="flex items-center gap-2 border-b border-slate-800 pb-3 flex-wrap">
               <button
-                onClick={() => setTaxonomySubTab('categories')}
-                className={`px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
-                  taxonomySubTab === 'categories'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm'
+                onClick={() => setTaxonomySubTab('instructors')}
+                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+                  taxonomySubTab === 'instructors'
+                    ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 shadow-lg shadow-amber-950/30'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Tags className="w-4 h-4" />
-                <span>Danh Mục Chủ Đề ({categories.length})</span>
+                <User className="w-4 h-4 text-amber-400" />
+                <span>👨‍🏫 Tác Giả / Giảng Viên</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold">
+                  {instructors.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setTaxonomySubTab('categories')}
+                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+                  taxonomySubTab === 'categories'
+                    ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-950/30'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Tags className="w-4 h-4 text-emerald-400" />
+                <span>🏷️ Danh Mục Chủ Đề</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold">
+                  {categories.length}
+                </span>
               </button>
 
               <button
                 onClick={() => setTaxonomySubTab('sources')}
-                className={`px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
                   taxonomySubTab === 'sources'
-                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
+                    ? 'bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border border-teal-500/40 shadow-lg shadow-teal-950/30'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Globe className="w-4 h-4" />
-                <span>Nền Tảng / Nguồn Mua ({sources.length})</span>
-              </button>
-
-              <button
-                onClick={() => setTaxonomySubTab('instructors')}
-                className={`px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
-                  taxonomySubTab === 'instructors'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <User className="w-4 h-4" />
-                <span>Tác Giả / Giảng Viên ({instructors.length})</span>
+                <Globe className="w-4 h-4 text-teal-400" />
+                <span>🌐 Nền Tảng / Nguồn Mua</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-extrabold">
+                  {sources.length}
+                </span>
               </button>
             </div>
 
-            {/* Subtab 1: Categories */}
-            {taxonomySubTab === 'categories' && (
-              <div className="space-y-4">
-                <form onSubmit={handleAddCategorySubmit} className="flex gap-2.5 max-w-xl">
-                  <input
-                    type="text"
-                    value={newCatInput}
-                    onChange={(e) => setNewCatInput(e.target.value)}
-                    placeholder="Nhập tên danh mục mới (ví dụ: An ninh mạng, DevOps...)"
-                    className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500/60"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newCatInput.trim()}
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs rounded-2xl flex items-center gap-2 transition-colors shadow-md"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Thêm Danh Mục</span>
-                  </button>
-                </form>
+            {/* SUBTAB 1: INSTRUCTORS & EXPERTS (PLAYFUL PROFILE BADGES) */}
+            {taxonomySubTab === 'instructors' && (
+              <div className="space-y-5 animate-fade-in">
+                
+                {/* Search & Add Dual Combo Bar */}
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-amber-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={instSearchOrAdd}
+                      onChange={(e) => setInstSearchOrAdd(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddInstructorSubmit();
+                      }}
+                      placeholder="🔍 Gõ tên giảng viên để tìm kiếm hoặc thêm mới... (Enter để thêm)"
+                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:border-amber-500/70"
+                    />
+                    {instSearchOrAdd && (
+                      <button
+                        onClick={() => setInstSearchOrAdd('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {categories.map((cat, idx) => {
+                  {/* Dual Action / Status Button */}
+                  <div className="flex items-center gap-2">
+                    {instSearchOrAdd.trim() && (
+                      isInstructorExisting ? (
+                        <div className="px-4 py-2 rounded-2xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                          <CheckCheck className="w-4 h-4 text-emerald-400" />
+                          <span>Đã có trong danh sách</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleAddInstructorSubmit()}
+                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-amber-500/20 whitespace-nowrap transition-all"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>+ Thêm: "{instSearchOrAdd.trim()}"</span>
+                        </button>
+                      )
+                    )}
+
+                    {/* Filter Pills */}
+                    <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                      <button
+                        onClick={() => setInstUsageFilter('all')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          instUsageFilter === 'all' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        Tất cả ({instructors.length})
+                      </button>
+                      <button
+                        onClick={() => setInstUsageFilter('active')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          instUsageFilter === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        🔥 Có khóa
+                      </button>
+                      <button
+                        onClick={() => setInstUsageFilter('empty')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          instUsageFilter === 'empty' ? 'bg-slate-800 text-slate-300' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        0 khóa
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PLAYFUL INSTRUCTOR PROFILE CARDS GRID */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredInstructors.length === 0 ? (
+                    <div className="col-span-full py-12 text-center bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-2">
+                      <p className="text-xs text-slate-400">Không tìm thấy giảng viên nào khớp với "{instSearchOrAdd}".</p>
+                      {instSearchOrAdd.trim() && !isInstructorExisting && (
+                        <button
+                          onClick={() => handleAddInstructorSubmit()}
+                          className="px-4 py-2 rounded-2xl bg-amber-500 text-slate-950 text-xs font-bold inline-flex items-center gap-1.5"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Tạo mới giảng viên "{instSearchOrAdd.trim()}"</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    filteredInstructors.map((inst, idx) => {
+                      const count = courses.filter(c => c.instructor === inst).length;
+                      const isEditing = editingInstIndex === idx;
+                      
+                      // Split title/role if in parentheses: "Alex Đặng (Tech Lead)"
+                      const matchRole = inst.match(/^(.*?)\s*\((.*?)\)$/);
+                      const mainName = matchRole ? matchRole[1] : inst;
+                      const roleName = matchRole ? matchRole[2] : null;
+
+                      return (
+                        <div
+                          key={inst}
+                          className="relative group p-4 rounded-3xl bg-slate-900/90 border border-slate-800/90 hover:border-amber-500/40 shadow-md hover:shadow-xl hover:shadow-amber-950/20 transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
+                        >
+                          {isEditing ? (
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                value={editingInstValue}
+                                onChange={(e) => setEditingInstValue(e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-950 border border-amber-500 rounded-xl text-xs text-white font-bold"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveEditInstructor(inst);
+                                  if (e.key === 'Escape') setEditingInstIndex(null);
+                                }}
+                              />
+                              <div className="flex justify-end gap-1.5">
+                                <button
+                                  onClick={() => setEditingInstIndex(null)}
+                                  className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-xs"
+                                >
+                                  Hủy
+                                </button>
+                                <button
+                                  onClick={() => handleSaveEditInstructor(inst)}
+                                  className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 text-xs font-bold"
+                                >
+                                  Lưu
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex items-start gap-3">
+                                {/* Vibrant Avatar Badge */}
+                                <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${getVibrantGradient(mainName)} p-[1.5px] flex-shrink-0 shadow-md`}>
+                                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center font-extrabold text-xs text-white tracking-wider">
+                                    {getInitials(mainName)}
+                                  </div>
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-extrabold text-sm text-white group-hover:text-amber-300 transition-colors line-clamp-1">
+                                    {mainName}
+                                  </h4>
+                                  
+                                  {roleName && (
+                                    <span className="inline-block text-[10px] font-semibold text-slate-400 bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800 mt-1 truncate max-w-full">
+                                      {roleName}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Footer count & actions */}
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
+                                {count > 0 ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    <Flame className="w-3 h-3 text-emerald-400" />
+                                    <span>{count} khóa học</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-500 border border-slate-800">
+                                    <span>0 khóa</span>
+                                  </span>
+                                )}
+
+                                <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => {
+                                      setEditingInstIndex(idx);
+                                      setEditingInstValue(inst);
+                                    }}
+                                    className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800/80 transition-colors"
+                                    title="Sửa tên giảng viên này"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteInstructorPrompt(inst)}
+                                    className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800/80 transition-colors"
+                                    title="Xóa giảng viên này"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* SUBTAB 2: CATEGORIES & TOPICS (PLAYFUL CARDS WITH 3D ICONS) */}
+            {taxonomySubTab === 'categories' && (
+              <div className="space-y-5 animate-fade-in">
+                
+                {/* Search & Add Dual Combo Bar */}
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-emerald-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={catSearchOrAdd}
+                      onChange={(e) => setCatSearchOrAdd(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddCategorySubmit();
+                      }}
+                      placeholder="🔍 Gõ tên danh mục để tìm kiếm hoặc thêm mới... (Enter để thêm)"
+                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:border-emerald-500/70"
+                    />
+                    {catSearchOrAdd && (
+                      <button
+                        onClick={() => setCatSearchOrAdd('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dual Action / Status Button */}
+                  <div className="flex items-center gap-2">
+                    {catSearchOrAdd.trim() && (
+                      isCatExisting ? (
+                        <div className="px-4 py-2 rounded-2xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                          <CheckCheck className="w-4 h-4 text-emerald-400" />
+                          <span>Đã có trong danh sách</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleAddCategorySubmit()}
+                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 whitespace-nowrap transition-all"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>+ Thêm: "{catSearchOrAdd.trim()}"</span>
+                        </button>
+                      )
+                    )}
+
+                    {/* Filter Pills */}
+                    <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                      <button
+                        onClick={() => setCatUsageFilter('all')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          catUsageFilter === 'all' ? 'bg-emerald-500/20 text-emerald-300' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        Tất cả ({categories.length})
+                      </button>
+                      <button
+                        onClick={() => setCatUsageFilter('active')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          catUsageFilter === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        🔥 Có khóa
+                      </button>
+                      <button
+                        onClick={() => setCatUsageFilter('empty')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          catUsageFilter === 'empty' ? 'bg-slate-800 text-slate-300' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        0 khóa
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PLAYFUL CATEGORY CARDS */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredCategories.map((cat, idx) => {
                     const count = courses.filter(c => c.category === cat).length;
                     const isEditing = editingCatIndex === idx;
 
                     return (
                       <div
                         key={cat}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs shadow-md"
+                        className="group p-4 rounded-3xl bg-slate-900/90 border border-slate-800/90 hover:border-emerald-500/40 shadow-md hover:shadow-xl hover:shadow-emerald-950/20 transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
                       >
                         {isEditing ? (
-                          <div className="flex items-center gap-1.5 flex-1 mr-2">
+                          <div className="space-y-2">
                             <input
                               type="text"
                               value={editingCatValue}
                               onChange={(e) => setEditingCatValue(e.target.value)}
-                              className="flex-1 px-2.5 py-1.5 bg-slate-950 border border-emerald-500 rounded-xl text-xs text-white"
+                              className="w-full px-3 py-2 bg-slate-950 border border-emerald-500 rounded-xl text-xs text-white font-bold"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveEditCategory(cat);
                                 if (e.key === 'Escape') setEditingCatIndex(null);
                               }}
                             />
-                            <button
-                              onClick={() => handleSaveEditCategory(cat)}
-                              className="p-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex justify-end gap-1.5">
+                              <button
+                                onClick={() => setEditingCatIndex(null)}
+                                className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-xs"
+                              >
+                                Hủy
+                              </button>
+                              <button
+                                onClick={() => handleSaveEditCategory(cat)}
+                                className="px-3 py-1 rounded-xl bg-emerald-500 text-slate-950 text-xs font-bold"
+                              >
+                                Lưu
+                              </button>
+                            </div>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <Tags className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                            <span className="font-bold text-slate-200 truncate">{cat}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold">{count} khóa</span>
-                          </div>
-                        )}
+                          <>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${getVibrantGradient(cat)} p-[1.5px] flex-shrink-0 shadow-md`}>
+                                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                                  {getCategoryIcon(cat)}
+                                </div>
+                              </div>
 
-                        <div className="flex items-center gap-1">
-                          {!isEditing && (
-                            <button
-                              onClick={() => {
-                                setEditingCatIndex(idx);
-                                setEditingCatValue(cat);
-                              }}
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteCategoryPrompt(cat)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-extrabold text-sm text-white group-hover:text-emerald-300 transition-colors truncate">
+                                  {cat}
+                                </h4>
+                                <p className="text-[11px] text-slate-400 mt-0.5">Chủ đề đào tạo</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                <span>{count} khóa học</span>
+                              </span>
+
+                              <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => {
+                                    setEditingCatIndex(idx);
+                                    setEditingCatValue(cat);
+                                  }}
+                                  className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800/80 transition-colors"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteCategoryPrompt(cat)}
+                                  className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800/80 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     );
                   })}
@@ -1214,169 +1601,164 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               </div>
             )}
 
-            {/* Subtab 2: Sources */}
+            {/* SUBTAB 3: SOURCES & PLATFORMS (BRAND STYLE CARDS) */}
             {taxonomySubTab === 'sources' && (
-              <div className="space-y-4">
-                <form onSubmit={handleAddSourceSubmit} className="flex gap-2.5 max-w-xl">
-                  <input
-                    type="text"
-                    value={newSourceInput}
-                    onChange={(e) => setNewSourceInput(e.target.value)}
-                    placeholder="Nhập tên nguồn / nền tảng mới (ví dụ: YouTube, Khóa học VIP...)"
-                    className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-200 placeholder-slate-500 focus:border-teal-500/60"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newSourceInput.trim()}
-                    className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-white font-bold text-xs rounded-2xl flex items-center gap-2 transition-colors shadow-md"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Thêm Nguồn</span>
-                  </button>
-                </form>
+              <div className="space-y-5 animate-fade-in">
+                
+                {/* Search & Add Dual Combo Bar */}
+                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={sourceSearchOrAdd}
+                      onChange={(e) => setSourceSearchOrAdd(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddSourceSubmit();
+                      }}
+                      placeholder="🔍 Gõ tên nguồn để tìm kiếm hoặc thêm mới... (Enter để thêm)"
+                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:border-teal-500/70"
+                    />
+                    {sourceSearchOrAdd && (
+                      <button
+                        onClick={() => setSourceSearchOrAdd('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {sources.map((src, idx) => {
+                  {/* Dual Action / Status Button */}
+                  <div className="flex items-center gap-2">
+                    {sourceSearchOrAdd.trim() && (
+                      isSourceExisting ? (
+                        <div className="px-4 py-2 rounded-2xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                          <CheckCheck className="w-4 h-4 text-teal-400" />
+                          <span>Đã có trong danh sách</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleAddSourceSubmit()}
+                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-teal-500/20 whitespace-nowrap transition-all"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>+ Thêm: "{sourceSearchOrAdd.trim()}"</span>
+                        </button>
+                      )
+                    )}
+
+                    {/* Filter Pills */}
+                    <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                      <button
+                        onClick={() => setSourceUsageFilter('all')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          sourceUsageFilter === 'all' ? 'bg-teal-500/20 text-teal-300' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        Tất cả ({sources.length})
+                      </button>
+                      <button
+                        onClick={() => setSourceUsageFilter('active')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          sourceUsageFilter === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        🔥 Có khóa
+                      </button>
+                      <button
+                        onClick={() => setSourceUsageFilter('empty')}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
+                          sourceUsageFilter === 'empty' ? 'bg-slate-800 text-slate-300' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        0 khóa
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PLAYFUL SOURCE CARDS */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredSources.map((src, idx) => {
                     const count = courses.filter(c => c.sourcePlatform === src).length;
                     const isEditing = editingSourceIndex === idx;
 
                     return (
                       <div
                         key={src}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs shadow-md"
+                        className="group p-4 rounded-3xl bg-slate-900/90 border border-slate-800/90 hover:border-teal-500/40 shadow-md hover:shadow-xl hover:shadow-teal-950/20 transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
                       >
                         {isEditing ? (
-                          <div className="flex items-center gap-1.5 flex-1 mr-2">
+                          <div className="space-y-2">
                             <input
                               type="text"
                               value={editingSourceValue}
                               onChange={(e) => setEditingSourceValue(e.target.value)}
-                              className="flex-1 px-2.5 py-1.5 bg-slate-950 border border-teal-500 rounded-xl text-xs text-white"
+                              className="w-full px-3 py-2 bg-slate-950 border border-teal-500 rounded-xl text-xs text-white font-bold"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveEditSource(src);
                                 if (e.key === 'Escape') setEditingSourceIndex(null);
                               }}
                             />
-                            <button
-                              onClick={() => handleSaveEditSource(src)}
-                              className="p-1.5 rounded-xl bg-teal-600 text-white hover:bg-teal-500"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex justify-end gap-1.5">
+                              <button
+                                onClick={() => setEditingSourceIndex(null)}
+                                className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-xs"
+                              >
+                                Hủy
+                              </button>
+                              <button
+                                onClick={() => handleSaveEditSource(src)}
+                                className="px-3 py-1 rounded-xl bg-teal-500 text-slate-950 text-xs font-bold"
+                              >
+                                Lưu
+                              </button>
+                            </div>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <Globe className="w-4 h-4 text-teal-400 flex-shrink-0" />
-                            <span className="font-bold text-slate-200 truncate">{src}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold">{count} khóa</span>
-                          </div>
+                          <>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${getVibrantGradient(src)} p-[1.5px] flex-shrink-0 shadow-md`}>
+                                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-teal-400">
+                                  <Globe className="w-5 h-5" />
+                                </div>
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-extrabold text-sm text-white group-hover:text-teal-300 transition-colors truncate">
+                                  {src}
+                                </h4>
+                                <p className="text-[11px] text-slate-400 mt-0.5">Nền tảng xuất xứ</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30">
+                                <span>{count} khóa học</span>
+                              </span>
+
+                              <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => {
+                                    setEditingSourceIndex(idx);
+                                    setEditingSourceValue(src);
+                                  }}
+                                  className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800/80 transition-colors"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSourcePrompt(src)}
+                                  className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800/80 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </>
                         )}
-
-                        <div className="flex items-center gap-1">
-                          {!isEditing && (
-                            <button
-                              onClick={() => {
-                                setEditingSourceIndex(idx);
-                                setEditingSourceValue(src);
-                              }}
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteSourcePrompt(src)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Subtab 3: Instructors / Authors */}
-            {taxonomySubTab === 'instructors' && (
-              <div className="space-y-4">
-                <form onSubmit={handleAddInstructorSubmit} className="flex gap-2.5 max-w-xl">
-                  <input
-                    type="text"
-                    value={newInstInput}
-                    onChange={(e) => setNewInstInput(e.target.value)}
-                    placeholder="Nhập tên giảng viên / chuyên gia mới..."
-                    className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-200 placeholder-slate-500 focus:border-amber-500/60"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newInstInput.trim()}
-                    className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white font-bold text-xs rounded-2xl flex items-center gap-2 transition-colors shadow-md"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Thêm Giảng Viên</span>
-                  </button>
-                </form>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {instructors.map((inst, idx) => {
-                    const count = courses.filter(c => c.instructor === inst).length;
-                    const isEditing = editingInstIndex === idx;
-
-                    return (
-                      <div
-                        key={inst}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 text-xs shadow-md"
-                      >
-                        {isEditing ? (
-                          <div className="flex items-center gap-1.5 flex-1 mr-2">
-                            <input
-                              type="text"
-                              value={editingInstValue}
-                              onChange={(e) => setEditingInstValue(e.target.value)}
-                              className="flex-1 px-2.5 py-1.5 bg-slate-950 border border-amber-500 rounded-xl text-xs text-white"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSaveEditInstructor(inst);
-                                if (e.key === 'Escape') setEditingInstIndex(null);
-                              }}
-                            />
-                            <button
-                              onClick={() => handleSaveEditInstructor(inst)}
-                              className="p-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-500"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <User className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                            <span className="font-bold text-slate-200 truncate">{inst}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold">{count} khóa</span>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-1">
-                          {!isEditing && (
-                            <button
-                              onClick={() => {
-                                setEditingInstIndex(idx);
-                                setEditingInstValue(inst);
-                              }}
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteInstructorPrompt(inst)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
                       </div>
                     );
                   })}

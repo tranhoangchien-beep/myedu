@@ -95,11 +95,24 @@ export const App: React.FC = () => {
             userStats: getStoredUserStats()
           });
         } else {
-          // Cloud Firestore is the Single Source of Truth (Preserves user deletions)
-          if (Array.isArray(cloudData.courses)) {
-            setCourses(cloudData.courses);
-            saveCourses(cloudData.courses);
+          // Cloud Firestore is the Single Source of Truth
+          let currentCloudCourses = Array.isArray(cloudData.courses) ? cloudData.courses : [];
+          
+          // Safely check if newly standardized official courses (e.g. Thành Công TC) need one-time seeding
+          const existingCourseIds = new Set(currentCloudCourses.map(c => c.id));
+          const newStandardizedOfficialCourses = INITIAL_SAMPLE_COURSES.filter(
+            c => c.id === 'course-thanhcongtc-dau-tu-chung-chi-quy-101' || c.id === 'course-8xtrading-footprint-trading'
+          );
+          const missingNewCourses = newStandardizedOfficialCourses.filter(c => !existingCourseIds.has(c.id));
+          
+          if (missingNewCourses.length > 0) {
+            currentCloudCourses = [...missingNewCourses, ...currentCloudCourses];
+            syncToCloud({ courses: currentCloudCourses });
           }
+
+          setCourses(currentCloudCourses);
+          saveCourses(currentCloudCourses);
+
           if (cloudData.categories && Array.isArray(cloudData.categories)) {
             setCategories(cloudData.categories);
             saveCategories(cloudData.categories);
@@ -108,10 +121,15 @@ export const App: React.FC = () => {
             setSources(cloudData.sources);
             saveSources(cloudData.sources);
           }
-          if (cloudData.instructors && Array.isArray(cloudData.instructors)) {
-            setInstructors(cloudData.instructors);
-            saveInstructors(cloudData.instructors);
+          
+          let currentInstructors = (cloudData.instructors && Array.isArray(cloudData.instructors)) ? cloudData.instructors : loadedInstructors;
+          if (!currentInstructors.includes('Thành Công TC')) {
+            currentInstructors = ['Thành Công TC', ...currentInstructors];
+            syncToCloud({ instructors: currentInstructors });
           }
+          setInstructors(currentInstructors);
+          saveInstructors(currentInstructors);
+
           if (cloudData.continueProgress !== undefined) {
             setContinueProgress(cloudData.continueProgress);
             if (cloudData.continueProgress) {

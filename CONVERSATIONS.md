@@ -152,3 +152,8 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
       - **🏷️ Thẻ Chủ đề 3D/Gradient**: Icon biểu trưng rực rỡ theo từng ngành học.
       - **🌐 Thẻ Nguồn mua Brand Style**: Màu sắc nhận diện thương hiệu rõ nét.
       - **Bộ lọc tình trạng vui nhộn**: `Tất cả` | `🔥 Đang có khóa` | `💤 0 khóa` giúp dọn dẹp danh mục rác siêu nhanh.
+15. **Đồng Bộ Hóa 100% Dữ Liệu Giảng Viên Trên Toàn Ứng Dụng (Full Instructor Synchronization)**:
+    * **Khắc phục triệt để lỗi lệch danh sách Giảng viên**:
+      - Truyền toàn bộ danh sách `instructors` quản trị tập trung (`myedu_instructors_v1`) vào cả **`FilterHub`** (Bộ lọc), **`CourseEditorModal`** (Tạo/Sửa khóa học) và **`BulkImportModal`** (Nạp bài hàng loạt).
+      - Khi người dùng thêm một giảng viên mới (như "Chiến") ở bất kỳ nơi nào (trong modal tạo khóa hoặc tab quản trị), hệ thống tự động đồng bộ hóa sang tất cả các ô chọn, dropdown và bộ lọc ngay lập tức.
+      - `FilterHub` thông minh kết hợp cả danh sách Giảng viên đăng ký và các Giảng viên có trong khóa học, hiển thị số lượng và ưu tiên sắp xếp trực quan.

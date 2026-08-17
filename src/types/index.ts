@@ -50,6 +50,8 @@ export interface ContinueProgress {
   category: CategoryType;
   videoSource?: string;
   timestamp: string;
+  timestampSeconds?: number;
+  durationSeconds?: number;
 }
 
 export interface UserStats {

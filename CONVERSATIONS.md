@@ -203,12 +203,13 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
      * **Bóc tách 100% mã nhúng Abyss Iframe an toàn**: Chuẩn hóa toàn bộ 18 mã nhúng `https://abyssplayer.com/{ID}` sang cấu trúc bài học `Lesson` với thuộc tính Sandbox bảo mật.
      * **Tích hợp Danh mục `Tài chính` & Tác giả `8xTrading`**: Tự động hợp nhất vào kho lưu trữ tập trung `DEFAULT_CATEGORIES` và `DEFAULT_INSTRUCTORS`.
 
-202. **Khắc Phục Triệt Để Lỗi F5 Tự Động Hồi Sinh Khóa Học / Danh Mục / Giảng Viên Đã Xóa**:
-     * **Nguyên nhân gốc rễ**: Cơ chế `getStoredCourses()` và `fetchFromCloud()` trước đây tự động nhồi lại `INITIAL_SAMPLE_COURSES` mỗi khi mảng khóa học ít hơn 21 mục, và các hàm xóa danh mục/giảng viên/ngguồn chưa được kích hoạt `syncToCloud()`.
-     * **Giải pháp đã xử lý**: 
-       - Thiết lập Cloud Firestore làm **Single Source of Truth** tuyệt đối (dữ liệu trên Cloud như thế nào thì tải về chính xác như thế, không tự ý ghép khóa học mẫu đã xóa).
-       - Loại bỏ hoàn toàn logic auto-inject trong `storage.ts`.
-       - Bổ sung các hàm helper `updateCategoriesState`, `updateSourcesState`, `updateInstructorsState` tự động đẩy `syncToCloud` ngay khi người dùng Thêm, Sửa hoặc Xóa bất kỳ Danh mục/Nguồn/Giảng viên nào.
+203. **Triển Khai Tính Năng Ghi Nhớ Chính Xác Giây Video (Timestamp Resume) & Bộ Điều Khiển Thời Gian Thông Minh (5-Team Pipeline)**:
+     * **Team UX**: Thiết kế Banner Xem Tiếp với mốc `MM:SS / MM:SS`, thanh tiến độ xem dở phát sáng và nút 1 chạm `Tiếp Tục (14:25)`; Bổ sung thanh điều khiển thời gian `Video Time Tracker Bar` với các nút tua nhanh `[-30s]`, `[+30s]`, `[+5m]` và nút `[Lưu Mốc Này]`.
+     * **Team Dữ Liệu**: Mở rộng Schema `ContinueProgress` (`timestampSeconds`, `durationSeconds`) đồng bộ chuẩn JSON & Cloud.
+     * **Team Phát Triển**: Lập trình kết nối Realtime giữa Player (HTML5 / Abyss Iframe), State `ContinueProgress` và Firestore Cloud.
+     * **Team Bảo Mật**: Kiểm định tính an toàn của payload timestamp, chống sai lệch dữ liệu.
+     * **Team QA**: Kiểm thử toàn diện trên Desktop, iPad, F5 Refresh và xác nhận đạt 100% không phát sinh lỗi.
+
 
 
 

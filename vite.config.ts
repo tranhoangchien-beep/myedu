@@ -5,6 +5,18 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    host: true
+    host: true,
+    headers: {
+      'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai',
+      'Referrer-Policy': 'no-referrer'
+    }
+  },
+  preview: {
+    port: 4173,
+    host: true,
+    headers: {
+      'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai',
+      'Referrer-Policy': 'no-referrer'
+    }
   }
 });

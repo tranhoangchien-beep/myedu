@@ -22,11 +22,13 @@ import {
   PanelLeftOpen,
   BookMarked,
   AlertTriangle,
-  Check
+  Check,
+  Zap
 } from 'lucide-react';
 import { extractAbyssId, parseUniversalVideo } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
 import { RichTextEditor } from '../common/RichTextEditor';
+import { QuickBulkEmbedModal } from './QuickBulkEmbedModal';
 
 interface CourseEditorModalProps {
   isOpen: boolean;
@@ -88,8 +90,27 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
   const draggedChapterIdxRef = useRef<number | null>(null);
 
-  // Modal alert confirmation for unsaved changes
+  // Modal alert confirmation for unsaved changes & Quick Abyss Embed Modal
   const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
+  const [isQuickEmbedOpen, setIsQuickEmbedOpen] = useState<boolean>(false);
+
+  const handleImportBulkLessonsToChapter = (targetChapterId: string, newLessons: Lesson[]) => {
+    setChapters(prev => {
+      return prev.map(ch => {
+        if (ch.id === targetChapterId) {
+          return {
+            ...ch,
+            lessons: [...ch.lessons, ...newLessons],
+          };
+        }
+        return ch;
+      });
+    });
+
+    if (newLessons.length > 0) {
+      setActiveSelection({ chId: targetChapterId, lessonId: newLessons[0].id });
+    }
+  };
 
   // Refs to guarantee initialization only runs once when modal opens
   const prevIsOpenRef = useRef<boolean>(false);
@@ -649,6 +670,16 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setIsQuickEmbedOpen(true)}
+                          title="Nhập nhanh hàng loạt bài giảng copy từ Abyss.to (Filename.mp4|URL|Iframe)"
+                          className="px-2 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all border border-emerald-500/30 shadow-sm"
+                        >
+                          <Zap className="w-3 h-3 text-emerald-400 fill-emerald-400/20" />
+                          <span>Nhập Abyss</span>
+                        </button>
+
                         <button
                           type="button"
                           onClick={handleAddChapter}
@@ -1318,6 +1349,15 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* Quick Abyss Multi-Embed Bulk Import Modal */}
+        <QuickBulkEmbedModal
+          isOpen={isQuickEmbedOpen}
+          onClose={() => setIsQuickEmbedOpen(false)}
+          chapters={chapters}
+          defaultChapterId={activeSelection?.chId || chapters[0]?.id}
+          onImportLessons={handleImportBulkLessonsToChapter}
+        />
 
       </div>
     </div>

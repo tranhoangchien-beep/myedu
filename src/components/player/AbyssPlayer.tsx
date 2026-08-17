@@ -32,8 +32,6 @@ interface AbyssPlayerProps {
   onToggleComplete: (lessonId: string) => void;
   onToggleStar: (lessonId: string) => void;
   onUpdateNotes: (lessonId: string, notes: string) => void;
-  isTheaterMode: boolean;
-  onToggleTheaterMode: () => void;
   isZenMode: boolean;
   onToggleZenMode: () => void;
   autoPlayNext: boolean;
@@ -50,8 +48,6 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   onToggleComplete,
   onToggleStar,
   onUpdateNotes,
-  isTheaterMode,
-  onToggleTheaterMode,
   isZenMode,
   onToggleZenMode,
 }) => {
@@ -175,8 +171,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
       <div 
         ref={playerContainerRef}
         className={`relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 transition-all ${
-          isTheaterMode ? 'ring-2 ring-emerald-500/30' : ''
-        } ${isZenMode ? 'ring-2 ring-teal-500/50 shadow-emerald-950/40' : ''}`}
+          isZenMode ? 'ring-2 ring-teal-500/50 shadow-emerald-950/40' : ''
+        }`}
       >
         {embedUrl ? (
           <iframe
@@ -259,7 +255,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
             </button>
           </div>
 
-          {/* Right: Mark Completed, Zen Focus, Theater & Fullscreen */}
+          {/* Right: Mark Completed, Zen Focus & Fullscreen */}
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => onToggleComplete(currentLesson.id)}
@@ -293,21 +289,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
               }`}
             >
               <Sparkles className="w-4 h-4 text-teal-400" />
-              <span className="hidden sm:inline">Zen Focus</span>
-            </button>
-
-            {/* Theater Mode Button */}
-            <button
-              onClick={onToggleTheaterMode}
-              title="Chế độ rạp chiếu phim (Phím T)"
-              className={`p-2 px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm ${
-                isTheaterMode
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                  : 'bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border-slate-800'
-              }`}
-            >
-              <Tv className="w-4 h-4" />
-              <span className="hidden md:inline">Rạp phim</span>
+              <span>Zen Focus</span>
             </button>
 
             {/* Fullscreen Button */}

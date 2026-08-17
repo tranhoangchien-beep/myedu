@@ -13,7 +13,6 @@ export const ShortcutModal: React.FC<ShortcutModalProps> = ({ isOpen, onClose })
     { key: 'N', desc: 'Chuyển nhanh sang bài học kế tiếp (Next Lesson)' },
     { key: 'P', desc: 'Quay lại bài học trước đó (Previous Lesson)' },
     { key: 'Z', desc: 'Bật / Tắt chế độ tập trung (Zen Focus Mode)' },
-    { key: 'T', desc: 'Bật / Tắt chế độ rạp chiếu phim (Theater Mode)' },
     { key: 'F', desc: 'Bật / Tắt chế độ toàn màn hình (Fullscreen)' },
     { key: 'Esc', desc: 'Thoát chế độ Zen / Toàn màn hình hoặc đóng modal' },
   ];

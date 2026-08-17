@@ -44,7 +44,6 @@ export const App: React.FC = () => {
   const [selectedInstructor, setSelectedInstructor] = useState<string>('Tất cả');
 
   // Player preferences
-  const [isTheaterMode, setIsTheaterMode] = useState<boolean>(false);
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [autoPlayNext, setAutoPlayNext] = useState<boolean>(true);
 
@@ -416,8 +415,6 @@ export const App: React.FC = () => {
           handleNextLesson();
         } else if (e.key === 'p' || e.key === 'P') {
           handlePrevLesson();
-        } else if (e.key === 't' || e.key === 'T') {
-          setIsTheaterMode(prev => !prev);
         } else if (e.key === 'z' || e.key === 'Z') {
           setIsZenMode(prev => !prev);
         }
@@ -532,7 +529,7 @@ export const App: React.FC = () => {
         {currentView === 'player' && activeCourse && activeLesson && (
           <div className="space-y-6">
             {isZenMode ? (
-              // Zen Focus Mode: Distraction-free max container
+              // Zen Focus Mode: Distraction-free max container at center
               <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
                 <AbyssPlayer
                   course={activeCourse}
@@ -544,49 +541,11 @@ export const App: React.FC = () => {
                   onToggleComplete={(lId) => handleToggleComplete(lId)}
                   onToggleStar={(lId) => handleToggleStar(lId)}
                   onUpdateNotes={handleUpdateNotes}
-                  isTheaterMode={isTheaterMode}
-                  onToggleTheaterMode={() => setIsTheaterMode(prev => !prev)}
                   isZenMode={isZenMode}
                   onToggleZenMode={() => setIsZenMode(prev => !prev)}
                   autoPlayNext={autoPlayNext}
                   onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
                 />
-              </div>
-            ) : isTheaterMode ? (
-              // Theater Mode: Player on top taking full width, sidebar below
-              <div className="space-y-6">
-                <AbyssPlayer
-                  course={activeCourse}
-                  currentLesson={activeLesson}
-                  hasPrevLesson={hasPrevLesson}
-                  hasNextLesson={hasNextLesson}
-                  onPrevLesson={handlePrevLesson}
-                  onNextLesson={handleNextLesson}
-                  onToggleComplete={(lId) => handleToggleComplete(lId)}
-                  onToggleStar={(lId) => handleToggleStar(lId)}
-                  onUpdateNotes={handleUpdateNotes}
-                  isTheaterMode={isTheaterMode}
-                  onToggleTheaterMode={() => setIsTheaterMode(prev => !prev)}
-                  isZenMode={isZenMode}
-                  onToggleZenMode={() => setIsZenMode(prev => !prev)}
-                  autoPlayNext={autoPlayNext}
-                  onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
-                />
-
-                <div className="max-w-4xl mx-auto">
-                  <LessonSidebar
-                    course={activeCourse}
-                    currentLessonId={activeLesson.id}
-                    onSelectLesson={(lId) => handleSelectCourseAndLesson(activeCourse.id, lId)}
-                    onToggleComplete={(lId) => handleToggleComplete(lId)}
-                    onToggleStar={(lId) => handleToggleStar(lId)}
-                    onBackToCourseList={() => setCurrentView('home')}
-                    onOpenBulkImportForCourse={(cId) => {
-                      setBulkCourseId(cId);
-                      setIsBulkModalOpen(true);
-                    }}
-                  />
-                </div>
               </div>
             ) : (
               // Standard Split Mode: Player on Left, Sidebar on Right
@@ -602,8 +561,6 @@ export const App: React.FC = () => {
                     onToggleComplete={(lId) => handleToggleComplete(lId)}
                     onToggleStar={(lId) => handleToggleStar(lId)}
                     onUpdateNotes={handleUpdateNotes}
-                    isTheaterMode={isTheaterMode}
-                    onToggleTheaterMode={() => setIsTheaterMode(prev => !prev)}
                     isZenMode={isZenMode}
                     onToggleZenMode={() => setIsZenMode(prev => !prev)}
                     autoPlayNext={autoPlayNext}

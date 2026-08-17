@@ -16,7 +16,12 @@ import {
   Layers,
   Paperclip,
   FolderOpen,
-  GripVertical
+  GripVertical,
+  Settings,
+  PlusCircle,
+  Play,
+  Clock,
+  ExternalLink
 } from 'lucide-react';
 import { extractAbyssId } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
@@ -47,6 +52,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   onAddCategory,
   onAddSource,
 }) => {
+  // Course Metadata State
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [category, setCategory] = useState<string>(categories[0] || 'AI & Machine Learning');
@@ -56,13 +62,15 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [tagsInput, setTagsInput] = useState<string>('');
   const [chapters, setChapters] = useState<Chapter[]>([]);
 
-  // Expanded chapter & lesson attachment IDs
-  const [expandedChapterIds, setExpandedChapterIds] = useState<Record<string, boolean>>({});
-  const [expandedAttachmentLessonIds, setExpandedAttachmentLessonIds] = useState<Record<string, boolean>>({});
+  // Studio Mode: 'info' (Thông tin chung) | 'curriculum' (Mục lục & Soạn thảo 2 cột)
+  const [studioSection, setStudioSection] = useState<'info' | 'curriculum'>('curriculum');
 
-  // Drag and Drop state
-  const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
+  // Selected Active Lesson for 2-column workspace
+  const [activeSelection, setActiveSelection] = useState<{ chId: string; lessonId: string } | null>(null);
+
+  // Drag and Drop state (ONLY triggered on the Grip handle)
   const [draggedLessonInfo, setDraggedLessonInfo] = useState<{ chIdx: number; lIdx: number } | null>(null);
+  const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
 
   // Auto-collect unique instructors across existing courses
   const existingInstructors = useMemo(() => {
@@ -89,10 +97,13 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       setTagsInput(courseToEdit.tags?.join(', ') || '');
       setChapters(courseToEdit.chapters || []);
 
-      // Auto expand all chapters
-      const expanded: Record<string, boolean> = {};
-      courseToEdit.chapters.forEach(ch => { expanded[ch.id] = true; });
-      setExpandedChapterIds(expanded);
+      const firstCh = courseToEdit.chapters[0];
+      const firstLes = firstCh?.lessons[0];
+      if (firstCh && firstLes) {
+        setActiveSelection({ chId: firstCh.id, lessonId: firstLes.id });
+      } else {
+        setActiveSelection(null);
+      }
     } else {
       // New course defaults
       setTitle('');
@@ -103,6 +114,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       setThumbnailUrl('');
       setTagsInput('');
       const defaultChId = `ch-${Date.now()}`;
+      const defaultLesId = `les-${Date.now()}-1`;
       setChapters([
         {
           id: defaultChId,
@@ -110,10 +122,11 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           order: 1,
           lessons: [
             {
-              id: `les-${Date.now()}-1`,
+              id: defaultLesId,
               title: 'Bài 1: Giới thiệu tổng quan',
               type: 'video',
               videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
+              content: '',
               durationMinutes: 15,
               isCompleted: false,
               isStarred: false,
@@ -122,55 +135,65 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           ]
         }
       ]);
-      setExpandedChapterIds({ [defaultChId]: true });
+      setActiveSelection({ chId: defaultChId, lessonId: defaultLesId });
     }
   }, [courseToEdit, isOpen, categories, sources]);
 
   if (!isOpen) return null;
 
-  const toggleChapterExpand = (chId: string) => {
-    setExpandedChapterIds(prev => ({ ...prev, [chId]: !prev[chId] }));
-  };
+  // Active Lesson & Chapter computed
+  const activeChapter = chapters.find(ch => ch.id === activeSelection?.chId) || chapters[0];
+  const activeLesson = activeChapter?.lessons.find(l => l.id === activeSelection?.lessonId) || activeChapter?.lessons[0] || null;
 
-  const toggleAttachmentExpand = (lessonId: string) => {
-    setExpandedAttachmentLessonIds(prev => ({ ...prev, [lessonId]: !prev[lessonId] }));
-  };
-
-  // Chapter CRUD & Reorder
+  // Chapter CRUD
   const handleAddChapter = () => {
     const newId = `ch-${Date.now()}`;
+    const newLesId = `les-${Date.now()}-1`;
     const newChapter: Chapter = {
       id: newId,
       title: `Chương ${chapters.length + 1}: Chủ đề mới`,
       order: chapters.length + 1,
-      lessons: [],
+      lessons: [
+        {
+          id: newLesId,
+          title: 'Bài 1: Bài học mới',
+          type: 'video',
+          videoSource: '',
+          content: '',
+          durationMinutes: 15,
+          attachments: [],
+        }
+      ],
     };
     setChapters([...chapters, newChapter]);
-    setExpandedChapterIds(prev => ({ ...prev, [newId]: true }));
+    setActiveSelection({ chId: newId, lessonId: newLesId });
   };
 
   const handleUpdateChapterTitle = (chId: string, newTitle: string) => {
     setChapters(chapters.map(ch => ch.id === chId ? { ...ch, title: newTitle } : ch));
   };
 
-  const handleDeleteChapter = (chId: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa chương này cùng tất cả bài học bên trong?')) {
-      setChapters(chapters.filter(ch => ch.id !== chId));
+  const handleDeleteChapter = (chId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Bạn có chắc chắn muốn xóa chương này cùng toàn bộ bài học bên trong?')) {
+      const remaining = chapters.filter(ch => ch.id !== chId);
+      setChapters(remaining);
+      const nextCh = remaining[0];
+      const nextLes = nextCh?.lessons[0];
+      if (nextCh && nextLes) {
+        setActiveSelection({ chId: nextCh.id, lessonId: nextLes.id });
+      } else {
+        setActiveSelection(null);
+      }
     }
   };
 
-  const moveChapter = (fromIdx: number, toIdx: number) => {
-    if (toIdx < 0 || toIdx >= chapters.length) return;
-    const updated = [...chapters];
-    const [moved] = updated.splice(fromIdx, 1);
-    updated.splice(toIdx, 0, moved);
-    setChapters(updated);
-  };
-
-  // Lesson CRUD & Reorder
-  const handleAddLesson = (chId: string) => {
+  // Lesson CRUD
+  const handleAddLesson = (chId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const newLesId = `les-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     const newLesson: Lesson = {
-      id: `les-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: newLesId,
       title: `Bài học mới`,
       type: 'video',
       videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
@@ -187,9 +210,13 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       }
       return ch;
     }));
+    setActiveSelection({ chId, lessonId: newLesId });
   };
 
-  const handleUpdateLesson = (chId: string, lessonId: string, field: keyof Lesson, value: any) => {
+  const handleUpdateActiveLesson = (field: keyof Lesson, value: any) => {
+    if (!activeSelection) return;
+    const { chId, lessonId } = activeSelection;
+
     setChapters(chapters.map(ch => {
       if (ch.id === chId) {
         return {
@@ -201,45 +228,33 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     }));
   };
 
-  const handleDeleteLesson = (chId: string, lessonId: string) => {
-    setChapters(chapters.map(ch => {
-      if (ch.id === chId) {
-        return {
-          ...ch,
-          lessons: ch.lessons.filter(l => l.id !== lessonId)
-        };
-      }
-      return ch;
-    }));
-  };
+  const handleDeleteLesson = (chId: string, lessonId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const targetChapter = chapters.find(ch => ch.id === chId);
+    if (!targetChapter) return;
 
-  const moveLesson = (chIdx: number, fromLIdx: number, toLIdx: number) => {
-    const targetChapter = chapters[chIdx];
-    if (!targetChapter || toLIdx < 0 || toLIdx >= targetChapter.lessons.length) return;
-
-    const updatedLessons = [...targetChapter.lessons];
-    const [moved] = updatedLessons.splice(fromLIdx, 1);
-    updatedLessons.splice(toLIdx, 0, moved);
-
-    const updatedChapters = [...chapters];
-    updatedChapters[chIdx] = { ...targetChapter, lessons: updatedLessons };
-    setChapters(updatedChapters);
-  };
-
-  // Drag and drop handlers for Chapters
-  const handleChapterDragStart = (idx: number) => {
-    setDraggedChapterIdx(idx);
-  };
-
-  const handleChapterDrop = (targetIdx: number) => {
-    if (draggedChapterIdx !== null && draggedChapterIdx !== targetIdx) {
-      moveChapter(draggedChapterIdx, targetIdx);
+    if (targetChapter.lessons.length === 1 && chapters.length === 1) {
+      alert('Khóa học phải có ít nhất 1 bài học!');
+      return;
     }
-    setDraggedChapterIdx(null);
+
+    const updatedLessons = targetChapter.lessons.filter(l => l.id !== lessonId);
+    const updatedChapters = chapters.map(ch => ch.id === chId ? { ...ch, lessons: updatedLessons } : ch);
+    setChapters(updatedChapters);
+
+    // If deleted lesson was active, select another lesson
+    if (activeSelection?.lessonId === lessonId) {
+      const nextLesson = updatedLessons[0] || updatedChapters[0]?.lessons[0];
+      const nextCh = updatedLessons.length > 0 ? targetChapter : updatedChapters[0];
+      if (nextCh && nextLesson) {
+        setActiveSelection({ chId: nextCh.id, lessonId: nextLesson.id });
+      }
+    }
   };
 
-  // Drag and drop handlers for Lessons
-  const handleLessonDragStart = (chIdx: number, lIdx: number) => {
+  // Drag and drop (Handle Only)
+  const handleLessonDragStart = (chIdx: number, lIdx: number, e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', `${chIdx}:${lIdx}`);
     setDraggedLessonInfo({ chIdx, lIdx });
   };
 
@@ -249,10 +264,16 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
     if (srcChIdx === targetChIdx) {
       if (srcLIdx !== targetLIdx) {
-        moveLesson(srcChIdx, srcLIdx, targetLIdx);
+        const targetChapter = chapters[srcChIdx];
+        const updatedLessons = [...targetChapter.lessons];
+        const [moved] = updatedLessons.splice(srcLIdx, 1);
+        updatedLessons.splice(targetLIdx, 0, moved);
+
+        const updatedChapters = [...chapters];
+        updatedChapters[srcChIdx] = { ...targetChapter, lessons: updatedLessons };
+        setChapters(updatedChapters);
       }
     } else {
-      // Move lesson between different chapters
       const srcChapter = chapters[srcChIdx];
       const destChapter = chapters[targetChIdx];
       if (srcChapter && destChapter) {
@@ -266,90 +287,41 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
         updatedChapters[srcChIdx] = { ...srcChapter, lessons: srcLessons };
         updatedChapters[targetChIdx] = { ...destChapter, lessons: destLessons };
         setChapters(updatedChapters);
+        setActiveSelection({ chId: destChapter.id, lessonId: movedLesson.id });
       }
     }
     setDraggedLessonInfo(null);
   };
 
-  // Attachment CRUD
-  const handleAddAttachment = (chId: string, lessonId: string) => {
+  // Attachment CRUD for active lesson
+  const handleAddAttachment = () => {
+    if (!activeLesson) return;
     const newAtt: Attachment = {
       id: `att-${Date.now()}`,
       name: 'Tài liệu mới (Slide / Code)',
       url: 'https://drive.google.com',
       type: 'drive',
     };
-
-    setChapters(chapters.map(ch => {
-      if (ch.id === chId) {
-        return {
-          ...ch,
-          lessons: ch.lessons.map(l => {
-            if (l.id === lessonId) {
-              return {
-                ...l,
-                attachments: [...(l.attachments || []), newAtt]
-              };
-            }
-            return l;
-          })
-        };
-      }
-      return ch;
-    }));
-    setExpandedAttachmentLessonIds(prev => ({ ...prev, [lessonId]: true }));
+    handleUpdateActiveLesson('attachments', [...(activeLesson.attachments || []), newAtt]);
   };
 
-  const handleUpdateAttachment = (
-    chId: string, 
-    lessonId: string, 
-    attId: string, 
-    field: keyof Attachment, 
-    value: string
-  ) => {
-    setChapters(chapters.map(ch => {
-      if (ch.id === chId) {
-        return {
-          ...ch,
-          lessons: ch.lessons.map(l => {
-            if (l.id === lessonId) {
-              return {
-                ...l,
-                attachments: (l.attachments || []).map(a => a.id === attId ? { ...a, [field]: value } : a)
-              };
-            }
-            return l;
-          })
-        };
-      }
-      return ch;
-    }));
+  const handleUpdateAttachment = (attId: string, field: keyof Attachment, value: string) => {
+    if (!activeLesson) return;
+    const updated = (activeLesson.attachments || []).map(a => a.id === attId ? { ...a, [field]: value } : a);
+    handleUpdateActiveLesson('attachments', updated);
   };
 
-  const handleDeleteAttachment = (chId: string, lessonId: string, attId: string) => {
-    setChapters(chapters.map(ch => {
-      if (ch.id === chId) {
-        return {
-          ...ch,
-          lessons: ch.lessons.map(l => {
-            if (l.id === lessonId) {
-              return {
-                ...l,
-                attachments: (l.attachments || []).filter(a => a.id !== attId)
-              };
-            }
-            return l;
-          })
-        };
-      }
-      return ch;
-    }));
+  const handleDeleteAttachment = (attId: string) => {
+    if (!activeLesson) return;
+    const updated = (activeLesson.attachments || []).filter(a => a.id !== attId);
+    handleUpdateActiveLesson('attachments', updated);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert('Vui lòng nhập tên khóa học!');
+      alert('Vui lòng nhập tên khóa học ở mục Thông Tin Cơ Bản!');
+      setStudioSection('info');
       return;
     }
 
@@ -376,547 +348,535 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     onClose();
   };
 
+  const totalLessonsCount = chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col my-6 max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden animate-fade-in">
+      <div className="relative w-full max-w-7xl h-[92vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
         
-        {/* Modal Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        {/* Top Header Bar with Tab Switchers & Save */}
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-lg shadow-emerald-500/20">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
-                {courseToEdit ? 'Chỉnh Sửa Khóa Học & Giáo Trình' : 'Tạo Khóa Học Mới'}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
+                  {title || (courseToEdit ? 'Chỉnh Sửa Khóa Học' : 'Tạo Khóa Học Mới')}
+                </h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-bold">
+                  {totalLessonsCount} bài
+                </span>
+              </div>
               <p className="text-xs text-slate-400">
-                Sắp xếp kéo thả bài học, soạn thảo bài viết Rich Text & quản lý tài liệu đính kèm
+                Giao diện 2 cột chuyên nghiệp: Mục lục bên trái & Soạn thảo chi tiết bên phải
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Modal Body Form */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
-          
-          {/* Section 1: Basic Info with Searchable Comboboxes */}
-          <div className="space-y-4 p-5 rounded-3xl bg-slate-950/70 border border-slate-800/80 shadow-lg">
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="w-4 h-4 text-emerald-400" />
-              <span>Thông Tin Cơ Bản</span>
-            </h3>
-
-            {/* Course Title */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
-                Tên Khóa Học <span className="text-rose-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ví dụ: Làm Chủ Trí Tuệ Nhân Tạo & AI Generative..."
-                className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:border-emerald-500/80"
-                required
-              />
-            </div>
-
-            {/* Row 1: Category & Instructor Searchable Comboboxes */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <SearchableSelect
-                label="Danh Mục / Chủ Đề"
-                value={category}
-                onChange={setCategory}
-                options={categories}
-                placeholder="Tìm hoặc gõ danh mục mới..."
-                allowCustom={true}
-                onAddNewOption={(newCat) => onAddCategory && onAddCategory(newCat)}
-                required={true}
-              />
-
-              <SearchableSelect
-                label="Tác Giả / Giảng Viên"
-                icon={<User className="w-3.5 h-3.5 text-emerald-400" />}
-                value={instructor}
-                onChange={setInstructor}
-                options={existingInstructors}
-                placeholder="Chọn hoặc gõ tên tác giả mới..."
-                allowCustom={true}
-              />
-            </div>
-
-            {/* Row 2: Source Platform Searchable & Tags */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <SearchableSelect
-                label="Nguồn Mua / Nền Tảng"
-                icon={<Globe className="w-3.5 h-3.5 text-teal-400" />}
-                value={sourcePlatform}
-                onChange={setSourcePlatform}
-                options={sources}
-                placeholder="Tìm hoặc gõ nguồn mới..."
-                allowCustom={true}
-                onAddNewOption={(newSrc) => onAddSource && onAddSource(newSrc)}
-              />
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Thẻ Tags (cách nhau bởi dấu phẩy)
-                </label>
-                <input
-                  type="text"
-                  value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
-                  placeholder="AI, Lập trình, NextJS, ChatGPT..."
-                  className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:border-emerald-500/80"
-                />
-              </div>
-            </div>
-
-            {/* Row 3: Thumbnail & Description */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Ảnh Bìa (Thumbnail URL)</label>
-                <input
-                  type="url"
-                  value={thumbnailUrl}
-                  onChange={(e) => setThumbnailUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:border-emerald-500/80"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Mô Tả Ngắn</label>
-                <input
-                  type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Tóm tắt ngắn gọn nội dung và giá trị khóa học..."
-                  className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:border-emerald-500/80"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Curriculum Reordering & Multi-Format Lessons */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <FolderOpen className="w-4 h-4 text-teal-400" />
-                  <span>Giáo Trình & Bài Học ({chapters.reduce((acc, ch) => acc + ch.lessons.length, 0)} bài)</span>
-                </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  💡 Giữ và kéo biểu tượng <strong>⠿</strong> để sắp xếp lại thứ tự chương và bài học
-                </p>
-              </div>
+          {/* Section Mode Navigation (Curriculum vs General Info) + Save */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setStudioSection('curriculum')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  studioSection === 'curriculum'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Giáo Trình 2 Cột</span>
+              </button>
 
               <button
                 type="button"
-                onClick={handleAddChapter}
-                className="px-3.5 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                onClick={() => setStudioSection('info')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  studioSection === 'info'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Thêm Chương Mới</span>
+                <Settings className="w-3.5 h-3.5" />
+                <span>Thông Tin Khóa Học</span>
               </button>
             </div>
 
-            {/* Chapters List (Reorderable) */}
-            <div className="space-y-4">
-              {chapters.map((chapter, chIdx) => {
-                const isExpanded = expandedChapterIds[chapter.id] !== false;
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="px-5 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition-all"
+            >
+              <Save className="w-4 h-4" />
+              <span>{courseToEdit ? 'Lưu Thay Đổi' : 'Tạo Khóa Học'}</span>
+            </button>
 
-                return (
-                  <div 
-                    key={chapter.id}
-                    draggable
-                    onDragStart={() => handleChapterDragStart(chIdx)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => handleChapterDrop(chIdx)}
-                    className={`border rounded-3xl bg-slate-950/60 overflow-hidden shadow-md transition-all ${
-                      draggedChapterIdx === chIdx ? 'opacity-40 border-dashed border-teal-500' : 'border-slate-800'
-                    }`}
+            <button
+              onClick={onClose}
+              className="p-2 rounded-2xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Studio Body */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          
+          {/* SECTION 1: 2-COLUMN CURRICULUM WORKSPACE */}
+          {studioSection === 'curriculum' && (
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden h-full">
+              
+              {/* COLUMN 1: Curriculum Tree Sidebar (35% width) */}
+              <div className="md:col-span-4 lg:col-span-4 border-r border-slate-800 bg-slate-950/70 flex flex-col h-full overflow-hidden">
+                
+                {/* Column 1 Header */}
+                <div className="p-3.5 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <FolderOpen className="w-4 h-4 text-teal-400" />
+                    <span>Mục Lục ({chapters.length} chương)</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleAddChapter}
+                    className="px-2.5 py-1 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all"
                   >
-                    {/* Chapter Header with Drag Handle */}
-                    <div className="p-3.5 bg-slate-900/90 flex items-center justify-between gap-3 border-b border-slate-800/80">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Plus className="w-3 h-3" />
+                    <span>+ Thêm Chương</span>
+                  </button>
+                </div>
+
+                {/* Chapters & Lessons Tree List */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+                  {chapters.map((chapter, chIdx) => (
+                    <div 
+                      key={chapter.id}
+                      className="border border-slate-800/80 rounded-2xl bg-slate-900/60 overflow-hidden shadow-sm"
+                    >
+                      {/* Chapter Title Row */}
+                      <div className="p-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between gap-2 group">
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <FolderOpen className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={chapter.title}
+                            onChange={(e) => handleUpdateChapterTitle(chapter.id, e.target.value)}
+                            placeholder="Tên chương..."
+                            className="text-xs font-bold text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-emerald-500 px-1 py-0.5 flex-1 focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddLesson(chapter.id, e)}
+                            title="Thêm bài học vào chương này"
+                            className="p-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[11px]"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+
+                          {chapters.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteChapter(chapter.id, e)}
+                              title="Xóa chương này"
+                              className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Lessons in Chapter */}
+                      <div className="p-1.5 space-y-1">
+                        {chapter.lessons.map((lesson, lIdx) => {
+                          const isActive = activeSelection?.chId === chapter.id && activeSelection?.lessonId === lesson.id;
+                          const lessonType = lesson.type || 'video';
+
+                          return (
+                            <div
+                              key={lesson.id}
+                              onClick={() => setActiveSelection({ chId: chapter.id, lessonId: lesson.id })}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={() => handleLessonDrop(chIdx, lIdx)}
+                              className={`group/lesson flex items-center justify-between p-2 rounded-xl text-xs transition-all cursor-pointer border ${
+                                isActive
+                                  ? 'bg-emerald-500/15 border-emerald-500/60 text-white font-bold shadow-sm ring-1 ring-emerald-500/20'
+                                  : 'bg-slate-950/40 border-slate-800/60 text-slate-300 hover:bg-slate-800/50 hover:border-slate-700'
+                              }`}
+                            >
+                              {/* Left: Drag Handle ONLY + Type Icon + Title */}
+                              <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                                
+                                {/* DRAG HANDLE: Drag ONLY starts from this icon */}
+                                <div
+                                  draggable
+                                  onDragStart={(e) => handleLessonDragStart(chIdx, lIdx, e)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="cursor-grab active:cursor-grabbing p-1 text-slate-600 hover:text-emerald-400 flex-shrink-0"
+                                  title="Kéo thả để sắp xếp vị trí bài học"
+                                >
+                                  <GripVertical className="w-3.5 h-3.5" />
+                                </div>
+
+                                <div className="flex-shrink-0">
+                                  {lessonType === 'article' ? (
+                                    <FileText className="w-3.5 h-3.5 text-teal-400" />
+                                  ) : lessonType === 'mixed' ? (
+                                    <Layers className="w-3.5 h-3.5 text-amber-400" />
+                                  ) : (
+                                    <Play className="w-3.5 h-3.5 text-emerald-400 fill-current" />
+                                  )}
+                                </div>
+
+                                <span className="truncate text-xs">{lesson.title}</span>
+                              </div>
+
+                              {/* Right: Delete button */}
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteLesson(chapter.id, lesson.id, e)}
+                                className="opacity-0 group-hover/lesson:opacity-100 p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-opacity"
+                                title="Xóa bài này"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* COLUMN 2: Active Lesson Workspace & Rich Editor (65% width) */}
+              <div className="md:col-span-8 lg:col-span-8 bg-slate-900 flex flex-col h-full overflow-y-auto custom-scrollbar p-6 space-y-6">
+                
+                {activeLesson ? (
+                  <div className="space-y-6 max-w-4xl mx-auto w-full">
+                    
+                    {/* Header Row: Title & Format Selector */}
+                    <div className="space-y-3 p-5 rounded-3xl bg-slate-950/70 border border-slate-800 shadow-md">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
                         
-                        {/* Chapter Drag Handle */}
-                        <div 
-                          className="cursor-grab active:cursor-grabbing p-1 text-slate-500 hover:text-slate-200"
-                          title="Kéo để đổi thứ tự chương"
-                        >
-                          <GripVertical className="w-4 h-4" />
+                        {/* Format Switcher */}
+                        <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateActiveLesson('type', 'video')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                              (activeLesson.type || 'video') === 'video'
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            <Video className="w-3.5 h-3.5" />
+                            <span>Video Abyss</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateActiveLesson('type', 'article')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                              activeLesson.type === 'article'
+                                ? 'bg-teal-600 text-white shadow-sm'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Bài Viết / Bài Đọc</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateActiveLesson('type', 'mixed')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                              activeLesson.type === 'mixed'
+                                ? 'bg-amber-600 text-white shadow-sm'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            <Layers className="w-3.5 h-3.5" />
+                            <span>Cả Video & Bài Viết</span>
+                          </button>
+                        </div>
+
+                        {/* Estimated time */}
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-slate-400 flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Thời lượng:</span>
+                          </label>
+                          <input
+                            type="number"
+                            value={activeLesson.durationMinutes || 15}
+                            onChange={(e) => handleUpdateActiveLesson('durationMinutes', parseInt(e.target.value) || 0)}
+                            className="w-20 px-2.5 py-1 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white text-center font-bold"
+                          />
+                          <span className="text-xs text-slate-500">phút</span>
+                        </div>
+                      </div>
+
+                      {/* Lesson Title Input */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1">
+                          Tiêu Đề Bài Giảng <span className="text-rose-400">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={activeLesson.title}
+                          onChange={(e) => handleUpdateActiveLesson('title', e.target.value)}
+                          placeholder="Nhập tiêu đề bài học..."
+                          className="w-full px-4 py-2.5 text-sm sm:text-base font-bold bg-slate-900 border border-slate-800 rounded-2xl text-white focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Video Configuration (If video or mixed) */}
+                    {(activeLesson.type === 'video' || activeLesson.type === 'mixed' || !activeLesson.type) && (
+                      <div className="p-5 rounded-3xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-md">
+                        <label className="block text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                          <Video className="w-4 h-4" />
+                          <span>Nguồn Video Abyss (URL hoặc Iframe embed code)</span>
+                        </label>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={activeLesson.videoSource || ''}
+                            onChange={(e) => handleUpdateActiveLesson('videoSource', e.target.value)}
+                            placeholder="Dán link Abyss: https://abyssplayer.com/ID hoặc mã <iframe...>"
+                            className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-slate-200 placeholder-slate-500 focus:border-emerald-500 font-mono text-[11px]"
+                          />
+                          {activeLesson.videoSource && extractAbyssId(activeLesson.videoSource) && (
+                            <span className="text-[10px] font-mono font-bold px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+                              ID: {extractAbyssId(activeLesson.videoSource)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rich Text Editor for Article / Reading Content */}
+                    {(activeLesson.type === 'article' || activeLesson.type === 'mixed') && (
+                      <div className="space-y-2">
+                        <RichTextEditor
+                          value={activeLesson.content || ''}
+                          onChange={(val) => handleUpdateActiveLesson('content', val)}
+                          placeholder="Soạn thảo nội dung bài học chi tiết tại đây (H1-H3, in đậm, khối code, danh sách, trích dẫn)... Bôi đen văn bản tự nhiên không lo kéo thả!"
+                          minHeight="260px"
+                          label="Soạn Thảo Bài Viết / Hướng Dẫn Chi Tiết"
+                        />
+                      </div>
+                    )}
+
+                    {/* Attachments Section */}
+                    <div className="p-5 rounded-3xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Paperclip className="w-4 h-4 text-emerald-400" />
+                          <h4 className="text-xs font-bold text-slate-200">
+                            Tài Liệu Đính Kèm ({activeLesson.attachments?.length || 0})
+                          </h4>
                         </div>
 
                         <button
                           type="button"
-                          onClick={() => toggleChapterExpand(chapter.id)}
-                          className="p-1 text-slate-400 hover:text-white"
-                        >
-                          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                        </button>
-
-                        <input
-                          type="text"
-                          value={chapter.title}
-                          onChange={(e) => handleUpdateChapterTitle(chapter.id, e.target.value)}
-                          placeholder={`Chương ${chIdx + 1}: Tiêu đề chương...`}
-                          className="font-bold text-xs sm:text-sm text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-emerald-500 px-1 py-0.5 flex-1 focus:outline-none"
-                        />
-                      </div>
-
-                      {/* Chapter Reorder Buttons & Actions */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded-full bg-slate-800 mr-1">
-                          {chapter.lessons.length} bài
-                        </span>
-
-                        {/* Move Up / Down Chapter */}
-                        <button
-                          type="button"
-                          disabled={chIdx === 0}
-                          onClick={() => moveChapter(chIdx, chIdx - 1)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-white disabled:opacity-20 transition-colors"
-                          title="Di chuyển chương lên trên"
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={chIdx === chapters.length - 1}
-                          onClick={() => moveChapter(chIdx, chIdx + 1)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-white disabled:opacity-20 transition-colors"
-                          title="Di chuyển chương xuống dưới"
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-
-                        <div className="h-4 w-[1px] bg-slate-800 mx-1" />
-
-                        <button
-                          type="button"
-                          onClick={() => handleAddLesson(chapter.id)}
-                          title="Thêm bài học mới vào chương này"
-                          className="p-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white transition-colors"
+                          onClick={handleAddAttachment}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white text-xs font-bold flex items-center gap-1.5 border border-emerald-500/30 transition-all shadow-sm"
                         >
                           <Plus className="w-3.5 h-3.5" />
+                          <span>+ Thêm File/Link</span>
                         </button>
-
-                        {chapters.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteChapter(chapter.id)}
-                            title="Xóa chương này"
-                            className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
                       </div>
+
+                      {/* Attachments List */}
+                      {(!activeLesson.attachments || activeLesson.attachments.length === 0) ? (
+                        <p className="text-xs text-slate-500 italic py-2">
+                          Chưa có tài liệu đính kèm cho bài này. Bấm "+ Thêm File/Link" để chèn Slide PDF, Google Drive, Repo GitHub hoặc link bài tập.
+                        </p>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {activeLesson.attachments.map((att) => (
+                            <div 
+                              key={att.id}
+                              className="flex flex-wrap items-center gap-2 bg-slate-900/90 p-2.5 rounded-2xl border border-slate-800"
+                            >
+                              <input
+                                type="text"
+                                value={att.name}
+                                onChange={(e) => handleUpdateAttachment(att.id, 'name', e.target.value)}
+                                placeholder="Tên tài liệu..."
+                                className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 flex-1 min-w-[160px] focus:border-emerald-500"
+                              />
+
+                              <input
+                                type="url"
+                                value={att.url}
+                                onChange={(e) => handleUpdateAttachment(att.id, 'url', e.target.value)}
+                                placeholder="https://..."
+                                className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-300 font-mono text-[11px] flex-1 min-w-[180px] focus:border-emerald-500"
+                              />
+
+                              <select
+                                value={att.type || 'link'}
+                                onChange={(e) => handleUpdateAttachment(att.id, 'type', e.target.value as any)}
+                                className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-300 focus:border-emerald-500"
+                              >
+                                <option value="pdf">📄 PDF</option>
+                                <option value="drive">📁 Google Drive</option>
+                                <option value="github">🐙 GitHub</option>
+                                <option value="link">🔗 Link ngoài</option>
+                              </select>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAttachment(att.id)}
+                                className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Chapter Lessons List (Reorderable) */}
-                    {isExpanded && (
-                      <div className="p-4 space-y-3.5">
-                        {chapter.lessons.length === 0 ? (
-                          <div className="py-6 text-center text-xs text-slate-500">
-                            Chưa có bài học nào trong chương này.{' '}
-                            <button
-                              type="button"
-                              onClick={() => handleAddLesson(chapter.id)}
-                              className="text-emerald-400 underline font-bold"
-                            >
-                              + Thêm bài đầu tiên
-                            </button>
-                          </div>
-                        ) : (
-                          chapter.lessons.map((lesson, lIdx) => {
-                            const lessonType = lesson.type || 'video';
-                            const abyssId = lesson.videoSource ? extractAbyssId(lesson.videoSource) : null;
-                            const isAttExpanded = expandedAttachmentLessonIds[lesson.id] === true;
-                            const attCount = lesson.attachments?.length || 0;
-                            const isBeingDragged = draggedLessonInfo?.chIdx === chIdx && draggedLessonInfo?.lIdx === lIdx;
-
-                            return (
-                              <div
-                                key={lesson.id}
-                                draggable
-                                onDragStart={(e) => {
-                                  e.stopPropagation();
-                                  handleLessonDragStart(chIdx, lIdx);
-                                }}
-                                onDragOver={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                                onDrop={(e) => {
-                                  e.stopPropagation();
-                                  handleLessonDrop(chIdx, lIdx);
-                                }}
-                                className={`p-4 rounded-2xl bg-slate-900/90 border space-y-3.5 shadow-sm transition-all ${
-                                  isBeingDragged
-                                    ? 'opacity-40 border-dashed border-emerald-500 bg-slate-950'
-                                    : 'border-slate-800/90 hover:border-slate-700'
-                                }`}
-                              >
-                                {/* Lesson Top Row: Drag Handle + Title + Format Switcher + Order Arrows + Delete */}
-                                <div className="flex flex-wrap items-center justify-between gap-2.5">
-                                  
-                                  {/* Left: Drag Handle + Index + Lesson Title */}
-                                  <div className="flex items-center gap-2 flex-1 min-w-[240px]">
-                                    <div 
-                                      className="cursor-grab active:cursor-grabbing p-1 text-slate-500 hover:text-emerald-400"
-                                      title="Kéo để đổi thứ tự bài học"
-                                    >
-                                      <GripVertical className="w-4 h-4" />
-                                    </div>
-
-                                    <span className="text-[11px] font-mono text-slate-500 font-bold px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800">
-                                      #{lIdx + 1}
-                                    </span>
-
-                                    <input
-                                      type="text"
-                                      value={lesson.title}
-                                      onChange={(e) => handleUpdateLesson(chapter.id, lesson.id, 'title', e.target.value)}
-                                      placeholder={`Bài ${lIdx + 1}: Tên bài giảng...`}
-                                      className="text-xs sm:text-sm font-bold text-white bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 flex-1 focus:border-emerald-500/80"
-                                      required
-                                    />
-                                  </div>
-
-                                  {/* Middle: Lesson Format Switcher */}
-                                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUpdateLesson(chapter.id, lesson.id, 'type', 'video')}
-                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all ${
-                                        lessonType === 'video'
-                                          ? 'bg-emerald-600 text-white shadow-sm'
-                                          : 'text-slate-400 hover:text-slate-200'
-                                      }`}
-                                      title="Bài học video Abyss"
-                                    >
-                                      <Video className="w-3 h-3" />
-                                      <span>Video</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUpdateLesson(chapter.id, lesson.id, 'type', 'article')}
-                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all ${
-                                        lessonType === 'article'
-                                          ? 'bg-teal-600 text-white shadow-sm'
-                                          : 'text-slate-400 hover:text-slate-200'
-                                      }`}
-                                      title="Bài đọc / Bài viết lý thuyết Markdown"
-                                    >
-                                      <FileText className="w-3 h-3" />
-                                      <span>Bài Viết</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleUpdateLesson(chapter.id, lesson.id, 'type', 'mixed')}
-                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all ${
-                                        lessonType === 'mixed'
-                                          ? 'bg-amber-600 text-white shadow-sm'
-                                          : 'text-slate-400 hover:text-slate-200'
-                                      }`}
-                                      title="Bao gồm cả Video và Bài viết Markdown"
-                                    >
-                                      <Layers className="w-3 h-3" />
-                                      <span>Cả Hai</span>
-                                    </button>
-                                  </div>
-
-                                  {/* Right: Quick Move Up/Down + Delete */}
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      type="button"
-                                      disabled={lIdx === 0}
-                                      onClick={() => moveLesson(chIdx, lIdx, lIdx - 1)}
-                                      className="p-1 rounded text-slate-500 hover:text-white disabled:opacity-20 transition-colors"
-                                      title="Di chuyển bài lên"
-                                    >
-                                      <ChevronUp className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      disabled={lIdx === chapter.lessons.length - 1}
-                                      onClick={() => moveLesson(chIdx, lIdx, lIdx + 1)}
-                                      className="p-1 rounded text-slate-500 hover:text-white disabled:opacity-20 transition-colors"
-                                      title="Di chuyển bài xuống"
-                                    >
-                                      <ChevronDown className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteLesson(chapter.id, lesson.id)}
-                                      className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                                      title="Xóa bài học này"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Video Link Input (If video or mixed) */}
-                                {(lessonType === 'video' || lessonType === 'mixed') && (
-                                  <div className="flex items-center gap-2">
-                                    <div className="relative flex-1">
-                                      <Video className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
-                                      <input
-                                        type="text"
-                                        value={lesson.videoSource || ''}
-                                        onChange={(e) => handleUpdateLesson(chapter.id, lesson.id, 'videoSource', e.target.value)}
-                                        placeholder="Dán link Abyss (https://abyssplayer.com/ID) hoặc mã <iframe...>"
-                                        className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-500 focus:border-emerald-500/80 font-mono"
-                                      />
-                                    </div>
-                                    {abyssId && (
-                                      <span className="text-[10px] font-mono font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
-                                        ID: {abyssId}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Article Content Rich Text Editor Toolbar (If article or mixed) */}
-                                {(lessonType === 'article' || lessonType === 'mixed') && (
-                                  <div className="space-y-1.5 pt-1">
-                                    <RichTextEditor
-                                      value={lesson.content || ''}
-                                      onChange={(val) => handleUpdateLesson(chapter.id, lesson.id, 'content', val)}
-                                      placeholder="Soạn thảo nội dung bài học chi tiết tại đây (H1, in đậm, danh sách, khối code, trích dẫn)..."
-                                      minHeight="180px"
-                                      label="Soạn Thảo Bài Viết / Tài Liệu"
-                                    />
-                                  </div>
-                                )}
-
-                                {/* Attachments Manager Accordion */}
-                                <div className="border-t border-slate-800/80 pt-2.5">
-                                  <div className="flex items-center justify-between">
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleAttachmentExpand(lesson.id)}
-                                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors py-0.5"
-                                    >
-                                      <Paperclip className="w-3.5 h-3.5 text-emerald-400" />
-                                      <span>Tài Liệu Đính Kèm ({attCount})</span>
-                                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAttExpanded ? 'rotate-180 text-emerald-400' : ''}`} />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleAddAttachment(chapter.id, lesson.id)}
-                                      className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all"
-                                    >
-                                      <Plus className="w-3 h-3" />
-                                      <span>+ Thêm File/Link</span>
-                                    </button>
-                                  </div>
-
-                                  {/* Attachments List */}
-                                  {isAttExpanded && (
-                                    <div className="mt-2.5 space-y-2 bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                                      {attCount === 0 ? (
-                                        <p className="text-[11px] text-slate-500 italic py-1">
-                                          Chưa có tài liệu đính kèm nào. Bấm "+ Thêm File/Link" để chèn Slide, Drive, GitHub hoặc tài liệu đọc.
-                                        </p>
-                                      ) : (
-                                        lesson.attachments?.map((att) => (
-                                          <div key={att.id} className="flex flex-wrap items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800">
-                                            {/* Attachment Name */}
-                                            <input
-                                              type="text"
-                                              value={att.name}
-                                              onChange={(e) => handleUpdateAttachment(chapter.id, lesson.id, att.id, 'name', e.target.value)}
-                                              placeholder="Tên tài liệu (Ví dụ: Slide PDF, Kho Prompt...)"
-                                              className="text-xs bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-200 flex-1 min-w-[140px] focus:border-emerald-500"
-                                            />
-
-                                            {/* Attachment URL */}
-                                            <input
-                                              type="url"
-                                              value={att.url}
-                                              onChange={(e) => handleUpdateAttachment(chapter.id, lesson.id, att.id, 'url', e.target.value)}
-                                              placeholder="https://drive.google.com/..."
-                                              className="text-xs bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-300 font-mono text-[11px] flex-1 min-w-[160px] focus:border-emerald-500"
-                                            />
-
-                                            {/* Type Selector */}
-                                            <select
-                                              value={att.type || 'link'}
-                                              onChange={(e) => handleUpdateAttachment(chapter.id, lesson.id, att.id, 'type', e.target.value as any)}
-                                              className="text-[11px] bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-300 focus:border-emerald-500"
-                                            >
-                                              <option value="pdf">📄 PDF</option>
-                                              <option value="drive">📁 Drive</option>
-                                              <option value="github">🐙 GitHub</option>
-                                              <option value="link">🔗 Link</option>
-                                            </select>
-
-                                            {/* Delete Attachment */}
-                                            <button
-                                              type="button"
-                                              onClick={() => handleDeleteAttachment(chapter.id, lesson.id, att.id)}
-                                              className="p-1 rounded-lg text-slate-500 hover:text-rose-400 transition-colors"
-                                              title="Xóa tài liệu này"
-                                            >
-                                              <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                          </div>
-                                        ))
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    )}
                   </div>
-                );
-              })}
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3">
+                    <BookOpen className="w-12 h-12 text-slate-600" />
+                    <p className="text-sm">Hãy chọn một bài học từ cột mục lục bên trái để bắt đầu soạn thảo.</p>
+                  </div>
+                )}
+
+              </div>
+
             </div>
-          </div>
+          )}
 
-          {/* Form Actions Footer */}
-          <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 text-xs font-bold transition-colors"
-            >
-              Hủy Bỏ
-            </button>
+          {/* SECTION 2: COURSE GENERAL INFO SETTINGS */}
+          {studioSection === 'info' && (
+            <div className="flex-1 overflow-y-auto p-6 max-w-4xl mx-auto w-full space-y-6 custom-scrollbar">
+              <div className="p-6 rounded-3xl bg-slate-950/70 border border-slate-800/80 space-y-5 shadow-xl">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+                  <Settings className="w-4 h-4 text-emerald-400" />
+                  <span>Thông Tin Cơ Bản Khóa Học</span>
+                </h3>
 
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition-all"
-            >
-              <Save className="w-4 h-4" />
-              <span>{courseToEdit ? 'Lưu Thay Đổi' : 'Tạo Khóa Học Ngay'}</span>
-            </button>
-          </div>
+                {/* Title */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Tên Khóa Học <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Ví dụ: Làm Chủ Trí Tuệ Nhân Tạo & AI Generative..."
+                    className="w-full px-4 py-2.5 text-sm bg-slate-900 border border-slate-800 rounded-2xl text-white focus:border-emerald-500"
+                    required
+                  />
+                </div>
 
-        </form>
+                {/* Category & Instructor */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <SearchableSelect
+                    label="Danh Mục / Chủ Đề"
+                    value={category}
+                    onChange={setCategory}
+                    options={categories}
+                    placeholder="Tìm hoặc gõ danh mục mới..."
+                    allowCustom={true}
+                    onAddNewOption={(newCat) => onAddCategory && onAddCategory(newCat)}
+                    required={true}
+                  />
+
+                  <SearchableSelect
+                    label="Tác Giả / Giảng Viên"
+                    icon={<User className="w-3.5 h-3.5 text-emerald-400" />}
+                    value={instructor}
+                    onChange={setInstructor}
+                    options={existingInstructors}
+                    placeholder="Chọn hoặc gõ tên tác giả mới..."
+                    allowCustom={true}
+                  />
+                </div>
+
+                {/* Source & Tags */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <SearchableSelect
+                    label="Nguồn Mua / Nền Tảng"
+                    icon={<Globe className="w-3.5 h-3.5 text-teal-400" />}
+                    value={sourcePlatform}
+                    onChange={setSourcePlatform}
+                    options={sources}
+                    placeholder="Tìm hoặc gõ nguồn mới..."
+                    allowCustom={true}
+                    onAddNewOption={(newSrc) => onAddSource && onAddSource(newSrc)}
+                  />
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Thẻ Tags (cách nhau bởi dấu phẩy)
+                    </label>
+                    <input
+                      type="text"
+                      value={tagsInput}
+                      onChange={(e) => setTagsInput(e.target.value)}
+                      placeholder="AI, Lập trình, NextJS, ChatGPT..."
+                      className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-white focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Thumbnail & Description */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Ảnh Bìa (Thumbnail URL)</label>
+                    <input
+                      type="url"
+                      value={thumbnailUrl}
+                      onChange={(e) => setThumbnailUrl(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-white focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Mô Tả Ngắn Khóa Học</label>
+                    <textarea
+                      rows={3}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Tóm tắt ngắn gọn nội dung và giá trị khóa học..."
+                      className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-white focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setStudioSection('curriculum')}
+                    className="px-6 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg"
+                  >
+                    <span>Tiếp tục Soạn Thảo Giáo Trình ➔</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
 
       </div>
     </div>

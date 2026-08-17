@@ -11,7 +11,6 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
-  ChevronLeft,
   Video,
   Layers,
   Paperclip,
@@ -21,7 +20,8 @@ import {
   Clock,
   PanelLeftClose,
   PanelLeftOpen,
-  BookMarked
+  BookMarked,
+  AlertTriangle
 } from 'lucide-react';
 import { extractAbyssId } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
@@ -62,8 +62,10 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [tagsInput, setTagsInput] = useState<string>('');
   const [chapters, setChapters] = useState<Chapter[]>([]);
 
+  // Initial Snapshot for Unsaved Changes tracking
+  const [initialSnapshot, setInitialSnapshot] = useState<string>('');
+
   // Studio Mode: 'info' (Thông tin) | 'curriculum' (Giáo trình)
-  // When creating new course -> 'info' first. When editing existing course -> 'curriculum' first.
   const [studioSection, setStudioSection] = useState<'info' | 'curriculum'>('curriculum');
 
   // Selected Active Lesson for 2-column workspace
@@ -75,6 +77,9 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
   // Drag and Drop state (ONLY triggered on the Grip handle)
   const [draggedLessonInfo, setDraggedLessonInfo] = useState<{ chIdx: number; lIdx: number } | null>(null);
+
+  // Modal alert confirmation for unsaved changes
+  const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
 
   // Auto-collect unique instructors across existing courses
   const existingInstructors = useMemo(() => {
@@ -91,64 +96,140 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   }, [allCourses]);
 
   useEffect(() => {
-    if (courseToEdit) {
-      // Editing existing course -> Default to 'curriculum' tab
-      setStudioSection('curriculum');
-      setTitle(courseToEdit.title);
-      setDescription(courseToEdit.description || '');
-      setCategory(courseToEdit.category || categories[0] || 'Chung');
-      setInstructor(courseToEdit.instructor || '');
-      setSourcePlatform(courseToEdit.sourcePlatform || sources[0] || 'Khác');
-      setThumbnailUrl(courseToEdit.thumbnailUrl || '');
-      setTagsInput(courseToEdit.tags?.join(', ') || '');
-      setChapters(courseToEdit.chapters || []);
-      setCollapsedChapterIds({});
+    if (isOpen) {
+      setShowUnsavedConfirmModal(false);
 
-      const firstCh = courseToEdit.chapters[0];
-      const firstLes = firstCh?.lessons[0];
-      if (firstCh && firstLes) {
-        setActiveSelection({ chId: firstCh.id, lessonId: firstLes.id });
-      } else {
-        setActiveSelection(null);
-      }
-    } else {
-      // Creating NEW course -> Default to 'info' tab
-      setStudioSection('info');
-      setTitle('');
-      setDescription('');
-      setCategory(categories[0] || 'AI & Machine Learning');
-      setInstructor('');
-      setSourcePlatform(sources[0] || 'Udemy');
-      setThumbnailUrl('');
-      setTagsInput('');
-      setCollapsedChapterIds({});
-      const defaultChId = `ch-${Date.now()}`;
-      const defaultLesId = `les-${Date.now()}-1`;
-      setChapters([
-        {
-          id: defaultChId,
-          title: 'Chương 1: Khởi động & Nền tảng',
-          order: 1,
-          lessons: [
-            {
-              id: defaultLesId,
-              title: 'Bài 1: Giới thiệu tổng quan',
-              type: 'video',
-              videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
-              content: '',
-              durationMinutes: 15,
-              isCompleted: false,
-              isStarred: false,
-              attachments: [],
-            }
-          ]
+      if (courseToEdit) {
+        // Editing existing course -> Default to 'curriculum' tab
+        setStudioSection('curriculum');
+        setTitle(courseToEdit.title);
+        setDescription(courseToEdit.description || '');
+        setCategory(courseToEdit.category || categories[0] || 'Chung');
+        setInstructor(courseToEdit.instructor || '');
+        setSourcePlatform(courseToEdit.sourcePlatform || sources[0] || 'Khác');
+        setThumbnailUrl(courseToEdit.thumbnailUrl || '');
+        setTagsInput(courseToEdit.tags?.join(', ') || '');
+        setChapters(courseToEdit.chapters || []);
+        setCollapsedChapterIds({});
+
+        const firstCh = courseToEdit.chapters[0];
+        const firstLes = firstCh?.lessons[0];
+        if (firstCh && firstLes) {
+          setActiveSelection({ chId: firstCh.id, lessonId: firstLes.id });
+        } else {
+          setActiveSelection(null);
         }
-      ]);
-      setActiveSelection({ chId: defaultChId, lessonId: defaultLesId });
+
+        // Save initial snapshot
+        setInitialSnapshot(JSON.stringify({
+          title: courseToEdit.title,
+          description: courseToEdit.description || '',
+          category: courseToEdit.category || categories[0] || 'Chung',
+          instructor: courseToEdit.instructor || '',
+          sourcePlatform: courseToEdit.sourcePlatform || sources[0] || 'Khác',
+          thumbnailUrl: courseToEdit.thumbnailUrl || '',
+          tagsInput: courseToEdit.tags?.join(', ') || '',
+          chapters: courseToEdit.chapters || []
+        }));
+      } else {
+        // Creating NEW course -> Default to 'info' tab
+        setStudioSection('info');
+        setTitle('');
+        setDescription('');
+        setCategory(categories[0] || 'AI & Machine Learning');
+        setInstructor('');
+        setSourcePlatform(sources[0] || 'Udemy');
+        setThumbnailUrl('');
+        setTagsInput('');
+        setCollapsedChapterIds({});
+        const defaultChId = `ch-${Date.now()}`;
+        const defaultLesId = `les-${Date.now()}-1`;
+        const initChapters: Chapter[] = [
+          {
+            id: defaultChId,
+            title: 'Chương 1: Khởi động & Nền tảng',
+            order: 1,
+            lessons: [
+              {
+                id: defaultLesId,
+                title: 'Bài 1: Giới thiệu tổng quan',
+                type: 'video',
+                videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
+                content: '',
+                durationMinutes: 15,
+                isCompleted: false,
+                isStarred: false,
+                attachments: [],
+              }
+            ]
+          }
+        ];
+        setChapters(initChapters);
+        setActiveSelection({ chId: defaultChId, lessonId: defaultLesId });
+
+        // Save initial snapshot for new course
+        setInitialSnapshot(JSON.stringify({
+          title: '',
+          description: '',
+          category: categories[0] || 'AI & Machine Learning',
+          instructor: '',
+          sourcePlatform: sources[0] || 'Udemy',
+          thumbnailUrl: '',
+          tagsInput: '',
+          chapters: initChapters
+        }));
+      }
     }
   }, [courseToEdit, isOpen, categories, sources]);
 
+  // Compute if form has unsaved modifications
+  const currentSnapshot = useMemo(() => {
+    return JSON.stringify({
+      title,
+      description,
+      category,
+      instructor,
+      sourcePlatform,
+      thumbnailUrl,
+      tagsInput,
+      chapters
+    });
+  }, [title, description, category, instructor, sourcePlatform, thumbnailUrl, tagsInput, chapters]);
+
+  const isDirty = useMemo(() => {
+    if (!initialSnapshot) return false;
+    return currentSnapshot !== initialSnapshot;
+  }, [currentSnapshot, initialSnapshot]);
+
+  // Prevent accidental tab reload / page close with beforeunload
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isOpen && isDirty) {
+        e.preventDefault();
+        e.returnValue = 'Bạn có các thay đổi chưa được lưu trong khóa học. Bạn có chắc chắn muốn rời đi?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isOpen, isDirty]);
+
   if (!isOpen) return null;
+
+  // Safe Close Handler: Warns if there are unsaved changes
+  const handleSafeClose = () => {
+    if (isDirty) {
+      setShowUnsavedConfirmModal(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleForceClose = () => {
+    setShowUnsavedConfirmModal(false);
+    onClose();
+  };
 
   // Active Lesson & Chapter computed
   const activeChapter = chapters.find(ch => ch.id === activeSelection?.chId) || chapters[0];
@@ -334,8 +415,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     handleUpdateActiveLesson('attachments', updated);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!title.trim()) {
       alert('Vui lòng nhập tên khóa học ở mục Thông Tin!');
       setStudioSection('info');
@@ -371,20 +452,28 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden animate-fade-in">
       <div className="relative w-full max-w-7xl h-[92vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
         
-        {/* Top Header Bar with Tab Switchers & Save */}
+        {/* Top Header Bar with Tab Switchers, Unsaved Indicator & Save */}
         <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-lg shadow-emerald-500/20">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
                   {title || (courseToEdit ? 'Chỉnh Sửa Khóa Học' : 'Tạo Khóa Học Mới')}
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-bold">
                   {totalLessonsCount} bài
                 </span>
+
+                {/* Unsaved Changes Visual Pill */}
+                {isDirty && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <span>Chưa lưu thay đổi</span>
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400">
                 Giao diện 2 cột chuyên nghiệp: Mục lục bên trái & Soạn thảo chi tiết bên phải
@@ -424,16 +513,19 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={() => handleSubmit()}
               className="px-5 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition-all"
             >
               <Save className="w-4 h-4" />
               <span>{courseToEdit ? 'Lưu Thay Đổi' : 'Tạo Khóa Học'}</span>
             </button>
 
+            {/* Safe Close Button */}
             <button
-              onClick={onClose}
+              type="button"
+              onClick={handleSafeClose}
               className="p-2 rounded-2xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Đóng cửa sổ soạn thảo"
             >
               <X className="w-5 h-5" />
             </button>
@@ -984,6 +1076,49 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           )}
 
         </div>
+
+        {/* Unsaved Changes Warning Modal Confirmation */}
+        {showUnsavedConfirmModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+            <div className="relative w-full max-w-md bg-slate-900 border border-amber-500/40 rounded-3xl p-6 space-y-4 shadow-2xl shadow-amber-950/40">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white leading-tight">
+                    Cảnh Báo Thay Đổi Chưa Lưu!
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Các nội dung vừa chỉnh sửa sẽ bị mất nếu không lưu.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                Bạn đã thay đổi thông tin hoặc nội dung giáo trình của khóa học nhưng chưa bấm <strong>"Lưu Thay Đổi"</strong>. Bạn có chắc chắn muốn thoát và hủy bỏ toàn bộ chỉnh sửa này không?
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUnsavedConfirmModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+                >
+                  Ở Lại Chỉnh Sửa
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleForceClose}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-md shadow-rose-600/20"
+                >
+                  Thoát & Hủy Bỏ
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

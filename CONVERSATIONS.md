@@ -54,11 +54,37 @@
 
 ## 3. Kiến Trúc Tùy Biến Antigravity 2.0 (Customization Ecosystem)
 
-Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với 3 thành phần:
+Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với các thành phần:
 
-1. **Rules (`.agents/AGENTS.md`):** Quy chuẩn công nghệ Next.js + Tailwind CSS, quy chuẩn bảo mật Iframe Abyss, quy tắc thiết kế Lean UX.
+1. **Rules (`.agents/AGENTS.md`):** Quy chuẩn React 18 + TypeScript + Tailwind CSS, quy chuẩn bảo mật Iframe Abyss, quy tắc thiết kế Lean UX.
 2. **Skills (`.agents/skills/`):**
    * `abyss-media-embedder`: Bóc tách và chuẩn hóa ID/URL Abyss, sinh iframe an toàn.
    * `course-data-manager`: Quản lý cấu trúc dữ liệu JSON, import/export dữ liệu và tiến độ.
-   * `pwa-mobile-optimizer`: Cấu hình PWA manifest và cử chỉ chạm trên di động.
-3. **Workflow:** Planning Mode $\rightarrow$ User Approval $\rightarrow$ Development $\rightarrow$ Verification & Demo.
+   * `ui-ux-pro-max` & `ui-styling`: Thiết kế giao diện Dark theme tối ưu học tập, vi chuyển động.
+   * `a11y-debugging`: Quy chuẩn tiếp cận, điều hướng phím tắt.
+   * `git-commit-formatter`: Quy chuẩn thông điệp Conventional Commits.
+
+---
+
+## 4. Nhật Ký Tiến Độ & Quyết Định Kỹ Thuật (Ngày 17/08/2026)
+
+### A. Tinh gọn Trình phát & Trải nghiệm Học tập (2-Mode System)
+* **Gộp chế độ xem**: Loại bỏ Theater Mode trùng lặp, chỉ giữ **2 chế độ rõ ràng**:
+  1. *Chế độ Học tập Tiêu chuẩn (2 cột)*: Player + Ghi chú bên trái, Danh mục bài giảng Sidebar bên phải.
+  2. *Chế độ Tập trung Cao độ (Zen Focus Mode - Phím `Z`)*: Ẩn 100% Navbar, Sidebar và Footer, đưa video ra trung tâm với kích thước lớn (`max-w-5xl`).
+* **Ghi chú thông minh**: Hỗ trợ chèn mốc thời gian `[mm:ss]` dạng badge và xem trước Markdown nhẹ (tiêu đề, in đậm, danh sách).
+* **Gamification Tinh gọn**: Widget chuỗi ngày học (`🔥 Streak`) và mục tiêu bài học hoàn thành trong ngày trên Navbar.
+
+### B. Điều Hướng Phân Cấp (Breadcrumb) & Đồng Bộ URL (Routing)
+* **Breadcrumb**: Hiển thị phân cấp `Trang Chủ > Danh Mục > Khóa Học > Chương > Bài Học` với khả năng click vào danh mục để lọc khóa học ngay tại trang chủ.
+* **Deep Linking (Hash Routing)**:
+  * Hỗ trợ lưu trữ vị trí học tập trên URL, F5/Reload không bị mất trang.
+  * Hỗ trợ nút Back / Forward trên trình duyệt.
+
+### C. Quyết Định Kỹ Thuật Mới Thống Nhất Cùng [Thư Ký](conversation://2b112e1a-1ba7-4289-a1ea-5d28083e9912)
+1. **Chuẩn hóa Slug URL**: Chuyển toàn bộ cấu trúc slug và ID bài giảng sang chuẩn **Kebab-case (`-`)** thay vì Snake_case (`_`) để tuân thủ chuẩn Web/SEO quốc tế.
+2. **Chuyển Trung tâm Quản trị thành Trang Độc Lập (`#/studio`)**:
+   * Chuyển đổi từ dạng Popup Modal sang **Page View Toàn Màn Hình (`CourseStudioView`)** với link riêng `http://localhost:5500/#/studio`.
+   * Tách bạch 100% giữa **Không Gian Học Tập (`#/`)** và **Xưởng Soạn Bài / Quản Trị (`#/studio`)**.
+   * Navbar chỉ còn nút **`⚙️ Quản Trị`** chuyển sang `#/studio`, và ở Studio có nút **`⬅ Về Trang Học Tập`**.
+

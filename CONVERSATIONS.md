@@ -127,8 +127,18 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
     * **Quản trị Giảng viên trong Course Studio**:
       - Bổ sung tab con thứ 3 `👨‍🏫 Tác Giả / Giảng Viên` trong Trung Tâm Quản Trị.
       - Hỗ trợ thêm giảng viên mới, sửa tên giảng viên (tự động đồng bộ hàng loạt vào tất cả khóa học liên quan), xóa giảng viên khỏi danh sách kèm cảnh báo số lượng khóa học.
-    * **Bộ lọc liên kết thông minh 3 chiều (Faceted / Cascading Filters)**:
-      - Khi chọn **Danh mục A**: Nguồn mua và Giảng viên sẽ tự động co lại, chỉ hiển thị đúng các nguồn và giảng viên có dạy trong danh mục A kèm số lượng khóa học tương ứng (`Udemy (2)`, `Coursera (1)`).
-      - Khi chọn **Nguồn B**: Danh mục và Giảng viên chỉ hiển thị các tùy chọn có khóa học trên nguồn B.
-      - Khi chọn **Giảng viên C**: Danh mục và Nguồn tự động thu hẹp theo các khóa của giảng viên C.
-      - Loại bỏ hoàn toàn tình trạng danh sách hàng nghìn giảng viên/nguồn không liên quan, tăng tốc độ tìm kiếm khóa học lên gấp nhiều lần.
+12. **Nâng Cấp Toàn Diện Dashboard Quản Trị Khóa Học (Course Studio 2.0)**:
+    * **Thanh Mini KPI Metrics đầu trang**: Thống kê thời gian thực 4 chỉ số cốt lõi (Tổng số khóa học, tổng bài giảng phân loại Video/Bài đọc, % Tiến độ hoàn thành chung, Tổng số lượng chủ đề & giảng viên).
+    * **Bộ lọc & Sắp xếp chuyên sâu trên Bảng**:
+      - Tabs lọc nhanh trạng thái học: `Tất cả` | `Đang học` | `Chưa học` | `Đã xong (100%)`.
+      - Dropdown lọc kết hợp theo Chủ đề và Nền tảng nguồn.
+      - Dropdown Sắp xếp: *Mới cập nhật gần nhất*, *Tên A-Z*, *Tiến độ học*, *Số lượng bài học*.
+    * **Tối ưu Thumbnail chuẩn 16:9 & Thematic Fallback**:
+      - Tỷ lệ ảnh 16:9 sắc nét, bo góc chuẩn mực.
+      - Khi ảnh bị lỗi link hoặc chưa có: Tự động render huy hiệu biểu tượng Gradient theo danh mục (AI, Code, Design, Marketing, Finance...) thay vì text vỡ.
+    * **Thao tác hàng loạt (Floating Batch Actions Toolbar)**:
+      - Checkbox chọn nhiều khóa học (kèm nút Chọn tất cả).
+      - Thanh công cụ nổi thông minh: Xóa hàng loạt, Đổi danh mục hàng loạt, Xuất JSON riêng cho các khóa được chọn.
+    * **Modal Xác Nhận Xóa Tùy Chỉnh (Custom Dark Confirmation Modals)**:
+      - Loại bỏ hoàn toàn `confirm()` trắng mặc định của trình duyệt.
+      - Modal Dark mode chuyên nghiệp hiển thị chi tiết tên khóa học, số chương, số bài giảng sắp xóa để phòng tránh nhầm lẫn.

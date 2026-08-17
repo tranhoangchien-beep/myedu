@@ -154,6 +154,6 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
       - **Bộ lọc tình trạng vui nhộn**: `Tất cả` | `🔥 Đang có khóa` | `💤 0 khóa` giúp dọn dẹp danh mục rác siêu nhanh.
 15. **Đồng Bộ Hóa 100% Dữ Liệu Giảng Viên Trên Toàn Ứng Dụng (Full Instructor Synchronization)**:
     * **Khắc phục triệt để lỗi lệch danh sách Giảng viên**:
-      - Truyền toàn bộ danh sách `instructors` quản trị tập trung (`myedu_instructors_v1`) vào cả **`FilterHub`** (Bộ lọc), **`CourseEditorModal`** (Tạo/Sửa khóa học) và **`BulkImportModal`** (Nạp bài hàng loạt).
-      - Khi người dùng thêm một giảng viên mới (như "Chiến") ở bất kỳ nơi nào (trong modal tạo khóa hoặc tab quản trị), hệ thống tự động đồng bộ hóa sang tất cả các ô chọn, dropdown và bộ lọc ngay lập tức.
-      - `FilterHub` thông minh kết hợp cả danh sách Giảng viên đăng ký và các Giảng viên có trong khóa học, hiển thị số lượng và ưu tiên sắp xếp trực quan.
+      - Tự động quét và hợp nhất (Auto-Merge) toàn bộ giảng viên đang được gán trong các khóa học vào kho lưu trữ Quản trị tập trung (`myedu_instructors_v1`).
+      - Nhờ đó, cả ở **Quản trị (`CourseStudioView`)**, **Bộ lọc (`FilterHub`)** và **Modal Tạo/Sửa khóa học (`CourseEditorModal`)** đều hiển thị đồng nhất 100% cả `Chiến` và `Trần Hoàng Chiến` (cùng số khóa học thực tế tương ứng).
+      - Mọi thao tác Thêm, Sửa tên, hoặc Xóa giảng viên sẽ được phản ánh đồng bộ ngay tức thì ở mọi nơi.

@@ -34,11 +34,13 @@ interface CourseEditorModalProps {
   courseToEdit: Course | null; // null if creating a new course
   categories: string[];
   sources: string[];
+  instructors?: string[];
   allCourses?: Course[];
   onSaveCourse: (course: Course) => void;
   onOpenCategoryManager?: () => void;
   onAddCategory?: (cat: string) => void;
   onAddSource?: (source: string) => void;
+  onAddInstructor?: (inst: string) => void;
 }
 
 export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
@@ -47,11 +49,13 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   courseToEdit,
   categories,
   sources,
+  instructors = [],
   allCourses = [],
   onSaveCourse,
   onOpenCategoryManager,
   onAddCategory,
   onAddSource,
+  onAddInstructor,
 }) => {
   // Course Metadata State
   const [title, setTitle] = useState<string>('');
@@ -89,19 +93,22 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const prevIsOpenRef = useRef<boolean>(false);
   const prevCourseIdRef = useRef<string | null>(null);
 
-  // Auto-collect unique instructors across existing courses
+  // Auto-collect unique instructors across global list and existing courses
   const existingInstructors = useMemo(() => {
     const set = new Set<string>();
+    instructors.forEach(i => {
+      if (i && i.trim()) set.add(i.trim());
+    });
     allCourses.forEach(c => {
       if (c.instructor && c.instructor.trim()) {
         set.add(c.instructor.trim());
       }
     });
     if (set.size === 0) {
-      ['Hoàng Minh', 'Alex Đặng', 'Nguyễn Tiến Dũng', 'VietJack', 'F8 Official'].forEach(i => set.add(i));
+      ['Andrew Ng & Hoàng Minh', 'Alex Đặng', 'Sarah Jenkins', 'VietJack', 'F8 Official'].forEach(i => set.add(i));
     }
     return Array.from(set);
-  }, [allCourses]);
+  }, [allCourses, instructors]);
 
   useEffect(() => {
     // Only re-initialize when modal transitions from closed -> open, or editing a different course ID
@@ -1099,6 +1106,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                     options={existingInstructors}
                     placeholder="Chọn hoặc gõ tên tác giả mới..."
                     allowCustom={true}
+                    onAddNewOption={(newInst) => onAddInstructor && onAddInstructor(newInst)}
                   />
                 </div>
 

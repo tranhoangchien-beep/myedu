@@ -143,14 +143,34 @@ export const FilterHub: React.FC<FilterHubProps> = ({
     const list: { name: string; count: number }[] = [];
     list.push({ name: 'Tất cả', count: coursesForInstructorScope.length });
 
-    // Sorted by number of courses descending
-    const sortedInstructors = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-    sortedInstructors.forEach(([inst, count]) => {
-      list.push({ name: inst, count });
+    // Combine all known instructors from global list + instructors found in courses
+    const allKnown = new Set<string>();
+    instructors.forEach(i => {
+      if (i && i.trim()) allKnown.add(i.trim());
+    });
+    map.forEach((_, inst) => allKnown.add(inst));
+
+    // Convert to list with counts in this scope
+    const sorted = Array.from(allKnown).map(inst => ({
+      name: inst,
+      count: map.get(inst) || 0
+    })).sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.name.localeCompare(b.name, 'vi');
+    });
+
+    sorted.forEach(item => {
+      if (
+        item.count > 0 || 
+        selectedInstructor === item.name || 
+        (selectedCategory === 'Tất cả' && selectedSource === 'Tất cả')
+      ) {
+        list.push(item);
+      }
     });
 
     return list;
-  }, [coursesForInstructorScope]);
+  }, [coursesForInstructorScope, instructors, selectedInstructor, selectedCategory, selectedSource]);
 
   // Check if any filter is active
   const isFiltered = 

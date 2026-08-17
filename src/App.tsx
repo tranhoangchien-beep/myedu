@@ -522,12 +522,27 @@ export const App: React.FC = () => {
       updatedCourses = [savedCourse, ...courses];
     }
     updateCoursesState(updatedCourses);
+
+    if (savedCourse.instructor && savedCourse.instructor.trim()) {
+      const instName = savedCourse.instructor.trim();
+      if (!instructors.some(i => i.toLowerCase() === instName.toLowerCase())) {
+        handleAddInstructor(instName);
+      }
+    }
   };
 
   // Bulk Import Handlers
   const handleSaveNewCourseFromBulk = (newCourse: Course) => {
     const updated = [newCourse, ...courses];
     updateCoursesState(updated);
+
+    if (newCourse.instructor && newCourse.instructor.trim()) {
+      const instName = newCourse.instructor.trim();
+      if (!instructors.some(i => i.toLowerCase() === instName.toLowerCase())) {
+        handleAddInstructor(instName);
+      }
+    }
+
     handleSelectCourseAndLesson(newCourse.id);
   };
 
@@ -793,10 +808,12 @@ export const App: React.FC = () => {
         courseToEdit={courseToEdit}
         categories={categories}
         sources={sources}
+        instructors={instructors}
         allCourses={courses}
         onSaveCourse={handleSaveCourse}
         onAddCategory={handleAddCategory}
         onAddSource={handleAddSource}
+        onAddInstructor={handleAddInstructor}
         onOpenCategoryManager={() => {
           setIsCourseEditorOpen(false);
           setCurrentView('studio');
@@ -811,9 +828,11 @@ export const App: React.FC = () => {
         courses={courses}
         categories={categories}
         sources={sources}
+        instructors={instructors}
         preselectedCourseId={bulkCourseId}
         onSaveNewCourse={handleSaveNewCourseFromBulk}
         onAddChapterToCourse={handleAddChapterToCourse}
+        onAddInstructor={handleAddInstructor}
       />
 
       <ShortcutModal

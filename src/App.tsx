@@ -599,11 +599,6 @@ export const App: React.FC = () => {
             window.location.hash = '#/';
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          onNavigateFavorites={() => {
-            setCurrentView('favorites');
-            window.location.hash = '#/favorites';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
           onOpenStudio={() => {
             setCurrentView('studio');
             window.location.hash = '#/studio';
@@ -611,7 +606,6 @@ export const App: React.FC = () => {
           }}
           onOpenShortcuts={() => setIsShortcutsOpen(true)}
           totalCoursesCount={courses.length}
-          starredCount={starredCount}
           userStats={userStats}
         />
       )}

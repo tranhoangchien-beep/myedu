@@ -215,17 +215,6 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                 </span>
               )}
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onToggleStar(currentLesson.id)}
-                title={currentLesson.isStarred ? 'Bỏ ghim bài này' : 'Ghim bài giảng cốt lõi'}
-                className="p-1.5 px-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-amber-400 transition-colors flex items-center gap-1.5 text-xs font-semibold"
-              >
-                <Star className={`w-4 h-4 ${currentLesson.isStarred ? 'text-amber-400 fill-amber-400' : ''}`} />
-                <span>{currentLesson.isStarred ? 'Đã ghim' : 'Ghim bài'}</span>
-              </button>
-            </div>
           </div>
 
           <h1 className="text-base sm:text-xl font-bold text-white tracking-tight leading-snug">
@@ -251,58 +240,43 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
             <button
               onClick={onNextLesson}
               disabled={!hasNextLesson}
-              title="Bài kế tiếp (Phím N)"
-              className="px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+              title="Bài tiếp (Phím N)"
+              className="px-3 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white disabled:opacity-30 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
             >
-              <span className="hidden sm:inline">Bài tiếp theo</span>
+              <span>Bài tiếp theo</span>
               <SkipForward className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Right: Mark Completed, Zen Focus & Fullscreen */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Right: Toggle Completion & Zen Mode */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => onToggleComplete(currentLesson.id)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm ${
+              className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all shadow-sm ${
                 currentLesson.isCompleted
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/20'
+                  : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border-slate-800'
               }`}
             >
-              {currentLesson.isCompleted ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 fill-emerald-400/20" />
-                  <span>Đã Xong</span>
-                </>
-              ) : (
-                <>
-                  <Circle className="w-4 h-4 text-slate-400" />
-                  <span>Đánh Dấu Xong</span>
-                </>
-              )}
+              <CheckCircle2 className={`w-4 h-4 ${currentLesson.isCompleted ? 'text-white' : 'text-emerald-400'}`} />
+              <span>{currentLesson.isCompleted ? 'Đã Hoàn Thành' : 'Đánh Dấu Xong'}</span>
             </button>
 
-            {/* Zen Focus Mode Button */}
             <button
               onClick={onToggleZenMode}
-              title="Chế độ tập trung Zen Mode (Phím Z)"
-              className={`p-2 px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm ${
-                isZenMode
-                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/50 ring-1 ring-teal-500/30'
-                  : 'bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border-slate-800'
-              }`}
+              title="Chế độ Zen Focus (Phím Z)"
+              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-xs font-semibold"
             >
-              <Sparkles className="w-4 h-4 text-teal-400" />
-              <span>Zen Focus</span>
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Zen Focus</span>
             </button>
 
-            {/* Fullscreen Button */}
             <button
               onClick={handleToggleFullscreen}
               title="Toàn màn hình (Phím F)"
-              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors shadow-sm"
+              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
             >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              <Maximize2 className="w-4 h-4" />
             </button>
           </div>
 
@@ -310,128 +284,44 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
 
       </div>
 
-      {/* 3. Lesson Attachments & Interactive Markdown Notes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
-        {/* Attachments & Resource Links */}
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Paperclip className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-bold text-slate-200">Tài Liệu Đính Kèm</h3>
-            </div>
-
-            {currentLesson.attachments && currentLesson.attachments.length > 0 ? (
-              <div className="space-y-2">
-                {currentLesson.attachments.map((att) => (
-                  <a
-                    key={att.id}
-                    href={att.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    referrerPolicy="no-referrer"
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-white transition-all group"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="font-medium">{att.name}</span>
-                    </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500 italic py-2">
-                Không có tài liệu đính kèm cho bài học này.
-              </p>
-            )}
+      {/* 3. Lesson Attachments & Resources */}
+      <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-3">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Paperclip className="w-4 h-4 text-emerald-400" />
+            <h3 className="text-sm font-bold text-slate-200">Tài Liệu Đính Kèm</h3>
           </div>
 
-          <div className="pt-3 border-t border-slate-800/60 mt-3 text-[11px] text-slate-500 flex items-center justify-between">
-            <span>Thời lượng bài: <strong>{currentLesson.durationMinutes ? `${currentLesson.durationMinutes} phút` : 'Chưa cập nhật'}</strong></span>
-            <span>Khóa học: <strong className="text-slate-400">{course.category}</strong></span>
-          </div>
-        </div>
-
-        {/* Smart Lesson Notes with Markdown & Timestamp Support */}
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex flex-col justify-between space-y-3">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Edit3 className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-sm font-bold text-slate-200">Ghi Chú Bài Giảng</h3>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                {/* Edit / Preview Toggle Tabs */}
-                <div className="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-[11px]">
-                  <button
-                    onClick={() => setNoteViewMode('edit')}
-                    className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
-                      noteViewMode === 'edit' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Soạn thảo
-                  </button>
-                  <button
-                    onClick={() => setNoteViewMode('preview')}
-                    className={`px-2 py-0.5 rounded-md font-medium transition-colors flex items-center gap-1 ${
-                      noteViewMode === 'preview' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <Eye className="w-3 h-3" />
-                    Xem trước
-                  </button>
-                </div>
-
-                <button
-                  onClick={insertTimestampTemplate}
-                  title="Chèn mốc thời gian mẫu [mm:ss]"
-                  className="px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+          {currentLesson.attachments && currentLesson.attachments.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {currentLesson.attachments.map((att) => (
+                <a
+                  key={att.id}
+                  href={att.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  referrerPolicy="no-referrer"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-white transition-all group"
                 >
-                  <Clock className="w-3 h-3 text-emerald-400" />
-                  <span>+Mốc [00:00]</span>
-                </button>
-              </div>
+                  <div className="flex items-center gap-2 truncate">
+                    <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <span className="font-medium truncate">{att.name}</span>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
+                </a>
+              ))}
             </div>
-
-            {noteViewMode === 'edit' ? (
-              <textarea
-                ref={textareaRef}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ghi chú lại các ý chính, mốc thời gian dạng [05:30] hoặc đoạn code mẫu..."
-                rows={4}
-                className="w-full text-xs p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:border-emerald-500/60 transition-colors resize-none font-mono"
-              />
-            ) : (
-              <div className="min-h-[96px] max-h-[140px] overflow-y-auto p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
-                <MarkdownRenderer content={notes} />
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
-            <span className="text-[11px] text-slate-500">
-              {isSavedNotes ? (
-                <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Đã lưu vào máy
-                </span>
-              ) : (
-                'Hỗ trợ Markdown & [mm:ss]'
-              )}
-            </span>
-
-            <button
-              onClick={handleSaveNotes}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1.5 transition-colors shadow-sm"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>Lưu ghi chú</span>
-            </button>
-          </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic py-1">
+              Không có tài liệu đính kèm cho bài học này. Bấm "Chỉnh Sửa Khóa Học" ở trang Quản Trị để thêm link Slide PDF, Github, Google Drive.
+            </p>
+          )}
         </div>
 
+        <div className="pt-3 border-t border-slate-800/60 text-[11px] text-slate-500 flex items-center justify-between">
+          <span>Thời lượng bài: <strong className="text-slate-300">{currentLesson.durationMinutes ? `${currentLesson.durationMinutes} phút` : '15 phút'}</strong></span>
+          <span>Chủ đề: <strong className="text-emerald-400">{course.category}</strong></span>
+        </div>
       </div>
     </div>
   );

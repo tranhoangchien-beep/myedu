@@ -157,18 +157,8 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
                       </div>
                     </div>
 
-                    {/* Right: Star and Checkmark Actions (Fixed & never pushed off) */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0 self-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => onToggleStar(lesson.id)}
-                        title={lesson.isStarred ? 'Bỏ ghim' : 'Ghim bài hay'}
-                        className={`p-1.5 rounded-lg hover:bg-slate-800 transition-colors ${
-                          lesson.isStarred ? 'text-amber-400' : 'text-slate-600 hover:text-slate-400'
-                        }`}
-                      >
-                        <Star className={`w-4 h-4 ${lesson.isStarred ? 'fill-current' : ''}`} />
-                      </button>
-
+                    {/* Right: Checkmark Action */}
+                    <div className="flex items-center flex-shrink-0 self-center" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => onToggleComplete(lesson.id)}
                         title={lesson.isCompleted ? 'Đánh dấu chưa học' : 'Đánh dấu đã hoàn thành'}

@@ -14,26 +14,24 @@ import { UserStats } from '../../types';
 interface NavbarProps {
   currentView: 'home' | 'player' | 'favorites' | 'studio';
   onNavigateHome: () => void;
-  onNavigateFavorites: () => void;
+  onNavigateFavorites?: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   onOpenStudio: () => void;
   onOpenShortcuts: () => void;
   totalCoursesCount: number;
-  starredCount: number;
+  starredCount?: number;
   userStats: UserStats;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentView,
   onNavigateHome,
-  onNavigateFavorites,
   searchQuery,
   onSearchChange,
   onOpenStudio,
   onOpenShortcuts,
   totalCoursesCount,
-  starredCount,
   userStats,
 }) => {
   return (
@@ -80,33 +78,30 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             
-            {/* Learning Streak & Today's Goal Pills */}
-            <div className="hidden sm:flex items-center gap-1.5 mr-1">
-              <div 
-                title={`Chuỗi học liên tục: ${userStats.streak} ngày`}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 text-xs font-bold"
-              >
+            {/* Unified Single Achievement Badge (Streak + Today's Lessons) */}
+            <div 
+              title={`Thành tích học tập: Chuỗi ${userStats.streak} ngày liên tục • Hôm nay đã học +${userStats.todayCompletedCount || 0} bài`}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-900 to-emerald-500/10 border border-slate-800/90 text-xs font-bold text-slate-200 shadow-sm"
+            >
+              <div className="flex items-center gap-1.5 text-amber-400">
                 <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 <span>{userStats.streak} ngày</span>
               </div>
 
-              {userStats.todayCompletedCount > 0 && (
-                <div 
-                  title={`Hôm nay đã hoàn thành ${userStats.todayCompletedCount} bài giảng`}
-                  className="flex items-center gap-1 px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>+{userStats.todayCompletedCount} bài</span>
-                </div>
-              )}
+              <span className="text-slate-700 font-normal">&bull;</span>
+
+              <div className="flex items-center gap-1 text-emerald-400 font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>+{userStats.todayCompletedCount || 0} bài</span>
+              </div>
             </div>
 
             <button
               onClick={onNavigateHome}
               title="Trang chủ"
-              className={`p-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+              className={`p-2 px-3 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 ${
                 currentView === 'home'
                   ? 'bg-slate-800 text-emerald-400 border border-slate-700'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
@@ -114,27 +109,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Home className="w-4 h-4" />
               <span className="hidden sm:inline">Khóa học</span>
-              <span className="text-xs bg-slate-800 px-1.5 py-0.5 rounded-md text-slate-400">
+              <span className="text-[11px] bg-slate-950 px-1.5 py-0.5 rounded-md text-slate-400 border border-slate-800">
                 {totalCoursesCount}
               </span>
-            </button>
-
-            <button
-              onClick={onNavigateFavorites}
-              title="Bài giảng đã ghim"
-              className={`p-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                currentView === 'favorites'
-                  ? 'bg-slate-800 text-amber-400 border border-slate-700'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Bookmark className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">Đã ghim</span>
-              {starredCount > 0 && (
-                <span className="text-xs bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-md">
-                  {starredCount}
-                </span>
-              )}
             </button>
 
             {/* Unified Course Studio Admin Hub */}

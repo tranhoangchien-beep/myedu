@@ -116,14 +116,6 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
             {filteredCourses.length} khóa phù hợp
           </span>
         </div>
-
-        <button
-          onClick={onAddNewCourse}
-          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
-        >
-          <PlusCircle className="w-3.5 h-3.5" />
-          <span>+ Tạo Khóa Học Mới</span>
-        </button>
       </div>
 
       {/* 3. Cards Grid */}

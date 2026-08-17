@@ -20,9 +20,8 @@ import { AbyssPlayer } from './components/player/AbyssPlayer';
 import { LessonSidebar } from './components/player/LessonSidebar';
 import { BulkImportModal } from './components/course/BulkImportModal';
 import { CourseEditorModal } from './components/admin/CourseEditorModal';
-import { CategoryManagerModal } from './components/admin/CategoryManagerModal';
+import { CourseStudioModal } from './components/admin/CourseStudioModal';
 import { ShortcutModal } from './components/common/ShortcutModal';
-import { BackupModal } from './components/common/BackupModal';
 
 export const App: React.FC = () => {
   // Main Data States
@@ -47,17 +46,16 @@ export const App: React.FC = () => {
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [autoPlayNext, setAutoPlayNext] = useState<boolean>(true);
 
-  // Modals
+  // Studio & Sub-Modals
+  const [isStudioOpen, setIsStudioOpen] = useState<boolean>(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
   const [bulkCourseId, setBulkCourseId] = useState<string | undefined>(undefined);
   
-  // CRUD Modals
+  // Course Editor Modal
   const [isCourseEditorOpen, setIsCourseEditorOpen] = useState<boolean>(false);
   const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
-  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState<boolean>(false);
 
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
-  const [isBackupOpen, setIsBackupOpen] = useState<boolean>(false);
 
   // Initialize data on mount
   useEffect(() => {
@@ -425,17 +423,16 @@ export const App: React.FC = () => {
           setIsZenMode(false);
           return;
         }
+        if (isStudioOpen) setIsStudioOpen(false);
         if (isBulkModalOpen) setIsBulkModalOpen(false);
         if (isCourseEditorOpen) setIsCourseEditorOpen(false);
-        if (isCategoryManagerOpen) setIsCategoryManagerOpen(false);
         if (isShortcutsOpen) setIsShortcutsOpen(false);
-        if (isBackupOpen) setIsBackupOpen(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, handleNextLesson, handlePrevLesson, isZenMode, isBulkModalOpen, isCourseEditorOpen, isCategoryManagerOpen, isShortcutsOpen, isBackupOpen]);
+  }, [currentView, handleNextLesson, handlePrevLesson, isZenMode, isStudioOpen, isBulkModalOpen, isCourseEditorOpen, isShortcutsOpen]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 selection:bg-emerald-500 selection:text-white">
@@ -473,12 +470,7 @@ export const App: React.FC = () => {
           }}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onOpenBulkImport={() => {
-            setBulkCourseId(undefined);
-            setIsBulkModalOpen(true);
-          }}
-          onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
-          onOpenBackup={() => setIsBackupOpen(true)}
+          onOpenStudio={() => setIsStudioOpen(true)}
           onOpenShortcuts={() => setIsShortcutsOpen(true)}
           totalCoursesCount={courses.length}
           starredCount={starredCount}
@@ -600,6 +592,29 @@ export const App: React.FC = () => {
 
       </main>
 
+      {/* Unified Course Studio Management Hub Modal */}
+      <CourseStudioModal
+        isOpen={isStudioOpen}
+        onClose={() => setIsStudioOpen(false)}
+        courses={courses}
+        categories={categories}
+        sources={sources}
+        onAddNewCourse={handleAddNewCourse}
+        onEditCourse={handleEditCourse}
+        onDeleteCourse={handleDeleteCourse}
+        onOpenBulkImport={(cId) => {
+          setBulkCourseId(cId);
+          setIsBulkModalOpen(true);
+        }}
+        onAddCategory={handleAddCategory}
+        onRenameCategory={handleRenameCategory}
+        onDeleteCategory={handleDeleteCategory}
+        onAddSource={handleAddSource}
+        onRenameSource={handleRenameSource}
+        onDeleteSource={handleDeleteSource}
+        onRestoreCourses={handleRestoreCourses}
+      />
+
       {/* Course Editor CRUD Modal */}
       <CourseEditorModal
         isOpen={isCourseEditorOpen}
@@ -610,23 +625,8 @@ export const App: React.FC = () => {
         onSaveCourse={handleSaveCourse}
         onOpenCategoryManager={() => {
           setIsCourseEditorOpen(false);
-          setIsCategoryManagerOpen(true);
+          setIsStudioOpen(true);
         }}
-      />
-
-      {/* Category & Source Manager Modal */}
-      <CategoryManagerModal
-        isOpen={isCategoryManagerOpen}
-        onClose={() => setIsCategoryManagerOpen(false)}
-        categories={categories}
-        sources={sources}
-        courses={courses}
-        onAddCategory={handleAddCategory}
-        onRenameCategory={handleRenameCategory}
-        onDeleteCategory={handleDeleteCategory}
-        onAddSource={handleAddSource}
-        onRenameSource={handleRenameSource}
-        onDeleteSource={handleDeleteSource}
       />
 
       {/* Bulk Import Modal */}
@@ -644,13 +644,6 @@ export const App: React.FC = () => {
       <ShortcutModal
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
-      />
-
-      <BackupModal
-        isOpen={isBackupOpen}
-        onClose={() => setIsBackupOpen(false)}
-        courses={courses}
-        onRestoreCourses={handleRestoreCourses}
       />
 
       {/* Footer */}

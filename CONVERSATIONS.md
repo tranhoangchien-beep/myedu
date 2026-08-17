@@ -169,3 +169,11 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
     * **Bỏ tính năng Ghim bài giảng**: Gỡ nút `Đã ghim` trên Navbar, trình phát video và danh sách bài giảng để giao diện học lean, gọn nhẹ.
     * **Gom Chuỗi Học (Streak) & Bài Học Hôm Nay Thành 1 Khối Thành Tích**:
       - Hợp nhất 2 pill badge `🔥 1 ngày` và `+2 bài` riêng lẻ thành 1 **Mục Thành Tích duy nhất** sang trọng trên thanh Header: `🏆 Thành tích: 🔥 1 ngày • 🎯 +2 bài`.
+18. **Hỗ Trợ Phát Video Đa Nguồn Linh Hoạt (Universal Video Embedding)**:
+    * **Không giới hạn riêng Abyss Player**: Nâng cấp module `abyss.ts` thành bộ phân tích video đa năng (`parseUniversalVideo`), hỗ trợ tự động bóc tách và tạo mã nhúng an toàn cho:
+      - **Abyss Player**: Link `abyssplayer.com/ID`, `player.abyssplayer.com/ID` hoặc ID ngắn.
+      - **YouTube Video**: Trực tiếp link `youtube.com/watch?v=ID`, `youtu.be/ID`, `youtube.com/embed/ID` hoặc YouTube Shorts (sử dụng `youtube-nocookie.com` an toàn).
+      - **Vimeo Video**: Link `vimeo.com/ID` hoặc `player.vimeo.com/video/ID`.
+      - **Trực tiếp Video MP4 / WebM**: Tự động phát bằng thẻ `<video controls>` gốc siêu mượt.
+      - **Mã Nhúng Iframe Bất Kỳ**: Nhận diện và trích xuất `src` từ thẻ `<iframe ...>` của bất kỳ nền tảng nào (Google Drive preview, Loom, Bilibili, custom iframe...).
+    * **Chỉnh sửa giao diện Studio & Player**: Cập nhật nhãn nhập liệu thành `Nguồn Video Bài Giảng (Abyss, YouTube, Vimeo, MP4 hoặc mã nhúng Iframe bất kỳ)` kèm Badge nhận diện nguồn video thông minh (`[YouTube (ID)]`, `[Vimeo (ID)]`, `[Direct MP4]`, `[Abyss (ID)]`).

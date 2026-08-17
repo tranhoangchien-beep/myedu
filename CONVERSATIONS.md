@@ -116,7 +116,8 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
    * **Bảo toàn 100% dữ liệu khi chuyển giữa các bài học**: Cô lập vòng đời khởi tạo bằng `useRef`, đảm bảo sửa bài 1 -> chuyển qua bài 2 -> quay lại bài 1 mọi nội dung vẫn được giữ nguyên vẹn trong bộ nhớ form.
    * **Khắc phục lỗi cuộn chuột**: Khóa vị trí cuộn `scrollTop` và sử dụng `onMouseDown preventDefault` trên thanh công cụ Rich Text để khi bấm In đậm/Tiêu đề/Danh sách, con trỏ và màn hình không bao giờ bị nhảy lên trên cùng.
 
-10. **Tự Động Nạp Bộ Dữ Liệu Kiểm Thử Vàng (Golden Test Suite)**:
-    * Khởi tạo và tự động đồng bộ 4 khóa học mẫu chuẩn hóa cao cấp (`course-ai-generative-mastery`, `course-react-nextjs-fullstack`, `course-uiux-design-handbook`, `course-growth-marketing-funnel`).
-    * Bao phủ 100% các định dạng: Video Abyss đa dạng URL/Iframe, bài viết Markdown chuyên sâu có thanh công cụ/code block, bài học hỗn hợp, đầy đủ 4 loại tài liệu đính kèm (PDF, Google Drive, GitHub, Link ngoài).
-    * Tích hợp cơ chế tự động di chuyển (Auto-migration) nâng cấp `localStorage` cũ lên bộ dữ liệu mới mà không bị lỗi tương thích.
+10. **Tự Động Nạp Bộ Dữ Liệu Kiểm Thử Vàng (Golden Test Suite - 10 Khóa Học Đa Lĩnh Vực)**:
+    * Khởi tạo và tự động đồng bộ **10 khóa học mẫu cao cấp** bao phủ 100% các lĩnh vực: AI, Lập trình Web, DevOps Cloud, Phân tích Dữ liệu, Kinh doanh Startup, Thiết kế UI/UX, Ngoại ngữ, Kỹ năng sống & Content SEO.
+    * Đầy đủ các định dạng: Video Abyss đa dạng (URL, Iframe, Short ID), bài viết Markdown chuyên sâu (bảng biểu, code block, công thức), bài học hỗn hợp (Mixed), đầy đủ 4 loại tài liệu đính kèm (PDF, Google Drive, GitHub, Link Colab/Notion).
+    * Tích hợp cơ chế tự động di chuyển (Auto-migration) nâng cấp `localStorage` cũ lên bộ dữ liệu 10 khóa học mới mà không cần thao tác thủ công.
+

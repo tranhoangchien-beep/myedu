@@ -579,7 +579,7 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
             id: 'les-cont-101',
             title: 'Bài 1: Công Thức Hook 3 Giây & Cấu Trúc Kể Chuyện Storytelling',
             type: 'video',
-            videoSource: '<iframe width=\"640\" height=\"360\" src=\"https://abyssplayer.com/Ld3tfGRGA\" allowfullscreen></iframe>',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Ld3tfGRGA" allowfullscreen></iframe>',
             durationMinutes: 25,
             isCompleted: false,
             isStarred: false
@@ -605,6 +605,437 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
         ]
       }
     ]
+  },
+  {
+    id: 'course-machine-learning-scikit-learn',
+    title: 'Học Máy Ứng Dụng (Machine Learning) Với Scikit-Learn & TensorFlow',
+    description: 'Nắm vững các thuật toán Phân loại (Classification), Hồi quy (Regression), Phân cụm (Clustering) và huấn luyện mô hình Deep Learning cơ bản.',
+    category: 'AI & Machine Learning',
+    instructor: 'Lê Quang Huy (AI Researcher)',
+    sourcePlatform: 'Coursera',
+    tags: ['Machine Learning', 'AI', 'Scikit-Learn', 'TensorFlow', 'Python', 'Data Science'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-16T19:00:00Z',
+    updatedAt: '2026-08-17T05:00:00Z',
+    lastWatchedLessonId: 'les-ml-101',
+    chapters: [
+      {
+        id: 'ch-ml-supervised',
+        title: 'Chương 1: Học Có Giám Sát (Supervised Learning) & Đánh Giá Mô Hình',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-ml-101',
+            title: 'Bài 1: Thuật Toán Random Forest & Gradient Boosting (XGBoost)',
+            type: 'video',
+            videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
+            durationMinutes: 32,
+            isCompleted: true,
+            isStarred: true,
+            attachments: [
+              {
+                id: 'att-ml-1',
+                name: 'Slide_Supervised_Learning.pdf',
+                url: 'https://drive.google.com/sample-ml-pdf',
+                type: 'pdf'
+              }
+            ]
+          },
+          {
+            id: 'les-ml-102',
+            title: 'Bài 2: Thực Hành Đánh Giá Mô Hình Với Precision, Recall & F1-Score',
+            type: 'mixed',
+            videoSource: 'bGOgQoLE0',
+            content: '# Đánh Giá Mô Hình Phân Loại Với Confusion Matrix\n\nKhi làm việc với dữ liệu mất cân bằng (Imbalanced Data), chỉ số **Accuracy** có thể gây đánh lừa. Cần phân tích sâu **Precision**, **Recall** và **AUC-ROC**.\n\n```python\nfrom sklearn.metrics import classification_report, confusion_matrix\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Dự đoán và in báo cáo\ny_pred = model.predict(X_test)\nprint(classification_report(y_test, y_pred))\n\n# Trực quan hóa ma trận nhầm lẫn\ncm = confusion_matrix(y_test, y_pred)\nsns.heatmap(cm, annot=True, fmt="d", cmap="Blues")\nplt.show()\n```',
+            durationMinutes: 38,
+            isCompleted: false,
+            isStarred: false,
+            attachments: [
+              {
+                id: 'att-ml-2',
+                name: 'Jupyter_Notebook_Model_Evaluation (Colab)',
+                url: 'https://colab.research.google.com',
+                type: 'link'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-flutter-mobile-crossplatform',
+    title: 'Lập Trình Ứng Dụng Di Động Đa Nền Tảng Với Flutter & Dart',
+    description: 'Xây dựng ứng dụng iOS & Android từ một codebase duy nhất, quản lý State với Riverpod/Bloc và tích hợp REST API thời gian thực.',
+    category: 'Lập trình',
+    instructor: 'Phạm Thành Nam (Mobile Architect)',
+    sourcePlatform: 'Udemy',
+    tags: ['Flutter', 'Dart', 'Mobile', 'iOS', 'Android', 'Cross-Platform'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-16T20:00:00Z',
+    updatedAt: '2026-08-17T04:45:00Z',
+    lastWatchedLessonId: 'les-flt-101',
+    chapters: [
+      {
+        id: 'ch-flt-widgets',
+        title: 'Chương 1: Kiến Trúc Widget & Layout Tùy Biến',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-flt-101',
+            title: 'Bài 1: Xây Dựng UI Đẹp Mắt Với Custom Painter & Animation Controller',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/bGOgQoLE0" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: true,
+            attachments: [
+              {
+                id: 'att-flt-1',
+                name: 'Flutter_Starter_Kit_Repo (GitHub)',
+                url: 'https://github.com/myedu/flutter-clean-architecture',
+                type: 'github'
+              }
+            ]
+          },
+          {
+            id: 'les-flt-102',
+            title: 'Bài 2: Quản Lý State Chuyên Nghiệp Với Flutter Riverpod',
+            type: 'article',
+            content: '# Quản Lý State Trong Flutter Với Riverpod 2.0\n\nRiverpod là giải pháp State Management an toàn kiểu (Type-safe), có khả năng compile-time check và không phụ thuộc vào `BuildContext`.\n\n### Ví dụ StateNotifierProvider:\n```dart\nfinal counterProvider = StateNotifierProvider<CounterNotifier, int>((ref) {\n  return CounterNotifier();\n});\n\nclass CounterNotifier extends StateNotifier<int> {\n  CounterNotifier() : super(0);\n  void increment() => state++;\n}\n```',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-financial-management-investing',
+    title: 'Quản Trị Tài Chính Doanh Nghiệp & Đầu Tư Cổ Phiếu Dài Hạn',
+    description: 'Phương pháp đọc hiểu Báo cáo tài chính (BCTC), định giá doanh nghiệp theo chiết khấu dòng tiền DCF và quản trị rủi ro danh mục đầu tư.',
+    category: 'Kinh doanh',
+    instructor: 'ThS. Vũ Hoàng Điệp (CFA Charterholder)',
+    sourcePlatform: 'KTcity',
+    tags: ['Tài chính', 'Đầu tư', 'Chứng khoán', 'Báo cáo tài chính', 'Quản trị'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-16T21:00:00Z',
+    updatedAt: '2026-08-17T03:15:00Z',
+    lastWatchedLessonId: 'les-fin-101',
+    chapters: [
+      {
+        id: 'ch-fin-analysis',
+        title: 'Chương 1: Đọc Hiểu & Phân Tích 3 Bảng Báo Cáo Tài Chính',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-fin-101',
+            title: 'Bài 1: Bảng Cân Đối Kế Toán & Phân Tích Cơ Cấu Nợ Vay',
+            type: 'video',
+            videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: false,
+            attachments: [
+              {
+                id: 'att-fin-1',
+                name: 'File_Excel_Phan_Tich_BCTC_Mau.xlsx',
+                url: 'https://drive.google.com/sample-excel-finance',
+                type: 'drive'
+              }
+            ]
+          },
+          {
+            id: 'les-fin-102',
+            title: 'Bài 2: Báo Cáo Lưu Chuyển Tiền Tệ & Nhận Diện Dòng Tiền Thuần Hoạt Động (CFO)',
+            type: 'article',
+            content: '# Phân Tích Báo Cáo Lưu Chuyển Tiền Tệ (Cash Flow Statement)\n\nLợi nhuận kế toán có thể bị tác động bởi các bút toán trích lập, nhưng **Dòng tiền thực tế (Cash Flow)** không bao giờ nói dối.\n\n## 3 Luồng Tiền Cần Kiểm Tra:\n1. **CFO (Cash from Operating Activities)**: Phải dương và tăng trưởng đều qua các năm.\n2. **CFI (Cash from Investing Activities)**: Thường âm do doanh nghiệp mở rộng nhà máy, mua sắm TSCĐ (Capex).\n3. **CFF (Cash from Financing Activities)**: Phản ánh hoạt động vay nợ, trả nợ và chi trả cổ tức cho cổ đông.',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-data-engineering-sql-spark',
+    title: 'Kỹ Sư Dữ Liệu Thực Chiến (Data Engineering) Với SQL & Apache Spark',
+    description: 'Thiết kế Data Warehouse trên Cloud, tối ưu truy vấn SQL triệu dòng, xây dựng Data Pipeline với Apache Spark và điều phối luồng dữ liệu.',
+    category: 'Phân tích dữ liệu',
+    instructor: 'Nguyễn Hải Đăng (Lead Data Engineer)',
+    sourcePlatform: 'Coursera',
+    tags: ['Data Engineering', 'SQL', 'Spark', 'Big Data', 'ETL', 'Data Pipeline'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-16T22:00:00Z',
+    updatedAt: '2026-08-17T02:40:00Z',
+    lastWatchedLessonId: 'les-de-101',
+    chapters: [
+      {
+        id: 'ch-de-pipeline',
+        title: 'Chương 1: Xây Dựng Batch ETL Pipeline Với PySpark',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-de-101',
+            title: 'Bài 1: Khởi Tạo SparkSession & Tối Ưu Partitioning',
+            type: 'mixed',
+            videoSource: 'Ld3tfGRGA',
+            content: '# Xử Lý Dữ Liệu Lớn Với PySpark Dataframe\n\n```python\nfrom pyspark.sql import SparkSession\nfrom pyspark.sql.functions import col, to_date, sum\n\nspark = SparkSession.builder \\\n    .appName("LogProcessingPipeline") \\\n    .config("spark.sql.shuffle.partitions", "200") \\\n    .getOrCreate()\n\n# Đọc và biến đổi dữ liệu Parquet\ndf = spark.read.parquet("s3://myedu-data-lake/logs/")\ncleaned_df = df.filter(col("status") == 200) \\\n    .groupBy(to_date("timestamp").alias("date")) \\\n    .agg(sum("bytes").alias("total_bytes"))\n\ncleaned_df.write.mode("overwrite").parquet("s3://myedu-data-warehouse/daily_traffic/")\n```',
+            durationMinutes: 35,
+            isCompleted: false,
+            isStarred: false,
+            attachments: [
+              {
+                id: 'att-de-1',
+                name: 'Spark_Pipeline_Config_Github',
+                url: 'https://github.com/myedu/spark-pipelines',
+                type: 'github'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-branding-visual-identity',
+    title: 'Xây Dựng Nhận Diện Thương Hiệu (Brand Identity) & Logo Design',
+    description: 'Quy trình sáng tạo Logo chuyên nghiệp, xây dựng Brand Guidelines, Moodboard, Typography và phối màu nhận diện cho doanh nghiệp.',
+    category: 'Thiết kế đồ họa',
+    instructor: 'Trịnh Minh Châu (Creative Director)',
+    sourcePlatform: 'Udemy',
+    tags: ['Brand Identity', 'Logo Design', 'Illustrator', 'Thiết kế', 'Branding'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-16T23:00:00Z',
+    updatedAt: '2026-08-17T02:10:00Z',
+    lastWatchedLessonId: 'les-brd-101',
+    chapters: [
+      {
+        id: 'ch-brd-guidelines',
+        title: 'Chương 1: Khởi Tạo Moodboard & Hệ Thống Nhận Diện',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-brd-101',
+            title: 'Bài 1: Phân Tích Tính Cách Thương Hiệu (Brand Archetypes)',
+            type: 'video',
+            videoSource: 'https://abyssplayer.com/bGOgQoLE0',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: true,
+            attachments: [
+              {
+                id: 'att-brd-1',
+                name: 'Brand_Guidelines_Template_Figma',
+                url: 'https://figma.com/@sample-brand-kit',
+                type: 'link'
+              }
+            ]
+          },
+          {
+            id: 'les-brd-102',
+            title: 'Bài 2: Quy Chuẩn Vùng An Toàn & Tỷ Lệ Vàng Trong Thiết Kế Logo',
+            type: 'article',
+            content: '# Nguyên Tắc Thiết Lập Vùng An Toàn Cho Logo\n\nLogo khi xuất hiện trên các ấn phẩm truyền thông cần có **Vùng bảo vệ tối thiểu (Clear Space)** để không bị các yếu tố văn bản khác lấn át.\n\n* **Đơn vị đo**: Thường sử dụng chiều cao ký tự đầu tiên của logo (ví dụ ký tự `X`).\n* **Kích thước hiển thị tối thiểu**: Quy định rõ bản in (Print: min 20mm) và bản số (Digital: min 32px).',
+            durationMinutes: 18,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-japanese-n3-business',
+    title: 'Tiếng Nhật Thương Mại & Luyện Thi JLPT N3 Cấp Tốc',
+    description: 'Chinh phục 650+ chữ Hán Kanji, ngữ pháp kính ngữ Keigo chuyên nghiệp trong môi trường công sở Nhật Bản và kỹ năng hội thoại thực tế.',
+    category: 'Ngoại ngữ',
+    instructor: 'Sensei Takahashi & Mai Hương',
+    sourcePlatform: 'YouTube',
+    tags: ['Tiếng Nhật', 'JLPT N3', 'Ngoại ngữ', 'Business Japanese', 'Kanji'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-17T00:00:00Z',
+    updatedAt: '2026-08-17T01:50:00Z',
+    lastWatchedLessonId: 'les-jp-101',
+    chapters: [
+      {
+        id: 'ch-jp-keigo',
+        title: 'Chương 1: Kính Ngữ Keigo Trong Giao Tiếp Doanh Nghiệp',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-jp-101',
+            title: 'Bài 1: Phân Biệt Tôn Kính Ngữ (Sonkeigo) & Khiêm Nhường Ngữ (Kenjougo)',
+            type: 'article',
+            content: '# Phân Biệt Tôn Kính Ngữ & Khiêm Nhường Ngữ\n\n## 1. Tôn Kính Ngữ (Sonkeigo - 尊敬語)\nSử dụng khi nói về hành động của **khách hàng, cấp trên, đối tác**:\n* 行く・来る・いる $\\rightarrow$ いらっしゃる / おいでになる\n* 言う $\\rightarrow$ おっしゃる\n* 食べる・飲む $\\rightarrow$ 召し上がる\n\n## 2. Khiêm Nhường Ngữ (Kenjougo - 謙譲語)\nSử dụng khi nói về hành động của **bản thân hoặc người trong công ty mình**:\n* 行く・来る $\\rightarrow$ 伺う (うかがう) / 参る (まいる)\n* 言う $\\rightarrow$ 申す (もうす) / 申し上げる\n* 見る $\\rightarrow$ 拝見する (はいけんする)',
+            durationMinutes: 25,
+            isCompleted: true,
+            isStarred: true,
+            attachments: [
+              {
+                id: 'att-jp-1',
+                name: 'Bang_Keigo_Thuong_Mai_Cheatsheet.pdf',
+                url: 'https://drive.google.com/sample-jp-pdf',
+                type: 'pdf'
+              }
+            ]
+          },
+          {
+            id: 'les-jp-102',
+            title: 'Bài 2: Đàm Thoại Điện Thoại & Hẹn Gặp Khách Hàng Chuẩn Nhật',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Ld3tfGRGA" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-negotiation-leadership-skills',
+    title: 'Nghệ Thuật Đàm Phán Đỉnh Cao & Tư Duy Lãnh Đạo Đội Ngũ (Leadership)',
+    description: 'Kỹ thuật lắng nghe chủ động, chiến thuật thương lượng win-win, truyền cảm hứng và giải quyết xung đột trong nhóm làm việc.',
+    category: 'Kỹ năng sống',
+    instructor: 'Chris Voss & Đỗ Tuấn Anh',
+    sourcePlatform: 'Unica',
+    tags: ['Đàm phán', 'Lãnh đạo', 'Leadership', 'Giao tiếp', 'Quản lý'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-17T01:00:00Z',
+    updatedAt: '2026-08-17T01:20:00Z',
+    lastWatchedLessonId: 'les-lead-101',
+    chapters: [
+      {
+        id: 'ch-lead-tactics',
+        title: 'Chương 1: Tâm Lý Học Trong Đàm Phán & Giao Tiếp Thấu Cảm',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-lead-101',
+            title: 'Bài 1: Kỹ Thuật Phản Chiếu (Mirroring) & Gắn Nhãn Cảm Xúc (Labeling)',
+            type: 'video',
+            videoSource: 'https://abyssplayer.com/bGOgQoLE0',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-lead-102',
+            title: 'Bài 2: Nghệ Thuật Đặt Câu Hỏi Mở \"Làm Thế Nào\" (Calibrated Questions)',
+            type: 'article',
+            content: '# Sức Mạnh Của Câu Hỏi Định Hướng (Calibrated Questions)\n\nThay vì nói \"Tôi không thể làm điều đó\", hãy chuyển gánh nặng giải quyết vấn đề sang đối phương bằng các câu hỏi bắt đầu bằng **\"Như thế nào\" (How)** hoặc **\"Cái gì\" (What)**.\n\n### Các Câu Hỏi Mẫu:\n* *\"Làm thế nào để tôi có thể đáp ứng mức giá đó trong khi vẫn đảm bảo chất lượng dịch vụ tốt nhất cho quý vị?\"*\n* *\"Điều gì khiến tiến độ dự án hiện tại trở thành mối quan tâm lớn nhất của anh/chị?\"*\n* *\"Chúng ta nên xử lý việc này như thế nào để cả hai bên đều đạt được mục tiêu?\"*',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-performance-facebook-tiktok-ads',
+    title: 'Tối Ưu Quảng Cáo Facebook Ads & TikTok Ads Chuyển Đổi Cao',
+    description: 'Thiết lập Pixel & CAPI chuẩn xác, xây dựng tệp Custom Audience, tối ưu ngân sách chiến dịch CBO/ABO và nâng cao chỉ số ROAS.',
+    category: 'Marketing',
+    instructor: 'Bùi Đức Thắng (Performance Marketer)',
+    sourcePlatform: 'KTcity',
+    tags: ['Facebook Ads', 'TikTok Ads', 'Performance Marketing', 'ROI', 'Media Buying'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-17T02:00:00Z',
+    updatedAt: '2026-08-17T01:10:00Z',
+    lastWatchedLessonId: 'les-ads-101',
+    chapters: [
+      {
+        id: 'ch-ads-tracking',
+        title: 'Chương 1: Thiết Lập Tracking & Đo Lường Dữ Liệu Chuẩn Xác',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-ads-101',
+            title: 'Bài 1: Cài Đặt Meta Conversions API (CAPI) & TikTok Events API',
+            type: 'video',
+            videoSource: 'Ld3tfGRGA',
+            durationMinutes: 32,
+            isCompleted: false,
+            isStarred: false,
+            attachments: [
+              {
+                id: 'att-ads-1',
+                name: 'Tracking_Checklist_CAPI_GTM.pdf',
+                url: 'https://drive.google.com/sample-tracking-pdf',
+                type: 'pdf'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-cybersecurity-ethical-hacking',
+    title: 'An Ninh Mạng Thực Chiến & Kiểm Thử Xâm Nhập (Ethical Hacking)',
+    description: 'Nắm vững kỹ thuật rà quét lỗ hổng OWASP Top 10, phân tích mã độc, bảo mật hệ thống Linux/Cloud và quy trình Penetration Testing chuyên nghiệp.',
+    category: 'Lập trình',
+    instructor: 'Võ Quốc Khánh (Security Specialist)',
+    sourcePlatform: 'Google Drive',
+    tags: ['Security', 'Ethical Hacking', 'Pentest', 'Cybersecurity', 'Linux'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-17T03:00:00Z',
+    updatedAt: '2026-08-17T00:50:00Z',
+    lastWatchedLessonId: 'les-sec-101',
+    chapters: [
+      {
+        id: 'ch-sec-owasp',
+        title: 'Chương 1: Phòng Chống Lỗ Hổng Ứng Dụng Web (OWASP Top 10)',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-sec-101',
+            title: 'Bài 1: Nhận Diện & Khắc Phục Lỗ Hổng SQL Injection & XSS',
+            type: 'mixed',
+            videoSource: 'https://abyssplayer.com/bGOgQoLE0',
+            content: '# Phòng Chống Lỗ Hổng Cross-Site Scripting (XSS)\n\nXSS xảy ra khi ứng dụng nhận dữ liệu không an toàn từ người dùng và render trực tiếp ra DOM mà không escape hoặc sanitize.\n\n### Biện pháp phòng chống:\n1. Sử dụng hàm encode/escape dữ liệu đầu ra phù hợp với ngữ cảnh.\n2. Cấu hình **Content Security Policy (CSP)** nghiêm ngặt qua HTTP Header.\n3. Luôn bật thuộc tính `HttpOnly` và `SameSite=Strict` cho Cookie nhạy cảm.',
+            durationMinutes: 35,
+            isCompleted: true,
+            isStarred: true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'course-psychology-mindset-stoicism',
+    title: 'Tâm Lý Học Hành Vi & Triết Học Khắc Kỷ (Stoicism) Ứng Dụng',
+    description: 'Làm chủ cảm xúc trước nghịch cảnh, rèn luyện sự kiên định nội tâm và áp dụng tư duy Khắc kỷ vào công việc, sự nghiệp và cuộc sống.',
+    category: 'Kỹ năng sống',
+    instructor: 'TS. Phạm Minh Tâm',
+    sourcePlatform: 'Coursera',
+    tags: ['Tâm lý học', 'Stoicism', 'Mindset', 'Kỹ năng sống', 'Bình an nội tâm'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-17T04:00:00Z',
+    updatedAt: '2026-08-17T00:20:00Z',
+    lastWatchedLessonId: 'les-stc-101',
+    chapters: [
+      {
+        id: 'ch-stc-dichotomy',
+        title: 'Chương 1: Phân Đôi Quyền Kiểm Soát (Dichotomy of Control)',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-stc-101',
+            title: 'Bài 1: Những Thứ Nằm Trong & Ngoài Tầm Kiểm Soát Của Chúng Ta',
+            type: 'article',
+            content: '# Nguyên Tắc Phân Đôi Quyền Kiểm Soát Của Epictetus\n\n> *\"Có những điều nằm trong tầm kiểm soát của chúng ta, và có những điều hoàn toàn nằm ngoài tầm kiểm soát.\"*\n\n### 1. Nằm trong tầm kiểm soát:\n* Nhận định, suy nghĩ, phản ứng, hành động và giá trị sống của bản thân.\n\n### 2. Nằm ngoài tầm kiểm soát:\n* Ý kiến của người khác, thời tiết, nền kinh tế, thị trường, kết quả cuối cùng.\n\nKhi bạn dồn 100% năng lượng vào **nỗ lực của chính mình** thay vì lo lắng về kết quả ngoài tầm với, sự lo âu sẽ biến mất và sự bình an nội tâm sẽ xuất hiện.',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: true
+          }
+        ]
+      }
+    ]
   }
 ];
 
@@ -616,8 +1047,8 @@ export function getStoredCourses(): Course[] {
       return INITIAL_SAMPLE_COURSES;
     }
     const parsed: Course[] = JSON.parse(data);
-    // Auto-migrate if older initial sample dataset is detected (e.g. fewer than 10 courses or older ids)
-    if (Array.isArray(parsed) && (parsed.length < 10 || parsed[0].id === 'course-ai-mastery' || parsed[0].id === 'course-web-dev')) {
+    // Auto-migrate if older initial sample dataset is detected (e.g. fewer than 20 courses or older ids)
+    if (Array.isArray(parsed) && (parsed.length < 20 || parsed[0].id === 'course-ai-mastery' || parsed[0].id === 'course-web-dev')) {
       localStorage.setItem(STORAGE_KEY_COURSES, JSON.stringify(INITIAL_SAMPLE_COURSES));
       return INITIAL_SAMPLE_COURSES;
     }

@@ -94,5 +94,11 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
    * Tích hợp giao diện **Article Reader** riêng biệt cho bài đọc lý thuyết.
 5. **Khu Vực Quản Lý Tài Liệu Đính Kèm (Attachments Manager)**:
    * Quản lý không giới hạn Slide PDF, Drive, GitHub Repo, Link tài liệu kèm theo từng bài học trực tiếp trong modal tạo/sửa khóa học.
+6. **Kéo Thả Sắp Xếp Giáo Trình (Drag & Drop Curriculum Reordering)**:
+   * Tích hợp tay nắm `⠿` kéo thả HTML5 cho cả Chương và Bài học, kèm nút bấm nhanh `▲ Lên` / `▼ Xuống`.
+7. **Thanh Công Cụ Soạn Thảo Bài Viết Trực Quan (`RichTextEditor.tsx`) & Parser `MarkdownRenderer.tsx`**:
+   * Thanh công cụ hỗ trợ `H1-H3`, `In đậm`, `In nghiêng`, `Danh sách`, `Code Snippet`, `Trích dẫn`, `Đường kẻ ngang`, `Mẫu bài học chuẩn`.
+   * Tăng kích thước font chữ Article Reader (`text-base` / `text-lg`), khoảng cách dòng thoáng đãng chuẩn Typography, định dạng in đậm/tiêu đề rõ ràng.
+
 
 

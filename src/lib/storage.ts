@@ -1094,11 +1094,20 @@ export function saveCourses(courses: Course[]): void {
 export function getStoredCategories(): string[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_CATEGORIES);
-    if (!data) {
-      localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
-      return DEFAULT_CATEGORIES;
+    let list: string[] = data ? JSON.parse(data) : DEFAULT_CATEGORIES;
+    
+    // Auto-merge categories from existing courses
+    const storedCoursesData = localStorage.getItem(STORAGE_KEY_COURSES);
+    if (storedCoursesData) {
+      try {
+        const courses = JSON.parse(storedCoursesData);
+        if (Array.isArray(courses)) {
+          const fromCourses = courses.map((c: any) => c.category?.trim()).filter(Boolean);
+          list = Array.from(new Set([...list, ...fromCourses]));
+        }
+      } catch {}
     }
-    return JSON.parse(data);
+    return list;
   } catch {
     return DEFAULT_CATEGORIES;
   }
@@ -1115,11 +1124,20 @@ export function saveCategories(categories: string[]): void {
 export function getStoredSources(): string[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_SOURCES);
-    if (!data) {
-      localStorage.setItem(STORAGE_KEY_SOURCES, JSON.stringify(DEFAULT_SOURCES));
-      return DEFAULT_SOURCES;
+    let list: string[] = data ? JSON.parse(data) : DEFAULT_SOURCES;
+    
+    // Auto-merge sources from existing courses
+    const storedCoursesData = localStorage.getItem(STORAGE_KEY_COURSES);
+    if (storedCoursesData) {
+      try {
+        const courses = JSON.parse(storedCoursesData);
+        if (Array.isArray(courses)) {
+          const fromCourses = courses.map((c: any) => c.sourcePlatform?.trim()).filter(Boolean);
+          list = Array.from(new Set([...list, ...fromCourses]));
+        }
+      } catch {}
     }
-    return JSON.parse(data);
+    return list;
   } catch {
     return DEFAULT_SOURCES;
   }
@@ -1136,11 +1154,20 @@ export function saveSources(sources: string[]): void {
 export function getStoredInstructors(): string[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_INSTRUCTORS);
-    if (!data) {
-      localStorage.setItem(STORAGE_KEY_INSTRUCTORS, JSON.stringify(DEFAULT_INSTRUCTORS));
-      return DEFAULT_INSTRUCTORS;
+    let list: string[] = data ? JSON.parse(data) : DEFAULT_INSTRUCTORS;
+    
+    // Auto-merge instructors from existing courses
+    const storedCoursesData = localStorage.getItem(STORAGE_KEY_COURSES);
+    if (storedCoursesData) {
+      try {
+        const courses = JSON.parse(storedCoursesData);
+        if (Array.isArray(courses)) {
+          const fromCourses = courses.map((c: any) => c.instructor?.trim()).filter(Boolean);
+          list = Array.from(new Set([...list, ...fromCourses]));
+        }
+      } catch {}
     }
-    return JSON.parse(data);
+    return list;
   } catch {
     return DEFAULT_INSTRUCTORS;
   }

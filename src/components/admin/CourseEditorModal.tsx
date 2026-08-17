@@ -21,7 +21,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   BookMarked,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle2,
+  Check
 } from 'lucide-react';
 import { extractAbyssId } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
@@ -64,6 +66,9 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
   // Initial Snapshot for Unsaved Changes tracking
   const [initialSnapshot, setInitialSnapshot] = useState<string>('');
+
+  // Save Success Notification state
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string>('');
 
   // Studio Mode: 'info' (Thông tin) | 'curriculum' (Giáo trình)
   const [studioSection, setStudioSection] = useState<'info' | 'curriculum'>('curriculum');
@@ -108,6 +113,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       prevIsOpenRef.current = true;
       prevCourseIdRef.current = currentCourseId;
       setShowUnsavedConfirmModal(false);
+      setSaveSuccessMessage('');
 
       if (courseToEdit) {
         // Editing existing course -> Default to 'curriculum' tab
@@ -232,6 +238,72 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isOpen, isDirty]);
+
+  // Save Function (Supports Save & Stay OR Save & Close)
+  const handleSaveCourse = (andClose: boolean = false) => {
+    if (!title.trim()) {
+      alert('Vui lòng nhập tên khóa học ở mục Thông Tin!');
+      setStudioSection('info');
+      return;
+    }
+
+    const tags = tagsInput
+      .split(',')
+      .map(t => t.trim().replace(/^#/, ''))
+      .filter(Boolean);
+
+    const savedCourse: Course = {
+      id: courseToEdit ? courseToEdit.id : `course-${Date.now()}`,
+      title: title.trim(),
+      description: description.trim(),
+      category: category || 'Chung',
+      instructor: instructor.trim() || undefined,
+      sourcePlatform: sourcePlatform || 'Khác',
+      thumbnailUrl: thumbnailUrl.trim() || undefined,
+      tags,
+      chapters,
+      createdAt: courseToEdit ? courseToEdit.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Save to parent and storage
+    onSaveCourse(savedCourse);
+
+    // Update snapshot so isDirty becomes false
+    setInitialSnapshot(JSON.stringify({
+      title: savedCourse.title,
+      description: savedCourse.description || '',
+      category: savedCourse.category || 'Chung',
+      instructor: savedCourse.instructor || '',
+      sourcePlatform: savedCourse.sourcePlatform || 'Khác',
+      thumbnailUrl: savedCourse.thumbnailUrl || '',
+      tagsInput: tags.join(', '),
+      chapters: savedCourse.chapters
+    }));
+
+    if (andClose) {
+      onClose();
+    } else {
+      // Show instant feedback toast
+      setSaveSuccessMessage('Đã lưu tất cả thay đổi vào máy!');
+      setTimeout(() => setSaveSuccessMessage(''), 2500);
+    }
+  };
+
+  // Keyboard shortcut: Ctrl+S / Cmd+S to save without closing
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveCourse(false);
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, title, description, category, instructor, sourcePlatform, thumbnailUrl, tagsInput, chapters]);
 
   if (!isOpen) return null;
 
@@ -446,44 +518,13 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     handleUpdateActiveLesson('attachments', updated);
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!title.trim()) {
-      alert('Vui lòng nhập tên khóa học ở mục Thông Tin!');
-      setStudioSection('info');
-      return;
-    }
-
-    const tags = tagsInput
-      .split(',')
-      .map(t => t.trim().replace(/^#/, ''))
-      .filter(Boolean);
-
-    const savedCourse: Course = {
-      id: courseToEdit ? courseToEdit.id : `course-${Date.now()}`,
-      title: title.trim(),
-      description: description.trim(),
-      category: category || 'Chung',
-      instructor: instructor.trim() || undefined,
-      sourcePlatform: sourcePlatform || 'Khác',
-      thumbnailUrl: thumbnailUrl.trim() || undefined,
-      tags,
-      chapters,
-      createdAt: courseToEdit ? courseToEdit.createdAt : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    onSaveCourse(savedCourse);
-    onClose();
-  };
-
   const totalLessonsCount = chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden animate-fade-in">
       <div className="relative w-full max-w-7xl h-[92vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
         
-        {/* Top Header Bar with Tab Switchers, Unsaved Indicator & Save */}
+        {/* Top Header Bar with Tab Switchers, Unsaved Indicator & Save Actions */}
         <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-lg shadow-emerald-500/20">
@@ -498,11 +539,19 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                   {totalLessonsCount} bài
                 </span>
 
+                {/* Save Success Toast */}
+                {saveSuccessMessage && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-fade-in">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{saveSuccessMessage}</span>
+                  </span>
+                )}
+
                 {/* Unsaved Changes Visual Pill */}
-                {isDirty && (
+                {isDirty && !saveSuccessMessage && (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <span>Chưa lưu thay đổi</span>
+                    <span>Chưa lưu thay đổi (Ctrl+S)</span>
                   </span>
                 )}
               </div>
@@ -512,8 +561,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
             </div>
           </div>
 
-          {/* Section Mode Navigation (Tối giản tên tab: Giáo Trình & Thông Tin) + Save */}
-          <div className="flex items-center gap-2.5">
+          {/* Section Mode Navigation + Save Actions */}
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800">
               <button
                 type="button"
@@ -542,13 +591,26 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
               </button>
             </div>
 
+            {/* Save & Stay in Workspace Button */}
             <button
               type="button"
-              onClick={() => handleSubmit()}
-              className="px-5 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition-all"
+              onClick={() => handleSaveCourse(false)}
+              className="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/25 transition-all"
+              title="Lưu thay đổi vào máy và tiếp tục soạn thảo (Ctrl+S)"
             >
-              <Save className="w-4 h-4" />
-              <span>{courseToEdit ? 'Lưu Thay Đổi' : 'Tạo Khóa Học'}</span>
+              <Save className="w-3.5 h-3.5" />
+              <span>Lưu Thay Đổi</span>
+            </button>
+
+            {/* Save & Close Button */}
+            <button
+              type="button"
+              onClick={() => handleSaveCourse(true)}
+              className="px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
+              title="Lưu tất cả thay đổi và quay về danh sách"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Lưu & Đóng</span>
             </button>
 
             {/* Safe Close Button */}

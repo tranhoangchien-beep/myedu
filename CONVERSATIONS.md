@@ -120,8 +120,9 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
      - **`[✓ Lưu & Đóng]`**: Lưu và đóng cửa sổ khi người dùng đã hoàn thành toàn bộ khóa học.
 
 
-10. **Tự Động Nạp Bộ Dữ Liệu Kiểm Thử Vàng (Golden Test Suite - 10 Khóa Học Đa Lĩnh Vực)**:
-    * Khởi tạo và tự động đồng bộ **10 khóa học mẫu cao cấp** bao phủ 100% các lĩnh vực: AI, Lập trình Web, DevOps Cloud, Phân tích Dữ liệu, Kinh doanh Startup, Thiết kế UI/UX, Ngoại ngữ, Kỹ năng sống & Content SEO.
-    * Đầy đủ các định dạng: Video Abyss đa dạng (URL, Iframe, Short ID), bài viết Markdown chuyên sâu (bảng biểu, code block, công thức), bài học hỗn hợp (Mixed), đầy đủ 4 loại tài liệu đính kèm (PDF, Google Drive, GitHub, Link Colab/Notion).
-    * Tích hợp cơ chế tự động di chuyển (Auto-migration) nâng cấp `localStorage` cũ lên bộ dữ liệu 10 khóa học mới mà không cần thao tác thủ công.
+10. **Tự Động Nạp Bộ Dữ Liệu Kiểm Thử Vàng (Golden Test Suite - 20 Khóa Học Toàn Diện Đa Ngành)**:
+    * Khởi tạo và tự động đồng bộ **20 khóa học mẫu cao cấp** bao phủ 100% tất cả 8 danh mục và các nền tảng: AI & Machine Learning, Lập trình Fullstack & Mobile (Flutter, DevOps, Security), Phân tích Dữ liệu & Data Engineering, Kinh doanh & Tài chính Doanh nghiệp, Thiết kế UI/UX & Nhận diện Thương hiệu, Ngoại ngữ (Tiếng Anh, Tiếng Nhật N3), Kỹ năng sống (Deep Work, Đàm phán, Stoicism), Marketing & Ads Performance.
+    * Đầy đủ các định dạng: Video Abyss đa dạng (URL, Iframe, Short ID), bài viết Markdown chuyên sâu (bảng biểu, code block, công thức), bài học hỗn hợp (Mixed), đầy đủ 4 loại tài liệu đính kèm (PDF, Google Drive, GitHub, Link Colab/Notion/Figma).
+    * Tích hợp cơ chế tự động di chuyển (Auto-migration) nâng cấp `localStorage` cũ lên bộ dữ liệu 20 khóa học mới mà không cần thao tác thủ công.
+
 

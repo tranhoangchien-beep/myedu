@@ -686,9 +686,11 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {isZenMode ? (
-              // Zen Focus Mode: Distraction-free max container at center
-              <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pt-2">
+            {/* Single Persistent Player Layout (Prevents video reload when Zen Mode is toggled) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              <div className={`transition-all duration-300 space-y-6 ${
+                isZenMode ? 'lg:col-span-12 max-w-5xl mx-auto w-full pt-2' : 'lg:col-span-8'
+              }`}>
                 <AbyssPlayer
                   course={activeCourse}
                   currentLesson={activeLesson}
@@ -705,27 +707,8 @@ export const App: React.FC = () => {
                   onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
                 />
               </div>
-            ) : (
-              // Standard Split Mode: Player on Left, Sidebar on Right
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <div className="lg:col-span-8 space-y-6">
-                  <AbyssPlayer
-                    course={activeCourse}
-                    currentLesson={activeLesson}
-                    hasPrevLesson={hasPrevLesson}
-                    hasNextLesson={hasNextLesson}
-                    onPrevLesson={handlePrevLesson}
-                    onNextLesson={handleNextLesson}
-                    onToggleComplete={(lId) => handleToggleComplete(lId)}
-                    onToggleStar={(lId) => handleToggleStar(lId)}
-                    onUpdateNotes={handleUpdateNotes}
-                    isZenMode={isZenMode}
-                    onToggleZenMode={() => setIsZenMode(prev => !prev)}
-                    autoPlayNext={autoPlayNext}
-                    onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
-                  />
-                </div>
 
+              {!isZenMode && (
                 <div className="lg:col-span-4 sticky top-20">
                   <LessonSidebar
                     course={activeCourse}
@@ -740,8 +723,8 @@ export const App: React.FC = () => {
                     }}
                   />
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 

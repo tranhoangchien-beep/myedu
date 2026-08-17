@@ -1,9 +1,9 @@
 /**
  * Universal Video Embed Parser & Normalizer
- * Hỗ trợ bóc tách URL & ID từ Abyss Player, YouTube, Vimeo, MP4/WebM trực tiếp hoặc thẻ Iframe nhúng bất kỳ.
+ * Hỗ trợ bóc tách URL & ID từ Abyss Player, YouTube, TikTok, Vimeo, Google Drive, Loom, MP4/WebM trực tiếp hoặc thẻ Iframe nhúng bất kỳ.
  */
 
-export type VideoProviderType = 'abyss' | 'youtube' | 'vimeo' | 'mp4' | 'iframe' | 'unknown';
+export type VideoProviderType = 'abyss' | 'youtube' | 'tiktok' | 'vimeo' | 'gdrive' | 'loom' | 'mp4' | 'iframe' | 'unknown';
 
 export interface ParsedVideoInfo {
   provider: VideoProviderType;
@@ -52,7 +52,25 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
     };
   }
 
-  // 4. Vimeo Embed hoặc Link
+  // 4. TikTok Video Link / Iframe / Embed Code / Blockquote
+  // Formats: tiktok.com/@user/video/7123456789012345678, tiktok.com/embed/v2/7123456789012345678 hoặc data-video-id="7123456789012345678"
+  const tiktokMatch = targetUrl.match(/(?:tiktok\.com\/(?:@[\w.-]+\/video\/|embed\/v2\/|embed\/|player\/v1\/)|data-video-id=["'])(\d+)/i)
+    || trimmed.match(/data-video-id=["'](\d+)["']/i)
+    || trimmed.match(/\/video\/(\d+)/i);
+
+  if (tiktokMatch && tiktokMatch[1]) {
+    const videoId = tiktokMatch[1];
+    return {
+      provider: 'tiktok',
+      embedUrl: `https://www.tiktok.com/embed/v2/${videoId}`,
+      rawInput: trimmed,
+      isDirectVideo: false,
+      label: `TikTok (${videoId})`,
+      id: videoId,
+    };
+  }
+
+  // 5. Vimeo Embed hoặc Link
   // Formats: vimeo.com/ID hoặc player.vimeo.com/video/ID
   const vimeoMatch = targetUrl.match(/(?:vimeo\.com\/(?:video\/)?)([0-9]+)/i);
   if (vimeoMatch && vimeoMatch[1]) {
@@ -67,7 +85,35 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
     };
   }
 
-  // 5. Abyss Player Embed hoặc Link / ID
+  // 6. Google Drive Video (tự động chuyển /view thành /preview cho iframe nhúng)
+  const gdriveMatch = targetUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  if (gdriveMatch && gdriveMatch[1]) {
+    const fileId = gdriveMatch[1];
+    return {
+      provider: 'gdrive',
+      embedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+      rawInput: trimmed,
+      isDirectVideo: false,
+      label: `Google Drive (${fileId.slice(0, 8)}...)`,
+      id: fileId,
+    };
+  }
+
+  // 7. Loom Video (tự động chuyển /share/ID thành /embed/ID)
+  const loomMatch = targetUrl.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9_-]+)/i);
+  if (loomMatch && loomMatch[1]) {
+    const videoId = loomMatch[1];
+    return {
+      provider: 'loom',
+      embedUrl: `https://www.loom.com/embed/${videoId}`,
+      rawInput: trimmed,
+      isDirectVideo: false,
+      label: `Loom (${videoId})`,
+      id: videoId,
+    };
+  }
+
+  // 8. Abyss Player Embed hoặc Link / ID
   const abyssMatch = targetUrl.match(/(?:player\.abyssplayer\.com|abyssplayer\.com|abyss\.to\/(?:v|e|embed))\/(?:embed\/)?([a-zA-Z0-9_-]+)/i);
   if (abyssMatch && abyssMatch[1]) {
     const videoId = abyssMatch[1];
@@ -93,7 +139,7 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
     };
   }
 
-  // 6. Generic Embed URL (Drive preview, Loom, DailyMotion, custom iframe link)
+  // 9. Generic Embed URL (Drive preview, Loom, DailyMotion, custom iframe link)
   if (/^https?:\/\//i.test(targetUrl)) {
     return {
       provider: 'iframe',

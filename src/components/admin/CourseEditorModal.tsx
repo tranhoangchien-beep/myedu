@@ -1012,15 +1012,19 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
                             <Video className="w-4 h-4" />
-                            <span>Nguồn Video Bài Giảng (Abyss, YouTube, Vimeo, MP4 hoặc mã nhúng Iframe bất kỳ)</span>
+                            <span>Nguồn Video Bài Giảng (Abyss, YouTube, TikTok, Vimeo, Drive, MP4 hoặc Iframe)</span>
                           </label>
                           
                           {activeLesson.videoSource && (
                             <span className={`text-[10px] font-mono font-bold px-3 py-1 rounded-xl border whitespace-nowrap ${
                               parseUniversalVideo(activeLesson.videoSource).provider === 'youtube'
                                 ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                : parseUniversalVideo(activeLesson.videoSource).provider === 'tiktok'
+                                ? 'bg-pink-500/10 text-pink-400 border-pink-500/20'
                                 : parseUniversalVideo(activeLesson.videoSource).provider === 'vimeo'
                                 ? 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                                : parseUniversalVideo(activeLesson.videoSource).provider === 'gdrive'
+                                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                 : parseUniversalVideo(activeLesson.videoSource).provider === 'mp4'
                                 ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
                                 : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -1035,7 +1039,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                             type="text"
                             value={activeLesson.videoSource || ''}
                             onChange={(e) => handleUpdateActiveLesson('videoSource', e.target.value)}
-                            placeholder="Dán link Abyss, YouTube, Vimeo, MP4 trực tiếp hoặc mã <iframe src=...>"
+                            placeholder="Dán link hoặc mã nhúng: TikTok, YouTube, Abyss, Vimeo, Drive, MP4 hoặc <iframe...>"
                             className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-slate-200 placeholder-slate-500 focus:border-emerald-500 font-mono text-[11px]"
                           />
                         </div>

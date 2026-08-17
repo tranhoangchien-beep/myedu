@@ -142,6 +142,12 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
     * **Thao tác hàng loạt (Floating Batch Actions Toolbar)**:
       - Checkbox chọn nhiều khóa học (kèm nút Chọn tất cả).
       - Thanh công cụ nổi thông minh: Xóa hàng loạt, Đổi danh mục hàng loạt, Xuất JSON riêng cho các khóa được chọn.
-    * **Thước Đo Sức Khỏe Bộ Nhớ Thiết Bị (Offline Storage Health Meter)**:
-      - Hiển thị trực quan dung lượng LocalStorage đang sử dụng (KB/MB) so với giới hạn an toàn 5MB của trình duyệt.
-    * **Modal Xác Nhận Xóa Tùy Chỉnh (Custom Dark Confirmation Modals)** & **Phím tắt Studio (`/` để tìm kiếm, `Esc` để hủy chọn)**.
+13. **Kiến Trúc Hợp Nhất Trải Nghiệm Học Tập & Quản Trị (Super Workspace with View Switcher)**:
+    * **Bộ Chuyển Đổi Chế Độ Xem (View Mode Switcher: Dạng Thẻ ↔ Dạng Bảng)**:
+      - Đặt ngay trên thanh tiêu đề của Thư viện khóa học trên Trang Chủ: Cho phép chuyển đổi 1-click giữa **`[ 🎴 Dạng Thẻ ]`** (Card Gallery trực quan, truyền cảm hứng học tập) và **`[ 📋 Dạng Bảng ]`** (Table quản trị nhỏ gọn, tốc độ, thao tác hàng loạt).
+      - Tự động lưu và ghi nhớ chế độ xem ưa thích vào `localStorage` (`myedu_layout_mode_v1`).
+    * **Tích Hợp Toàn Bộ Năng Lực Quản Trị Trực Tiếp Trong Dạng Bảng**:
+      - Nút `[Vào Học]`, `[Sửa]`, `[Nhân bản 1-click]`, `[Nạp thêm bài]`, `[Xóa]`.
+      - Checkbox chọn nhiều hàng và **Thanh công cụ nổi thao tác hàng loạt** (Đổi danh mục, Xuất JSON, Xóa đã chọn).
+      - Modal Dark Theme xác nhận xóa an toàn.
+    * **Bộ Lọc Liên Kết 3 Chiều & Tìm Kiếm Hoạt Động Đồng Nhất 100%** trên cả 2 chế độ xem.

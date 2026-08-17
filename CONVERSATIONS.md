@@ -157,10 +157,15 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
       - Tự động quét và hợp nhất (Auto-Merge) toàn bộ giảng viên đang được gán trong các khóa học vào kho lưu trữ Quản trị tập trung (`myedu_instructors_v1`).
       - Nhờ đó, cả ở **Quản trị (`CourseStudioView`)**, **Bộ lọc (`FilterHub`)** và **Modal Tạo/Sửa khóa học (`CourseEditorModal`)** đều hiển thị đồng nhất 100% cả `Chiến` và `Trần Hoàng Chiến` (cùng số khóa học thực tế tương ứng).
       - Mọi thao tác Thêm, Sửa tên, hoặc Xóa giảng viên sẽ được phản ánh đồng bộ ngay tức thì ở mọi nơi.
-16. **Tối Ưu Giao Diện Tinh Tế & Kéo Thả Sắp Xếp Chương Học (Chapter Drag-and-Drop & Icon Polish)**:
+16. **Tối Ưu Giao Diện Tinh Tế & Kéo Thả Sắp Xếp Chương Học Hoàn Chỉnh (Chapter Drag-and-Drop & Icon Polish)**:
     * **Bỏ hoàn toàn các icon lặp thừa**:
       - Sửa nút `+ Tạo Khóa Học Mới` thành `Tạo Khóa Học Mới` (đã có icon `<Plus>` bên cạnh, không bị trùng `+ +`).
       - Loại bỏ các emoji thừa (`👨‍🏫`, `🏷️`, `🌐`) ở text button trong subtab Phân loại & Giảng viên (vì đã có icon SVG Lucide tương ứng).
     * **Tính Năng Kéo Thả Sắp Xếp Chương Học Hoàn Chỉnh (Chapter Reordering via HTML5 Drag API)**:
       - Tích hợp HTML5 Drag API chuẩn xác cho thẻ **Chương Học** (với `effectAllowed = 'move'`, `draggedChapterIdxRef` và `e.preventDefault()` đồng bộ).
       - Cho phép người dùng nắm kéo trực tiếp thanh Tiêu đề Chương học (hoặc icon `GripVertical`) để hoán đổi vị trí thứ tự Chương học một cách dễ dàng và mượt mà.
+17. **Tối Giản Hóa Giao Diện Hướng Học Tối Đa (Distraction-Free Video Learning Polish)**:
+    * **Bỏ phần Ghi chú bài giảng**: Gỡ hoàn toàn khối "Ghi Chú Bài Giảng" khỏi trình phát video AbyssPlayer để tập trung tối đa không gian phát video và tài liệu đính kèm.
+    * **Bỏ tính năng Ghim bài giảng**: Gỡ nút `Đã ghim` trên Navbar, trình phát video và danh sách bài giảng để giao diện học lean, gọn nhẹ.
+    * **Gom Chuỗi Học (Streak) & Bài Học Hôm Nay Thành 1 Khối Thành Tích**:
+      - Hợp nhất 2 pill badge `🔥 1 ngày` và `+2 bài` riêng lẻ thành 1 **Mục Thành Tích duy nhất** sang trọng trên thanh Header: `🏆 Thành tích: 🔥 1 ngày • 🎯 +2 bài`.

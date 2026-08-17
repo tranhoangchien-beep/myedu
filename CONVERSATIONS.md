@@ -177,3 +177,7 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
       - **Trực tiếp Video MP4 / WebM**: Tự động phát bằng thẻ `<video controls>` gốc siêu mượt.
       - **Mã Nhúng Iframe Bất Kỳ**: Nhận diện và trích xuất `src` từ thẻ `<iframe ...>` của bất kỳ nền tảng nào (Google Drive preview, Loom, Bilibili, custom iframe...).
     * **Chỉnh sửa giao diện Studio & Player**: Cập nhật nhãn nhập liệu thành `Nguồn Video Bài Giảng (Abyss, YouTube, Vimeo, MP4 hoặc mã nhúng Iframe bất kỳ)` kèm Badge nhận diện nguồn video thông minh (`[YouTube (ID)]`, `[Vimeo (ID)]`, `[Direct MP4]`, `[Abyss (ID)]`).
+19. **Khắc Phục Lỗi Video Reload Khi Chuyển Zen Mode & Tích Hợp TikTok / Drive / Loom Embed**:
+    * **Khắc phục triệt để lỗi Video tự phát lại khi Bật/Tắt Zen Mode**: Tối ưu hóa cấu trúc DOM trong `App.tsx`, giữ nguyên vị trí thẻ `<AbyssPlayer />` cố định trong Virtual DOM khi thay đổi layout grid giữa Zen Mode và Split Mode. Video / iframe giờ đây chạy liên tục không bao giờ bị ngắt hay tự động phát lại từ đầu!
+    * **Hỗ trợ nhúng TikTok Video**: Bổ sung bộ lọc regex hỗ trợ tự động nhận diện ID từ mã nhúng `<blockquote class="tiktok-embed" data-video-id="...">` hoặc link TikTok `tiktok.com/@user/video/ID` $\rightarrow$ sinh đường dẫn embed chuẩn `https://www.tiktok.com/embed/v2/ID`.
+    * **Tự động hóa Google Drive & Loom**: Tự động chuyển link Google Drive `/view` thành `/preview` và link Loom `/share/` thành `/embed/` để phát mượt mà không cần thao tác thủ công.

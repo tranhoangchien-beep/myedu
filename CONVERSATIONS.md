@@ -108,6 +108,12 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
    * **Tính năng Thu Gọn / Mở Rộng (Collapse / Expand)**:
      - Cho phép thu gọn/mở rộng từng **Chương** ở cột mục lục.
      - Cho phép thu gọn **Toàn bộ Cột 1 Mục Lục** để chuyển sang chế độ soạn thảo bài viết toàn màn hình (`Fullscreen Workspace`).
+9. **Hệ Thống Chống Mất Dữ Liệu & Cảnh Báo Thay Đổi Chưa Lưu (Unsaved Changes Guard)**:
+   * Tự động theo dõi trạng thái chỉnh sửa (`isDirty`).
+   * Hiển thị Badge trực quan nhấp nháy `● Chưa lưu thay đổi` trên thanh tiêu đề.
+   * **Chặn đóng cửa sổ bất ngờ**: Khi bấm nút Đóng `(X)`, popup cảnh báo xuất hiện để xác nhận `[Ở Lại Chỉnh Sửa]` hoặc `[Thoát & Hủy Bỏ]`.
+   * **Chặn Reload / Đóng Tab Trình Duyệt (`beforeunload`)**: Kích hoạt hộp thoại cảnh báo của trình duyệt khi người dùng vô tình F5 hoặc tắt tab lúc đang soạn bài dở.
+
 
 
 

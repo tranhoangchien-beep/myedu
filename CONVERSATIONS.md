@@ -110,11 +110,15 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
      - Cho phép thu gọn **Toàn bộ Cột 1 Mục Lục** để chuyển sang chế độ soạn thảo bài viết toàn màn hình (`Fullscreen Workspace`).
 9. **Hệ Thống Chống Mất Dữ Liệu & Cảnh Báo Thay Đổi Chưa Lưu (Unsaved Changes Guard)**:
    * Tự động theo dõi trạng thái chỉnh sửa (`isDirty`).
-   * Hiển thị Badge trực quan nhấp nháy `● Chưa lưu thay đổi` trên thanh tiêu đề.
+   * Hiển thị Badge trực quan nhấp nháy `● Chưa lưu thay đổi (Ctrl+S)` trên thanh tiêu đề.
    * **Chặn đóng cửa sổ bất ngờ**: Khi bấm nút Đóng `(X)`, popup cảnh báo xuất hiện để xác nhận `[Ở Lại Chỉnh Sửa]` hoặc `[Thoát & Hủy Bỏ]`.
    * **Chặn Reload / Đóng Tab Trình Duyệt (`beforeunload`)**: Kích hoạt hộp thoại cảnh báo của trình duyệt khi người dùng vô tình F5 hoặc tắt tab lúc đang soạn bài dở.
    * **Bảo toàn 100% dữ liệu khi chuyển giữa các bài học**: Cô lập vòng đời khởi tạo bằng `useRef`, đảm bảo sửa bài 1 -> chuyển qua bài 2 -> quay lại bài 1 mọi nội dung vẫn được giữ nguyên vẹn trong bộ nhớ form.
    * **Khắc phục lỗi cuộn chuột**: Khóa vị trí cuộn `scrollTop` và sử dụng `onMouseDown preventDefault` trên thanh công cụ Rich Text để khi bấm In đậm/Tiêu đề/Danh sách, con trỏ và màn hình không bao giờ bị nhảy lên trên cùng.
+   * **Tách biệt 2 cơ chế Lưu chuyên nghiệp**:
+     - **`[💾 Lưu Thay Đổi]` (Phím tắt `Ctrl + S` / `Cmd + S`)**: Lưu tức thì dữ liệu vào LocalStorage, xóa cờ `isDirty`, hiện thông báo `✓ Đã lưu tất cả thay đổi vào máy!` và **GIỮ NGUYÊN CỬA SỔ LÀM VIỆC** để tiếp tục soạn thảo các bài khác.
+     - **`[✓ Lưu & Đóng]`**: Lưu và đóng cửa sổ khi người dùng đã hoàn thành toàn bộ khóa học.
+
 
 10. **Tự Động Nạp Bộ Dữ Liệu Kiểm Thử Vàng (Golden Test Suite - 10 Khóa Học Đa Lĩnh Vực)**:
     * Khởi tạo và tự động đồng bộ **10 khóa học mẫu cao cấp** bao phủ 100% các lĩnh vực: AI, Lập trình Web, DevOps Cloud, Phân tích Dữ liệu, Kinh doanh Startup, Thiết kế UI/UX, Ngoại ngữ, Kỹ năng sống & Content SEO.

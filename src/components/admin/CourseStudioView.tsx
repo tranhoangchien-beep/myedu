@@ -667,7 +667,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
             className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Tạo Khóa Học Mới</span>
+            <span>Tạo Khóa Học Mới</span>
           </button>
         </div>
       </div>
@@ -1198,7 +1198,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                 }`}
               >
                 <User className="w-4 h-4 text-amber-400" />
-                <span>👨‍🏫 Tác Giả / Giảng Viên</span>
+                <span>Tác Giả / Giảng Viên</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold">
                   {instructors.length}
                 </span>
@@ -1213,7 +1213,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                 }`}
               >
                 <Tags className="w-4 h-4 text-emerald-400" />
-                <span>🏷️ Danh Mục Chủ Đề</span>
+                <span>Danh Mục Chủ Đề</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold">
                   {categories.length}
                 </span>
@@ -1228,7 +1228,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                 }`}
               >
                 <Globe className="w-4 h-4 text-teal-400" />
-                <span>🌐 Nền Tảng / Nguồn Mua</span>
+                <span>Nền Tảng / Nguồn Mua</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-extrabold">
                   {sources.length}
                 </span>
@@ -1277,7 +1277,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                           className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-amber-500/20 whitespace-nowrap transition-all"
                         >
                           <Plus className="w-4 h-4" />
-                          <span>+ Thêm: "{instSearchOrAdd.trim()}"</span>
+                          <span>Thêm: "{instSearchOrAdd.trim()}"</span>
                         </button>
                       )
                     )}
@@ -1478,7 +1478,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                           className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 whitespace-nowrap transition-all"
                         >
                           <Plus className="w-4 h-4" />
-                          <span>+ Thêm: "{catSearchOrAdd.trim()}"</span>
+                          <span>Thêm: "{catSearchOrAdd.trim()}"</span>
                         </button>
                       )
                     )}
@@ -1643,7 +1643,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                           className="px-4 py-2 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-teal-500/20 whitespace-nowrap transition-all"
                         >
                           <Plus className="w-4 h-4" />
-                          <span>+ Thêm: "{sourceSearchOrAdd.trim()}"</span>
+                          <span>Thêm: "{sourceSearchOrAdd.trim()}"</span>
                         </button>
                       )
                     )}

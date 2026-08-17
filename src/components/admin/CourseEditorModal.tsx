@@ -85,6 +85,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
   // Drag and Drop state (ONLY triggered on the Grip handle)
   const [draggedLessonInfo, setDraggedLessonInfo] = useState<{ chIdx: number; lIdx: number } | null>(null);
+  const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
 
   // Modal alert confirmation for unsaved changes
   const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
@@ -450,8 +451,34 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     });
   };
 
-  // Drag and drop (Handle Only)
+  // Drag and drop for Chapters (Handle Only)
+  const handleChapterDragStart = (chIdx: number, e: React.DragEvent) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('text/plain', `chapter:${chIdx}`);
+    setDraggedChapterIdx(chIdx);
+  };
+
+  const handleChapterDrop = (targetChIdx: number, e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedChapterIdx === null || draggedChapterIdx === targetChIdx) {
+      setDraggedChapterIdx(null);
+      return;
+    }
+
+    setChapters(prev => {
+      const updated = [...prev];
+      const [moved] = updated.splice(draggedChapterIdx, 1);
+      updated.splice(targetChIdx, 0, moved);
+      return updated.map((ch, idx) => ({ ...ch, order: idx + 1 }));
+    });
+
+    setDraggedChapterIdx(null);
+  };
+
+  // Drag and drop for Lessons (Handle Only)
   const handleLessonDragStart = (chIdx: number, lIdx: number, e: React.DragEvent) => {
+    e.stopPropagation();
     e.dataTransfer.setData('text/plain', `${chIdx}:${lIdx}`);
     setDraggedLessonInfo({ chIdx, lIdx });
   };
@@ -654,11 +681,31 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                       return (
                         <div 
                           key={chapter.id}
-                          className="border border-slate-800/80 rounded-2xl bg-slate-900/60 overflow-hidden shadow-sm"
+                          onDragOver={(e) => {
+                            if (draggedChapterIdx !== null) e.preventDefault();
+                          }}
+                          onDrop={(e) => {
+                            if (draggedChapterIdx !== null) handleChapterDrop(chIdx, e);
+                          }}
+                          className={`border rounded-2xl bg-slate-900/60 overflow-hidden shadow-sm transition-all ${
+                            draggedChapterIdx === chIdx ? 'opacity-40 border-emerald-500 border-dashed' : 'border-slate-800/80'
+                          }`}
                         >
-                          {/* Chapter Title Row with Expand/Collapse button */}
+                          {/* Chapter Title Row with Drag handle & Expand/Collapse button */}
                           <div className="p-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between gap-2 group">
                             <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                              
+                              {/* CHAPTER DRAG HANDLE */}
+                              <div
+                                draggable
+                                onDragStart={(e) => handleChapterDragStart(chIdx, e)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-emerald-400 flex-shrink-0"
+                                title="Kéo thả để sắp xếp vị trí chương"
+                              >
+                                <GripVertical className="w-3.5 h-3.5" />
+                              </div>
+
                               <button
                                 type="button"
                                 onClick={(e) => toggleChapterCollapse(chapter.id, e)}

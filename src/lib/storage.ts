@@ -1287,18 +1287,10 @@ export function getStoredCourses(): Course[] {
       return INITIAL_SAMPLE_COURSES;
     }
     const parsed: Course[] = JSON.parse(data);
-    // Auto-migrate if older initial sample dataset is detected or ensure 8xTrading is present
     if (Array.isArray(parsed)) {
-      const has8xTrading = parsed.some(c => c.id === 'course-8xtrading-footprint-trading');
-      if (!has8xTrading || parsed.length < 21 || parsed[0]?.id === 'course-ai-mastery' || parsed[0]?.id === 'course-web-dev') {
-        const existingIds = new Set(parsed.map(c => c.id));
-        const missingFromInitial = INITIAL_SAMPLE_COURSES.filter(c => !existingIds.has(c.id));
-        const updated = [...missingFromInitial, ...parsed];
-        localStorage.setItem(STORAGE_KEY_COURSES, JSON.stringify(updated));
-        return updated;
-      }
+      return parsed;
     }
-    return parsed;
+    return INITIAL_SAMPLE_COURSES;
   } catch (error) {
     console.error('Failed to parse courses from localStorage', error);
     return INITIAL_SAMPLE_COURSES;
@@ -1316,20 +1308,12 @@ export function saveCourses(courses: Course[]): void {
 export function getStoredCategories(): string[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_CATEGORIES);
-    let list: string[] = data ? JSON.parse(data) : DEFAULT_CATEGORIES;
-    
-    // Auto-merge categories from existing courses
-    const storedCoursesData = localStorage.getItem(STORAGE_KEY_COURSES);
-    if (storedCoursesData) {
-      try {
-        const courses = JSON.parse(storedCoursesData);
-        if (Array.isArray(courses)) {
-          const fromCourses = courses.map((c: any) => c.category?.trim()).filter(Boolean);
-          list = Array.from(new Set([...list, ...fromCourses]));
-        }
-      } catch {}
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
     }
-    return list;
+    localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
+    return DEFAULT_CATEGORIES;
   } catch {
     return DEFAULT_CATEGORIES;
   }
@@ -1346,20 +1330,12 @@ export function saveCategories(categories: string[]): void {
 export function getStoredSources(): string[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_SOURCES);
-    let list: string[] = data ? JSON.parse(data) : DEFAULT_SOURCES;
-    
-    // Auto-merge sources from existing courses
-    const storedCoursesData = localStorage.getItem(STORAGE_KEY_COURSES);
-    if (storedCoursesData) {
-      try {
-        const courses = JSON.parse(storedCoursesData);
-        if (Array.isArray(courses)) {
-          const fromCourses = courses.map((c: any) => c.sourcePlatform?.trim()).filter(Boolean);
-          list = Array.from(new Set([...list, ...fromCourses]));
-        }
-      } catch {}
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
     }
-    return list;
+    localStorage.setItem(STORAGE_KEY_SOURCES, JSON.stringify(DEFAULT_SOURCES));
+    return DEFAULT_SOURCES;
   } catch {
     return DEFAULT_SOURCES;
   }
@@ -1376,20 +1352,12 @@ export function saveSources(sources: string[]): void {
 export function getStoredInstructors(): string[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_INSTRUCTORS);
-    let list: string[] = data ? JSON.parse(data) : DEFAULT_INSTRUCTORS;
-    
-    // Auto-merge instructors from existing courses
-    const storedCoursesData = localStorage.getItem(STORAGE_KEY_COURSES);
-    if (storedCoursesData) {
-      try {
-        const courses = JSON.parse(storedCoursesData);
-        if (Array.isArray(courses)) {
-          const fromCourses = courses.map((c: any) => c.instructor?.trim()).filter(Boolean);
-          list = Array.from(new Set([...list, ...fromCourses]));
-        }
-      } catch {}
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
     }
-    return list;
+    localStorage.setItem(STORAGE_KEY_INSTRUCTORS, JSON.stringify(DEFAULT_INSTRUCTORS));
+    return DEFAULT_INSTRUCTORS;
   } catch {
     return DEFAULT_INSTRUCTORS;
   }

@@ -82,9 +82,10 @@ export const App: React.FC = () => {
 
     // Setup Cloud Firestore Real-time Sync if configured
     if (isFirebaseConfigured) {
-      // 1. Initial Cloud Check: Seed cloud if cloud is empty, otherwise merge & sync from cloud
+      // 1. Initial Cloud Fetch
       fetchFromCloud().then(cloudData => {
-        if (!cloudData || !cloudData.courses || cloudData.courses.length === 0) {
+        if (!cloudData || !cloudData.courses) {
+          // Seed cloud only if cloud is completely uninitialized
           syncToCloud({
             courses: loadedCourses,
             categories: loadedCategories,
@@ -94,52 +95,60 @@ export const App: React.FC = () => {
             userStats: getStoredUserStats()
           });
         } else {
-          // Merge any newly introduced initial sample courses (like 8xTrading) into cloud dataset
-          const existingCloudIds = new Set(cloudData.courses.map(c => c.id));
-          const missingInitial = INITIAL_SAMPLE_COURSES.filter(c => !existingCloudIds.has(c.id));
-          const mergedCourses = missingInitial.length > 0 ? [...missingInitial, ...cloudData.courses] : cloudData.courses;
-
-          setCourses(mergedCourses);
-          saveCourses(mergedCourses);
-
-          // If newly standardized courses were missing in cloud, sync back immediately
-          if (missingInitial.length > 0) {
-            syncToCloud({ courses: mergedCourses });
+          // Cloud Firestore is the Single Source of Truth (Preserves user deletions)
+          if (Array.isArray(cloudData.courses)) {
+            setCourses(cloudData.courses);
+            saveCourses(cloudData.courses);
           }
-
-          if (cloudData.categories) {
-            const mergedCats = Array.from(new Set([...cloudData.categories, ...loadedCategories]));
-            setCategories(mergedCats);
-            saveCategories(mergedCats);
+          if (cloudData.categories && Array.isArray(cloudData.categories)) {
+            setCategories(cloudData.categories);
+            saveCategories(cloudData.categories);
           }
-          if (cloudData.sources) {
-            const mergedSources = Array.from(new Set([...cloudData.sources, ...loadedSources]));
-            setSources(mergedSources);
-            saveSources(mergedSources);
+          if (cloudData.sources && Array.isArray(cloudData.sources)) {
+            setSources(cloudData.sources);
+            saveSources(cloudData.sources);
           }
-          if (cloudData.continueProgress) {
+          if (cloudData.instructors && Array.isArray(cloudData.instructors)) {
+            setInstructors(cloudData.instructors);
+            saveInstructors(cloudData.instructors);
+          }
+          if (cloudData.continueProgress !== undefined) {
             setContinueProgress(cloudData.continueProgress);
-            saveContinueProgress(cloudData.continueProgress);
+            if (cloudData.continueProgress) {
+              saveContinueProgress(cloudData.continueProgress);
+            } else {
+              localStorage.removeItem('myedu_continue_progress_v1');
+            }
           }
         }
       });
 
       // 2. Realtime listener for cross-device automatic updates
       const unsubscribe = subscribeToCloudChanges((cloudData) => {
-        if (cloudData && Array.isArray(cloudData.courses) && cloudData.courses.length > 0) {
-          setCourses(cloudData.courses);
-          saveCourses(cloudData.courses);
-          if (cloudData.categories) {
+        if (cloudData) {
+          if (Array.isArray(cloudData.courses)) {
+            setCourses(cloudData.courses);
+            saveCourses(cloudData.courses);
+          }
+          if (cloudData.categories && Array.isArray(cloudData.categories)) {
             setCategories(cloudData.categories);
             saveCategories(cloudData.categories);
           }
-          if (cloudData.sources) {
+          if (cloudData.sources && Array.isArray(cloudData.sources)) {
             setSources(cloudData.sources);
             saveSources(cloudData.sources);
           }
-          if (cloudData.continueProgress) {
+          if (cloudData.instructors && Array.isArray(cloudData.instructors)) {
+            setInstructors(cloudData.instructors);
+            saveInstructors(cloudData.instructors);
+          }
+          if (cloudData.continueProgress !== undefined) {
             setContinueProgress(cloudData.continueProgress);
-            saveContinueProgress(cloudData.continueProgress);
+            if (cloudData.continueProgress) {
+              saveContinueProgress(cloudData.continueProgress);
+            } else {
+              localStorage.removeItem('myedu_continue_progress_v1');
+            }
           }
         }
       });
@@ -248,17 +257,40 @@ export const App: React.FC = () => {
     setSearchQuery('');
   };
 
+  // Dedicated Taxonomy Sync Helpers (Local Storage + Cloud Firestore)
+  const updateCategoriesState = (updated: string[]) => {
+    setCategories(updated);
+    saveCategories(updated);
+    if (isFirebaseConfigured) {
+      syncToCloud({ categories: updated });
+    }
+  };
+
+  const updateSourcesState = (updated: string[]) => {
+    setSources(updated);
+    saveSources(updated);
+    if (isFirebaseConfigured) {
+      syncToCloud({ sources: updated });
+    }
+  };
+
+  const updateInstructorsState = (updated: string[]) => {
+    setInstructors(updated);
+    saveInstructors(updated);
+    if (isFirebaseConfigured) {
+      syncToCloud({ instructors: updated });
+    }
+  };
+
   // Dynamic Category Handlers
   const handleAddCategory = (newCat: string) => {
     const updated = [...categories, newCat];
-    setCategories(updated);
-    saveCategories(updated);
+    updateCategoriesState(updated);
   };
 
   const handleRenameCategory = (oldCat: string, newCat: string) => {
     const updatedCategories = categories.map(c => c === oldCat ? newCat : c);
-    setCategories(updatedCategories);
-    saveCategories(updatedCategories);
+    updateCategoriesState(updatedCategories);
 
     // Update category name in all existing courses
     const updatedCourses = courses.map(c => 
@@ -275,8 +307,7 @@ export const App: React.FC = () => {
 
   const handleDeleteCategory = (catToDelete: string) => {
     const updatedCategories = categories.filter(c => c !== catToDelete);
-    setCategories(updatedCategories);
-    saveCategories(updatedCategories);
+    updateCategoriesState(updatedCategories);
 
     // Reassign affected courses to fallback category
     const fallbackCat = updatedCategories[0] || 'Chung';
@@ -295,14 +326,12 @@ export const App: React.FC = () => {
   // Dynamic Source Handlers
   const handleAddSource = (newSource: string) => {
     const updated = [...sources, newSource];
-    setSources(updated);
-    saveSources(updated);
+    updateSourcesState(updated);
   };
 
   const handleRenameSource = (oldSource: string, newSource: string) => {
     const updatedSources = sources.map(s => s === oldSource ? newSource : s);
-    setSources(updatedSources);
-    saveSources(updatedSources);
+    updateSourcesState(updatedSources);
 
     const updatedCourses = courses.map(c => 
       c.sourcePlatform === oldSource ? { ...c, sourcePlatform: newSource } : c
@@ -312,8 +341,7 @@ export const App: React.FC = () => {
 
   const handleDeleteSource = (sourceToDelete: string) => {
     const updatedSources = sources.filter(s => s !== sourceToDelete);
-    setSources(updatedSources);
-    saveSources(updatedSources);
+    updateSourcesState(updatedSources);
 
     const fallbackSrc = updatedSources[0] || 'Khác';
     const updatedCourses = courses.map(c => 
@@ -325,14 +353,12 @@ export const App: React.FC = () => {
   // Dynamic Instructor Handlers
   const handleAddInstructor = (newInst: string) => {
     const updated = [...instructors, newInst];
-    setInstructors(updated);
-    saveInstructors(updated);
+    updateInstructorsState(updated);
   };
 
   const handleRenameInstructor = (oldInst: string, newInst: string) => {
     const updatedInstructors = instructors.map(i => i === oldInst ? newInst : i);
-    setInstructors(updatedInstructors);
-    saveInstructors(updatedInstructors);
+    updateInstructorsState(updatedInstructors);
 
     const updatedCourses = courses.map(c => 
       c.instructor === oldInst ? { ...c, instructor: newInst } : c
@@ -346,8 +372,7 @@ export const App: React.FC = () => {
 
   const handleDeleteInstructor = (instToDelete: string) => {
     const updatedInstructors = instructors.filter(i => i !== instToDelete);
-    setInstructors(updatedInstructors);
-    saveInstructors(updatedInstructors);
+    updateInstructorsState(updatedInstructors);
 
     const updatedCourses = courses.map(c => 
       c.instructor === instToDelete ? { ...c, instructor: undefined } : c
@@ -667,6 +692,12 @@ export const App: React.FC = () => {
 
   const handleRestoreCourses = (restoredCourses: Course[]) => {
     updateCoursesState(restoredCourses);
+    const cats = Array.from(new Set(restoredCourses.map(c => c.category?.trim()).filter(Boolean))) as string[];
+    if (cats.length > 0) updateCategoriesState(cats);
+    const srcs = Array.from(new Set(restoredCourses.map(c => c.sourcePlatform?.trim()).filter(Boolean))) as string[];
+    if (srcs.length > 0) updateSourcesState(srcs);
+    const insts = Array.from(new Set(restoredCourses.map(c => c.instructor?.trim()).filter(Boolean))) as string[];
+    if (insts.length > 0) updateInstructorsState(insts);
   };
 
   const handleDuplicateCourse = (sourceCourse: Course) => {

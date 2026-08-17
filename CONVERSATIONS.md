@@ -142,15 +142,13 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
     * **Thao tác hàng loạt (Floating Batch Actions Toolbar)**:
       - Checkbox chọn nhiều khóa học (kèm nút Chọn tất cả).
       - Thanh công cụ nổi thông minh: Xóa hàng loạt, Đổi danh mục hàng loạt, Xuất JSON riêng cho các khóa được chọn.
-13. **Kiến Trúc Hợp Nhất Trải Nghiệm Học Tập & Quản Trị (Super Workspace with View Switcher & Pagination)**:
-    * **Bộ Chuyển Đổi Chế Độ Xem (View Mode Switcher: Dạng Thẻ ↔ Dạng Bảng)**:
-      - Đặt ngay trên thanh tiêu đề của Thư viện khóa học trên Trang Chủ: Cho phép chuyển đổi 1-click giữa **`[ 🎴 Dạng Thẻ ]`** (Card Gallery trực quan, truyền cảm hứng học tập) và **`[ 📋 Dạng Bảng ]`** (Table quản trị nhỏ gọn, tốc độ, thao tác hàng loạt).
-      - Tự động lưu và ghi nhớ chế độ xem ưa thích vào `localStorage` (`myedu_layout_mode_v1`).
-    * **Phân Trang Thông Minh Đồng Nhất Cho Cả Dạng Thẻ & Dạng Bảng (Smart Pagination & Page Size Selector)**:
-      - Tùy chọn xem: **`8`** | **`12`** | **`24`** | **`48`** | **`Tất cả`** khóa học trên 1 trang.
-      - Thanh điều hướng phân trang: `« Trước`, các số trang `[1] [2]`, `Sau »` kèm hiển thị dải khóa học (ví dụ: `Hiển thị 1 - 12 trên 21 khóa học`).
-    * **Tích Hợp Toàn Bộ Năng Lực Quản Trị Trực Tiếp Trong Dạng Bảng**:
-      - Nút `[Vào Học]`, `[Sửa]`, `[Nhân bản 1-click]`, `[Nạp thêm bài]`, `[Xóa]`.
-      - Checkbox chọn nhiều hàng và **Thanh công cụ nổi thao tác hàng loạt** (Đổi danh mục, Xuất JSON, Xóa đã chọn).
-      - Modal Dark Theme xác nhận xóa an toàn.
-    * **Bộ Lọc Liên Kết 3 Chiều & Tìm Kiếm Hoạt Động Đồng Nhất 100%** trên cả 2 chế độ xem.
+14. **Tái Thiết Kế Tab Phân Loại & Giảng Viên (Dual Search & Add + Playful Vibrant Cards)**:
+    * **Ô Nhập Liệu Thông Minh 2 Trong 1 (Combo Search & Quick-Add)**:
+      - Khi gõ từ khóa: Danh sách bên dưới **tự động lọc theo thời gian thực**.
+      - Nếu từ khóa **chưa tồn tại**: Nút bên cạnh chuyển thành **`[ ➕ Thêm: "Tên mới" ]`** phát sáng rực rỡ, nhấn Enter là thêm ngay.
+      - Nếu từ khóa **đã có trong danh sách**: Nút hiển thị trạng thái `✓ Đã có trong danh sách` để tránh trùng lặp.
+    * **Giao Diện Thẻ Hồ Sơ Vui Nhộn & Sống Động (Playful Vibrant UI)**:
+      - **👨‍🏫 Thẻ Giảng viên Profile**: Avatar chữ cái viết tắt với hiệu ứng Gradient màu sắc sinh động (Hồng Neon, Tím Cyber, Cam Sunset, Xanh Mint...), tách biệt Chức danh/Chuyên môn thành huy hiệu phụ, kèm huy hiệu phát sáng `🔥 X khóa học` hoặc `💤 0 khóa`.
+      - **🏷️ Thẻ Chủ đề 3D/Gradient**: Icon biểu trưng rực rỡ theo từng ngành học.
+      - **🌐 Thẻ Nguồn mua Brand Style**: Màu sắc nhận diện thương hiệu rõ nét.
+      - **Bộ lọc tình trạng vui nhộn**: `Tất cả` | `🔥 Đang có khóa` | `💤 0 khóa` giúp dọn dẹp danh mục rác siêu nhanh.

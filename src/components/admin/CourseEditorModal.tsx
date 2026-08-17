@@ -11,18 +11,16 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Video,
   Layers,
   Paperclip,
-  Link as LinkIcon,
-  ExternalLink,
-  PlusCircle,
-  FileCode,
-  FileBox,
-  FolderOpen
+  FolderOpen,
+  GripVertical
 } from 'lucide-react';
 import { extractAbyssId } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
+import { RichTextEditor } from '../common/RichTextEditor';
 
 interface CourseEditorModalProps {
   isOpen: boolean;
@@ -62,6 +60,10 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [expandedChapterIds, setExpandedChapterIds] = useState<Record<string, boolean>>({});
   const [expandedAttachmentLessonIds, setExpandedAttachmentLessonIds] = useState<Record<string, boolean>>({});
 
+  // Drag and Drop state
+  const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
+  const [draggedLessonInfo, setDraggedLessonInfo] = useState<{ chIdx: number; lIdx: number } | null>(null);
+
   // Auto-collect unique instructors across existing courses
   const existingInstructors = useMemo(() => {
     const set = new Set<string>();
@@ -70,7 +72,6 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
         set.add(c.instructor.trim());
       }
     });
-    // Add some common defaults if empty
     if (set.size === 0) {
       ['Hoàng Minh', 'Alex Đặng', 'Nguyễn Tiến Dũng', 'VietJack', 'F8 Official'].forEach(i => set.add(i));
     }
@@ -105,12 +106,12 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       setChapters([
         {
           id: defaultChId,
-          title: 'Chương 1: Danh sách bài học',
+          title: 'Chương 1: Khởi động & Nền tảng',
           order: 1,
           lessons: [
             {
               id: `les-${Date.now()}-1`,
-              title: 'Bài 1: Giới thiệu khóa học',
+              title: 'Bài 1: Giới thiệu tổng quan',
               type: 'video',
               videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
               durationMinutes: 15,
@@ -135,7 +136,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     setExpandedAttachmentLessonIds(prev => ({ ...prev, [lessonId]: !prev[lessonId] }));
   };
 
-  // Chapter CRUD
+  // Chapter CRUD & Reorder
   const handleAddChapter = () => {
     const newId = `ch-${Date.now()}`;
     const newChapter: Chapter = {
@@ -158,7 +159,15 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     }
   };
 
-  // Lesson CRUD
+  const moveChapter = (fromIdx: number, toIdx: number) => {
+    if (toIdx < 0 || toIdx >= chapters.length) return;
+    const updated = [...chapters];
+    const [moved] = updated.splice(fromIdx, 1);
+    updated.splice(toIdx, 0, moved);
+    setChapters(updated);
+  };
+
+  // Lesson CRUD & Reorder
   const handleAddLesson = (chId: string) => {
     const newLesson: Lesson = {
       id: `les-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -202,6 +211,64 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       }
       return ch;
     }));
+  };
+
+  const moveLesson = (chIdx: number, fromLIdx: number, toLIdx: number) => {
+    const targetChapter = chapters[chIdx];
+    if (!targetChapter || toLIdx < 0 || toLIdx >= targetChapter.lessons.length) return;
+
+    const updatedLessons = [...targetChapter.lessons];
+    const [moved] = updatedLessons.splice(fromLIdx, 1);
+    updatedLessons.splice(toLIdx, 0, moved);
+
+    const updatedChapters = [...chapters];
+    updatedChapters[chIdx] = { ...targetChapter, lessons: updatedLessons };
+    setChapters(updatedChapters);
+  };
+
+  // Drag and drop handlers for Chapters
+  const handleChapterDragStart = (idx: number) => {
+    setDraggedChapterIdx(idx);
+  };
+
+  const handleChapterDrop = (targetIdx: number) => {
+    if (draggedChapterIdx !== null && draggedChapterIdx !== targetIdx) {
+      moveChapter(draggedChapterIdx, targetIdx);
+    }
+    setDraggedChapterIdx(null);
+  };
+
+  // Drag and drop handlers for Lessons
+  const handleLessonDragStart = (chIdx: number, lIdx: number) => {
+    setDraggedLessonInfo({ chIdx, lIdx });
+  };
+
+  const handleLessonDrop = (targetChIdx: number, targetLIdx: number) => {
+    if (!draggedLessonInfo) return;
+    const { chIdx: srcChIdx, lIdx: srcLIdx } = draggedLessonInfo;
+
+    if (srcChIdx === targetChIdx) {
+      if (srcLIdx !== targetLIdx) {
+        moveLesson(srcChIdx, srcLIdx, targetLIdx);
+      }
+    } else {
+      // Move lesson between different chapters
+      const srcChapter = chapters[srcChIdx];
+      const destChapter = chapters[targetChIdx];
+      if (srcChapter && destChapter) {
+        const srcLessons = [...srcChapter.lessons];
+        const [movedLesson] = srcLessons.splice(srcLIdx, 1);
+
+        const destLessons = [...destChapter.lessons];
+        destLessons.splice(targetLIdx, 0, movedLesson);
+
+        const updatedChapters = [...chapters];
+        updatedChapters[srcChIdx] = { ...srcChapter, lessons: srcLessons };
+        updatedChapters[targetChIdx] = { ...destChapter, lessons: destLessons };
+        setChapters(updatedChapters);
+      }
+    }
+    setDraggedLessonInfo(null);
   };
 
   // Attachment CRUD
@@ -311,7 +378,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col my-8 max-h-[90vh]">
+      <div className="relative w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col my-6 max-h-[92vh]">
         
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
@@ -320,11 +387,11 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-extrabold text-base text-white tracking-tight">
-                {courseToEdit ? 'Chỉnh Sửa Khóa Học & Mục Lục' : 'Tạo Khóa Học Mới'}
+              <h2 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
+                {courseToEdit ? 'Chỉnh Sửa Khóa Học & Giáo Trình' : 'Tạo Khóa Học Mới'}
               </h2>
               <p className="text-xs text-slate-400">
-                Quản lý tiêu đề, giảng viên, nguồn mua, bài giảng đa định dạng (Video / Bài viết) & tài liệu
+                Sắp xếp kéo thả bài học, soạn thảo bài viết Rich Text & quản lý tài liệu đính kèm
               </p>
             </div>
           </div>
@@ -357,7 +424,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ví dụ: Làm Chủ Trí Tuệ Nhân Tạo & AI Generative..."
-                className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:border-emerald-500/80"
+                className="w-full px-4 py-2.5 text-xs sm:text-sm bg-slate-900 border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:border-emerald-500/80"
                 required
               />
             </div>
@@ -439,25 +506,30 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Chapters & Multi-Format Lessons */}
+          {/* Section 2: Curriculum Reordering & Multi-Format Lessons */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <FolderOpen className="w-4 h-4 text-teal-400" />
-                <span>Mục Lục Chương & Bài Học ({chapters.reduce((acc, ch) => acc + ch.lessons.length, 0)} bài)</span>
-              </h3>
+              <div>
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-teal-400" />
+                  <span>Giáo Trình & Bài Học ({chapters.reduce((acc, ch) => acc + ch.lessons.length, 0)} bài)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  💡 Giữ và kéo biểu tượng <strong>⠿</strong> để sắp xếp lại thứ tự chương và bài học
+                </p>
+              </div>
 
               <button
                 type="button"
                 onClick={handleAddChapter}
-                className="px-3.5 py-1.5 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                className="px-3.5 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Thêm Chương Mới</span>
               </button>
             </div>
 
-            {/* Chapters List */}
+            {/* Chapters List (Reorderable) */}
             <div className="space-y-4">
               {chapters.map((chapter, chIdx) => {
                 const isExpanded = expandedChapterIds[chapter.id] !== false;
@@ -465,11 +537,26 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                 return (
                   <div 
                     key={chapter.id}
-                    className="border border-slate-800 rounded-3xl bg-slate-950/60 overflow-hidden shadow-md"
+                    draggable
+                    onDragStart={() => handleChapterDragStart(chIdx)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => handleChapterDrop(chIdx)}
+                    className={`border rounded-3xl bg-slate-950/60 overflow-hidden shadow-md transition-all ${
+                      draggedChapterIdx === chIdx ? 'opacity-40 border-dashed border-teal-500' : 'border-slate-800'
+                    }`}
                   >
-                    {/* Chapter Header */}
+                    {/* Chapter Header with Drag Handle */}
                     <div className="p-3.5 bg-slate-900/90 flex items-center justify-between gap-3 border-b border-slate-800/80">
-                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        
+                        {/* Chapter Drag Handle */}
+                        <div 
+                          className="cursor-grab active:cursor-grabbing p-1 text-slate-500 hover:text-slate-200"
+                          title="Kéo để đổi thứ tự chương"
+                        >
+                          <GripVertical className="w-4 h-4" />
+                        </div>
+
                         <button
                           type="button"
                           onClick={() => toggleChapterExpand(chapter.id)}
@@ -483,14 +570,38 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                           value={chapter.title}
                           onChange={(e) => handleUpdateChapterTitle(chapter.id, e.target.value)}
                           placeholder={`Chương ${chIdx + 1}: Tiêu đề chương...`}
-                          className="font-bold text-xs text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-emerald-500 px-1 py-0.5 flex-1 focus:outline-none"
+                          className="font-bold text-xs sm:text-sm text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-emerald-500 px-1 py-0.5 flex-1 focus:outline-none"
                         />
                       </div>
 
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded-full bg-slate-800">
+                      {/* Chapter Reorder Buttons & Actions */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded-full bg-slate-800 mr-1">
                           {chapter.lessons.length} bài
                         </span>
+
+                        {/* Move Up / Down Chapter */}
+                        <button
+                          type="button"
+                          disabled={chIdx === 0}
+                          onClick={() => moveChapter(chIdx, chIdx - 1)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-white disabled:opacity-20 transition-colors"
+                          title="Di chuyển chương lên trên"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={chIdx === chapters.length - 1}
+                          onClick={() => moveChapter(chIdx, chIdx + 1)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-white disabled:opacity-20 transition-colors"
+                          title="Di chuyển chương xuống dưới"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+
+                        <div className="h-4 w-[1px] bg-slate-800 mx-1" />
 
                         <button
                           type="button"
@@ -514,7 +625,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Chapter Lessons List */}
+                    {/* Chapter Lessons List (Reorderable) */}
                     {isExpanded && (
                       <div className="p-4 space-y-3.5">
                         {chapter.lessons.length === 0 ? (
@@ -534,29 +645,57 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                             const abyssId = lesson.videoSource ? extractAbyssId(lesson.videoSource) : null;
                             const isAttExpanded = expandedAttachmentLessonIds[lesson.id] === true;
                             const attCount = lesson.attachments?.length || 0;
+                            const isBeingDragged = draggedLessonInfo?.chIdx === chIdx && draggedLessonInfo?.lIdx === lIdx;
 
                             return (
                               <div
                                 key={lesson.id}
-                                className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800/90 space-y-3 shadow-sm hover:border-slate-700 transition-colors"
+                                draggable
+                                onDragStart={(e) => {
+                                  e.stopPropagation();
+                                  handleLessonDragStart(chIdx, lIdx);
+                                }}
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                onDrop={(e) => {
+                                  e.stopPropagation();
+                                  handleLessonDrop(chIdx, lIdx);
+                                }}
+                                className={`p-4 rounded-2xl bg-slate-900/90 border space-y-3.5 shadow-sm transition-all ${
+                                  isBeingDragged
+                                    ? 'opacity-40 border-dashed border-emerald-500 bg-slate-950'
+                                    : 'border-slate-800/90 hover:border-slate-700'
+                                }`}
                               >
-                                {/* Lesson Top Row: Title + Format Selector + Delete */}
+                                {/* Lesson Top Row: Drag Handle + Title + Format Switcher + Order Arrows + Delete */}
                                 <div className="flex flex-wrap items-center justify-between gap-2.5">
-                                  <div className="flex items-center gap-2 flex-1 min-w-[220px]">
-                                    <span className="text-[10px] font-mono text-slate-500 font-bold px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800">
+                                  
+                                  {/* Left: Drag Handle + Index + Lesson Title */}
+                                  <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+                                    <div 
+                                      className="cursor-grab active:cursor-grabbing p-1 text-slate-500 hover:text-emerald-400"
+                                      title="Kéo để đổi thứ tự bài học"
+                                    >
+                                      <GripVertical className="w-4 h-4" />
+                                    </div>
+
+                                    <span className="text-[11px] font-mono text-slate-500 font-bold px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800">
                                       #{lIdx + 1}
                                     </span>
+
                                     <input
                                       type="text"
                                       value={lesson.title}
                                       onChange={(e) => handleUpdateLesson(chapter.id, lesson.id, 'title', e.target.value)}
                                       placeholder={`Bài ${lIdx + 1}: Tên bài giảng...`}
-                                      className="text-xs font-bold text-white bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 flex-1 focus:border-emerald-500/80"
+                                      className="text-xs sm:text-sm font-bold text-white bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 flex-1 focus:border-emerald-500/80"
                                       required
                                     />
                                   </div>
 
-                                  {/* Lesson Format Switcher */}
+                                  {/* Middle: Lesson Format Switcher */}
                                   <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
                                     <button
                                       type="button"
@@ -601,15 +740,37 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                                     </button>
                                   </div>
 
-                                  {/* Delete Lesson Button */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteLesson(chapter.id, lesson.id)}
-                                    className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                                    title="Xóa bài học này"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  {/* Right: Quick Move Up/Down + Delete */}
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={lIdx === 0}
+                                      onClick={() => moveLesson(chIdx, lIdx, lIdx - 1)}
+                                      className="p-1 rounded text-slate-500 hover:text-white disabled:opacity-20 transition-colors"
+                                      title="Di chuyển bài lên"
+                                    >
+                                      <ChevronUp className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      disabled={lIdx === chapter.lessons.length - 1}
+                                      onClick={() => moveLesson(chIdx, lIdx, lIdx + 1)}
+                                      className="p-1 rounded text-slate-500 hover:text-white disabled:opacity-20 transition-colors"
+                                      title="Di chuyển bài xuống"
+                                    >
+                                      <ChevronDown className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteLesson(chapter.id, lesson.id)}
+                                      className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                                      title="Xóa bài học này"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
 
                                 {/* Video Link Input (If video or mixed) */}
@@ -622,36 +783,32 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                                         value={lesson.videoSource || ''}
                                         onChange={(e) => handleUpdateLesson(chapter.id, lesson.id, 'videoSource', e.target.value)}
                                         placeholder="Dán link Abyss (https://abyssplayer.com/ID) hoặc mã <iframe...>"
-                                        className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-500 focus:border-emerald-500/80 font-mono text-[11px]"
+                                        className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-500 focus:border-emerald-500/80 font-mono"
                                       />
                                     </div>
                                     {abyssId && (
-                                      <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+                                      <span className="text-[10px] font-mono font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
                                         ID: {abyssId}
                                       </span>
                                     )}
                                   </div>
                                 )}
 
-                                {/* Article Content Markdown Textarea (If article or mixed) */}
+                                {/* Article Content Rich Text Editor Toolbar (If article or mixed) */}
                                 {(lessonType === 'article' || lessonType === 'mixed') && (
-                                  <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-teal-400 flex items-center gap-1">
-                                      <FileText className="w-3 h-3" />
-                                      <span>Nội dung bài viết (Hỗ trợ định dạng Markdown, Code snippet, Danh mục)</span>
-                                    </label>
-                                    <textarea
-                                      rows={4}
+                                  <div className="space-y-1.5 pt-1">
+                                    <RichTextEditor
                                       value={lesson.content || ''}
-                                      onChange={(e) => handleUpdateLesson(chapter.id, lesson.id, 'content', e.target.value)}
-                                      placeholder="Soạn thảo nội dung bài học bằng Markdown tại đây: # Tiêu đề, **in đậm**, ```code```, danh sách..."
-                                      className="w-full px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:border-teal-500/80 font-mono leading-relaxed"
+                                      onChange={(val) => handleUpdateLesson(chapter.id, lesson.id, 'content', val)}
+                                      placeholder="Soạn thảo nội dung bài học chi tiết tại đây (H1, in đậm, danh sách, khối code, trích dẫn)..."
+                                      minHeight="180px"
+                                      label="Soạn Thảo Bài Viết / Tài Liệu"
                                     />
                                   </div>
                                 )}
 
                                 {/* Attachments Manager Accordion */}
-                                <div className="border-t border-slate-800/80 pt-2">
+                                <div className="border-t border-slate-800/80 pt-2.5">
                                   <div className="flex items-center justify-between">
                                     <button
                                       type="button"
@@ -666,7 +823,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => handleAddAttachment(chapter.id, lesson.id)}
-                                      className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all"
+                                      className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all"
                                     >
                                       <Plus className="w-3 h-3" />
                                       <span>+ Thêm File/Link</span>

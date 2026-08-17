@@ -21,6 +21,7 @@ import {
   Sparkles,
   Minimize2
 } from 'lucide-react';
+import { MarkdownRenderer } from '../common/MarkdownRenderer';
 
 interface AbyssPlayerProps {
   course: Course;
@@ -50,6 +51,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   onUpdateNotes,
   isZenMode,
   onToggleZenMode,
+  autoPlayNext,
+  onToggleAutoPlayNext,
 }) => {
   const [notes, setNotes] = useState<string>(currentLesson.notes || '');
   const [isSavedNotes, setIsSavedNotes] = useState<boolean>(false);
@@ -104,67 +107,6 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
     }, 50);
   };
 
-  const renderFormattedNotes = (text: string) => {
-    if (!text.trim()) {
-      return (
-        <p className="text-xs text-slate-500 italic py-2">
-          Chưa có ghi chú nào. Hãy chuyển sang tab Soạn thảo để thêm mốc thời gian hoặc ý chính bài học.
-        </p>
-      );
-    }
-
-    const lines = text.split('\n');
-    return (
-      <div className="space-y-1.5 text-xs text-slate-300 leading-relaxed font-sans">
-        {lines.map((line, idx) => {
-          // Timestamp matching like [02:15] or [1:20:30]
-          const timestampRegex = /\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g;
-          const hasTimestamp = timestampRegex.test(line);
-
-          if (line.startsWith('### ')) {
-            return <h4 key={idx} className="font-bold text-sm text-emerald-400 pt-1">{line.replace('### ', '')}</h4>;
-          }
-          if (line.startsWith('## ')) {
-            return <h3 key={idx} className="font-bold text-base text-white pt-1">{line.replace('## ', '')}</h3>;
-          }
-          if (line.startsWith('# ')) {
-            return <h2 key={idx} className="font-extrabold text-lg text-white pt-1">{line.replace('# ', '')}</h2>;
-          }
-
-          let formattedContent: React.ReactNode = line;
-          if (hasTimestamp) {
-            const parts = line.split(/(\[\d{1,2}:\d{2}(?::\d{2})?\])/g);
-            formattedContent = parts.map((part, pIdx) => {
-              if (/^\[\d{1,2}:\d{2}(?::\d{2})?\]$/.test(part)) {
-                return (
-                  <span 
-                    key={pIdx} 
-                    className="inline-flex items-center gap-1 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 mr-1 shadow-sm"
-                  >
-                    <Clock className="w-3 h-3 inline" />
-                    {part.replace('[', '').replace(']', '')}
-                  </span>
-                );
-              }
-              return part;
-            });
-          }
-
-          if (line.startsWith('- ') || line.startsWith('* ')) {
-            return (
-              <div key={idx} className="flex items-start gap-1.5 pl-1">
-                <span className="text-emerald-400 font-bold leading-none select-none mt-1">&bull;</span>
-                <div className="flex-1">{typeof formattedContent === 'string' ? formattedContent.substring(2) : formattedContent}</div>
-              </div>
-            );
-          }
-
-          return <div key={idx} className="min-h-[1.25rem]">{formattedContent}</div>;
-        })}
-      </div>
-    );
-  };
-
   const lessonType = currentLesson.type || (currentLesson.videoSource ? 'video' : 'article');
 
   return (
@@ -209,12 +151,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
           </div>
 
           {/* Article Text / Markdown Body */}
-          <div className="prose prose-invert max-w-none text-slate-200 text-sm leading-relaxed space-y-3 bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80">
-            {currentLesson.content ? (
-              renderFormattedNotes(currentLesson.content)
-            ) : (
-              <p className="text-slate-500 italic">Chưa có nội dung chi tiết cho bài đọc này.</p>
-            )}
+          <div className="bg-slate-950/60 p-6 rounded-2xl border border-slate-800/80">
+            <MarkdownRenderer content={currentLesson.content || ''} />
           </div>
         </div>
       ) : (
@@ -255,8 +193,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
             <FileText className="w-4 h-4" />
             <span>Nội Dung Bài Đọc Bổ Trợ</span>
           </div>
-          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 text-xs text-slate-200 space-y-2 leading-relaxed">
-            {renderFormattedNotes(currentLesson.content)}
+          <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800">
+            <MarkdownRenderer content={currentLesson.content} />
           </div>
         </div>
       )}
@@ -468,7 +406,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
               />
             ) : (
               <div className="min-h-[96px] max-h-[140px] overflow-y-auto p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
-                {renderFormattedNotes(notes)}
+                <MarkdownRenderer content={notes} />
               </div>
             )}
           </div>

@@ -549,6 +549,18 @@ export const App: React.FC = () => {
     updateCoursesState(restoredCourses);
   };
 
+  const handleDuplicateCourse = (sourceCourse: Course) => {
+    const clonedCourse: Course = {
+      ...JSON.parse(JSON.stringify(sourceCourse)),
+      id: `course-${Date.now()}`,
+      title: `[Bản sao] ${sourceCourse.title}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const updated = [clonedCourse, ...courses];
+    updateCoursesState(updated);
+  };
+
   // Count total starred lessons across all courses
   const starredCount = useMemo(() => {
     return courses.reduce((acc, course) => {
@@ -744,6 +756,7 @@ export const App: React.FC = () => {
             onAddNewCourse={handleAddNewCourse}
             onEditCourse={handleEditCourse}
             onDeleteCourse={handleDeleteCourse}
+            onDuplicateCourse={handleDuplicateCourse}
             onOpenBulkImport={(cId) => {
               setBulkCourseId(cId);
               setIsBulkModalOpen(true);

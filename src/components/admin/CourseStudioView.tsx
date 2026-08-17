@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Course } from '../../types';
 import { 
   ArrowLeft, 
@@ -35,7 +35,12 @@ import {
   AlertTriangle,
   X,
   CheckSquare,
-  Square
+  Square,
+  Copy,
+  ChevronLeft,
+  ChevronRight,
+  HardDrive,
+  ShieldCheck
 } from 'lucide-react';
 import { INITIAL_SAMPLE_COURSES } from '../../lib/storage';
 
@@ -48,6 +53,7 @@ interface CourseStudioViewProps {
   onAddNewCourse: () => void;
   onEditCourse: (course: Course) => void;
   onDeleteCourse: (courseId: string) => void;
+  onDuplicateCourse?: (course: Course) => void;
   onOpenBulkImport: (courseId?: string) => void;
   onAddCategory: (cat: string) => void;
   onRenameCategory: (oldCat: string, newCat: string) => void;
@@ -76,6 +82,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   onAddNewCourse,
   onEditCourse,
   onDeleteCourse,
+  onDuplicateCourse,
   onOpenBulkImport,
   onAddCategory,
   onRenameCategory,
@@ -99,6 +106,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('updated-desc');
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number | 'all'>(20);
+
+  // Search input ref for keyboard shortcut (/)
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Batch Selection State
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
@@ -135,6 +149,28 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   const [backupSuccess, setBackupSuccess] = useState<string>('');
   const [backupError, setBackupError] = useState<string>('');
 
+  // Keyboard shortcut listener for Studio: '/' to search, 'Esc' to clear selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        if (e.key === 'Escape') {
+          (e.target as HTMLElement).blur();
+        }
+        return;
+      }
+
+      if (e.key === '/') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === 'Escape') {
+        setSelectedCourseIds([]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // 1. CALCULATE KPI METRICS
   const kpiMetrics = useMemo(() => {
     let totalLessons = 0;
@@ -170,7 +206,26 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
     };
   }, [courses, categories, sources, instructors]);
 
-  // 2. FILTER & SORT COURSES
+  // 2. STORAGE HEALTH & USAGE CALCULATION
+  const storageMetrics = useMemo(() => {
+    try {
+      let totalBytes = 0;
+      for (const key in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+          totalBytes += (localStorage[key].length + key.length) * 2; // UTF-16 approximation
+        }
+      }
+      const usedKB = (totalBytes / 1024).toFixed(1);
+      const usedMB = (totalBytes / (1024 * 1024)).toFixed(2);
+      const quotaMB = 5; // Standard 5MB local storage quota
+      const percentUsed = Math.min(100, parseFloat(((totalBytes / (quotaMB * 1024 * 1024)) * 100).toFixed(1)));
+      return { usedKB, usedMB, quotaMB, percentUsed };
+    } catch {
+      return { usedKB: '0', usedMB: '0', quotaMB: 5, percentUsed: 0 };
+    }
+  }, [courses, categories, sources, instructors]);
+
+  // 3. FILTER & SORT COURSES
   const filteredAndSortedCourses = useMemo(() => {
     return courses
       .filter((c) => {
@@ -236,12 +291,25 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
       });
   }, [courses, searchStudio, categoryFilter, sourceFilter, statusFilter, sortBy]);
 
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchStudio, statusFilter, categoryFilter, sourceFilter, sortBy, pageSize]);
+
+  // 4. PAGINATED COURSES
+  const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(filteredAndSortedCourses.length / pageSize));
+  const paginatedCourses = useMemo(() => {
+    if (pageSize === 'all') return filteredAndSortedCourses;
+    const startIdx = (currentPage - 1) * pageSize;
+    return filteredAndSortedCourses.slice(startIdx, startIdx + pageSize);
+  }, [filteredAndSortedCourses, currentPage, pageSize]);
+
   // Batch Selection Handlers
   const handleToggleSelectAll = () => {
-    if (selectedCourseIds.length === filteredAndSortedCourses.length) {
+    if (selectedCourseIds.length === paginatedCourses.length) {
       setSelectedCourseIds([]);
     } else {
-      setSelectedCourseIds(filteredAndSortedCourses.map(c => c.id));
+      setSelectedCourseIds(paginatedCourses.map(c => c.id));
     }
   };
 
@@ -457,7 +525,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in relative pb-24">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in relative pb-28">
       
       {/* Studio Header Bar */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-5 sm:p-6 rounded-3xl shadow-xl backdrop-blur-md">
@@ -478,7 +546,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                 Trung Tâm Quản Trị Khóa Học
               </h1>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">
-                COURSE STUDIO
+                COURSE STUDIO 2.0
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -629,24 +697,31 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               {/* Row 1: Search & Quick Status Filters */}
               <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
                 
-                {/* Search Input */}
+                {/* Search Input with Shortcut (/) hint */}
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
+                    ref={searchInputRef}
                     type="text"
                     value={searchStudio}
                     onChange={(e) => setSearchStudio(e.target.value)}
-                    placeholder="Tìm kiếm khóa học theo tên, giảng viên, nguồn..."
-                    className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500"
+                    placeholder="Tìm kiếm khóa học theo tên, giảng viên, nguồn... (Nhấn / để tìm nhanh)"
+                    className="w-full pl-10 pr-12 py-2 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500"
                   />
-                  {searchStudio && (
-                    <button 
-                      onClick={() => setSearchStudio('')} 
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                    {searchStudio ? (
+                      <button 
+                        onClick={() => setSearchStudio('')} 
+                        className="text-slate-500 hover:text-white p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-slate-500 bg-slate-900 border border-slate-800 rounded">
+                        /
+                      </kbd>
+                    )}
+                  </div>
                 </div>
 
                 {/* Quick Status Filter Tabs */}
@@ -687,7 +762,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
               </div>
 
-              {/* Row 2: Secondary Filters & Sort Dropdown */}
+              {/* Row 2: Secondary Filters, Sort & Page Size */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80 text-xs">
                 <div className="flex items-center gap-2 flex-wrap">
                   
@@ -730,23 +805,39 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                   )}
                 </div>
 
-                {/* Sort By Dropdown */}
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <ArrowUpDown className="w-3.5 h-3.5 text-teal-400" />
-                    <span>Sắp xếp:</span>
-                  </span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="bg-slate-950 border border-slate-800 text-xs text-white font-bold rounded-xl px-3 py-1.5 focus:border-emerald-500"
-                  >
-                    <option value="updated-desc">Mới cập nhật gần nhất</option>
-                    <option value="title-asc">Tên khóa học (A ➔ Z)</option>
-                    <option value="progress-desc">Tiến độ (Cao ➔ Thấp)</option>
-                    <option value="progress-asc">Tiến độ (Thấp ➔ Cao)</option>
-                    <option value="lessons-desc">Nhiều bài học nhất</option>
-                  </select>
+                {/* Sort By Dropdown & Page Size */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <ArrowUpDown className="w-3.5 h-3.5 text-teal-400" />
+                      <span>Sắp xếp:</span>
+                    </span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                      className="bg-slate-950 border border-slate-800 text-xs text-white font-bold rounded-xl px-3 py-1.5 focus:border-emerald-500"
+                    >
+                      <option value="updated-desc">Mới cập nhật</option>
+                      <option value="title-asc">Tên (A ➔ Z)</option>
+                      <option value="progress-desc">Tiến độ (Cao ➔ Thấp)</option>
+                      <option value="progress-asc">Tiến độ (Thấp ➔ Cao)</option>
+                      <option value="lessons-desc">Nhiều bài học nhất</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
+                    <span className="text-slate-500 text-[11px]">Xem:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => setPageSize(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                      className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-xl px-2 py-1 focus:border-emerald-500 font-semibold"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value="all">Tất cả</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -766,7 +857,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                           className="p-1 rounded text-slate-400 hover:text-emerald-400"
                           title="Chọn tất cả khóa học trên trang này"
                         >
-                          {selectedCourseIds.length > 0 && selectedCourseIds.length === filteredAndSortedCourses.length ? (
+                          {selectedCourseIds.length > 0 && selectedCourseIds.length === paginatedCourses.length ? (
                             <CheckSquare className="w-4 h-4 text-emerald-400" />
                           ) : (
                             <Square className="w-4 h-4" />
@@ -782,14 +873,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {filteredAndSortedCourses.length === 0 ? (
+                    {paginatedCourses.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="py-12 text-center text-slate-500">
                           Không tìm thấy khóa học nào khớp với điều kiện lọc.
                         </td>
                       </tr>
                     ) : (
-                      filteredAndSortedCourses.map((c) => {
+                      paginatedCourses.map((c) => {
                         const total = c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
                         const completed = c.chapters.reduce(
                           (acc, ch) => acc + ch.lessons.filter(l => l.isCompleted).length,
@@ -891,9 +982,9 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               </div>
                             </td>
 
-                            {/* Action Buttons */}
+                            {/* Action Buttons with 1-Click Duplicate */}
                             <td className="py-4 px-5 text-right">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   onClick={() => onSelectCourseAndLesson(c.id)}
                                   className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
@@ -904,15 +995,25 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                 <button
                                   onClick={() => onEditCourse(c)}
                                   title="Chỉnh sửa thông tin & giáo trình"
-                                  className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 transition-colors"
+                                  className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 transition-colors"
                                 >
                                   <Edit3 className="w-4 h-4" />
                                 </button>
 
+                                {onDuplicateCourse && (
+                                  <button
+                                    onClick={() => onDuplicateCourse(c)}
+                                    title="Nhân bản (Tạo bản sao khóa học này)"
+                                    className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-purple-400 border border-slate-800 transition-colors"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </button>
+                                )}
+
                                 <button
                                   onClick={() => onOpenBulkImport(c.id)}
                                   title="Nạp thêm bài học vào khóa này"
-                                  className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-slate-800 transition-colors"
+                                  className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-slate-800 transition-colors"
                                 >
                                   <PlusCircle className="w-4 h-4" />
                                 </button>
@@ -920,7 +1021,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                 <button
                                   onClick={() => setCourseToDelete(c)}
                                   title="Xóa khóa học này"
-                                  className="p-2 rounded-xl bg-slate-950 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800 transition-colors"
+                                  className="p-1.5 rounded-xl bg-slate-950 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800 transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -933,6 +1034,54 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                   </tbody>
                 </table>
               </div>
+
+              {/* SMART PAGINATION CONTROLS */}
+              {pageSize !== 'all' && totalPages > 1 && (
+                <div className="p-4 bg-slate-950/90 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="text-slate-400">
+                    Hiển thị <span className="text-white font-bold">{(currentPage - 1) * pageSize + 1}</span> - <span className="text-white font-bold">{Math.min(currentPage * pageSize, filteredAndSortedCourses.length)}</span> trên <span className="text-white font-bold">{filteredAndSortedCourses.length}</span> khóa học
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Trước</span>
+                    </button>
+
+                    <div className="flex items-center gap-1 px-2">
+                      {Array.from({ length: totalPages }).map((_, idx) => {
+                        const pageNum = idx + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-7 h-7 rounded-xl font-bold text-xs transition-all ${
+                              currentPage === pageNum
+                                ? 'bg-emerald-600 text-white shadow-md'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-850'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                    >
+                      <span>Sau</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1238,18 +1387,63 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
           </div>
         )}
 
-        {/* TAB 3: BACKUP & DATA */}
+        {/* TAB 3: BACKUP & STORAGE HEALTH METERS */}
         {activeTab === 'backup' && (
           <div className="space-y-6">
+            
+            {/* FEATURE 3: STORAGE USAGE & HEALTH STATUS METER */}
+            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
+                    <HardDrive className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>Dung Lượng Bộ Nhớ Thiết Bị (Offline Storage Health)</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>Offline Ready & An Toàn</span>
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Dữ liệu được lưu trữ trực tiếp trên trình duyệt thiết bị của bạn, bảo mật tuyệt đối và không phụ thuộc server.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-xs text-slate-400">Đang dùng: </span>
+                  <span className="text-sm font-extrabold text-teal-400">{storageMetrics.usedKB} KB</span>
+                  <span className="text-xs text-slate-500"> / {storageMetrics.quotaMB} MB (~{storageMetrics.percentUsed}%)</span>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="space-y-1.5">
+                <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.max(2, storageMetrics.percentUsed)}%` }} 
+                  />
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span>0 MB</span>
+                  <span>{storageMetrics.usedMB} MB / {storageMetrics.quotaMB} MB</span>
+                  <span>5.0 MB (Giới hạn LocalStorage)</span>
+                </div>
+              </div>
+            </div>
+
             {backupSuccess && (
-              <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2.5 font-medium">
+              <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2.5 font-medium animate-fade-in">
                 <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span>{backupSuccess}</span>
               </div>
             )}
 
             {backupError && (
-              <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2.5 font-medium">
+              <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2.5 font-medium animate-fade-in">
                 <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
                 <span>{backupError}</span>
               </div>
@@ -1263,9 +1457,9 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                   <Download className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Xuất Bản Sao Lưu (Backup JSON)</h3>
+                  <h3 className="text-sm font-bold text-white">Xuất Bản Sao Lưu Toàn Bộ (Backup JSON)</h3>
                   <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                    Tải về toàn bộ dữ liệu {courses.length} khóa học, danh mục, nguồn và tiến độ học tập thành 1 tệp tin JSON độc lập.
+                    Tải về toàn bộ {courses.length} khóa học, mục lục bài giảng, ghi chú và tiến độ thành 1 tệp tin JSON an toàn.
                   </p>
                 </div>
                 <button
@@ -1373,7 +1567,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
             <button
               onClick={() => setSelectedCourseIds([])}
               className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              title="Bỏ chọn tất cả"
+              title="Bỏ chọn tất cả (Esc)"
             >
               <X className="w-4 h-4" />
             </button>

@@ -1,8 +1,30 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Course } from '../../types';
 import { CourseCard } from './CourseCard';
 import { FilterHub } from './FilterHub';
-import { PlusCircle, Search } from 'lucide-react';
+import { 
+  PlusCircle, 
+  Search, 
+  LayoutGrid, 
+  List, 
+  Edit3, 
+  Copy, 
+  Trash2, 
+  Globe, 
+  User, 
+  Sparkles, 
+  Code, 
+  Palette, 
+  TrendingUp, 
+  Award, 
+  BookOpen,
+  CheckSquare,
+  Square,
+  X,
+  Tags,
+  Download,
+  AlertTriangle
+} from 'lucide-react';
 
 interface CourseGridProps {
   courses: Course[];
@@ -21,7 +43,10 @@ interface CourseGridProps {
   onOpenBulkImport: (courseId?: string) => void;
   onEditCourse: (course: Course) => void;
   onDeleteCourse: (courseId: string) => void;
+  onDuplicateCourse?: (course: Course) => void;
   onAddNewCourse: () => void;
+  onBatchDeleteCourses?: (courseIds: string[]) => void;
+  onBatchUpdateCategory?: (courseIds: string[], newCat: string) => void;
 }
 
 export const CourseGrid: React.FC<CourseGridProps> = ({
@@ -41,58 +66,136 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
   onOpenBulkImport,
   onEditCourse,
   onDeleteCourse,
+  onDuplicateCourse,
   onAddNewCourse,
+  onBatchDeleteCourses,
+  onBatchUpdateCategory,
 }) => {
-  // Triple-dimension multi-filter
-  const filteredCourses = courses.filter((course) => {
-    // 1. Filter by category
-    if (selectedCategory && selectedCategory !== 'Tất cả') {
-      const selectedNorm = selectedCategory.trim().toLowerCase();
-      const courseNorm = (course.category || '').trim().toLowerCase();
-      if (courseNorm !== selectedNorm) {
-        return false;
-      }
-    }
-
-    // 2. Filter by source platform
-    if (selectedSource && selectedSource !== 'Tất cả') {
-      const selectedSrcNorm = selectedSource.trim().toLowerCase();
-      const courseSrcNorm = (course.sourcePlatform || '').trim().toLowerCase();
-      if (courseSrcNorm !== selectedSrcNorm) {
-        return false;
-      }
-    }
-
-    // 3. Filter by instructor / author
-    if (selectedInstructor && selectedInstructor !== 'Tất cả') {
-      const selectedInstNorm = selectedInstructor.trim().toLowerCase();
-      const courseInstNorm = (course.instructor || '').trim().toLowerCase();
-      if (courseInstNorm !== selectedInstNorm) {
-        return false;
-      }
-    }
-
-    // 4. Filter by search query (Title, Description, Tags, Instructor, Lessons)
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = course.title.toLowerCase().includes(q);
-      const matchDesc = (course.description || '').toLowerCase().includes(q);
-      const matchInstructor = (course.instructor || '').toLowerCase().includes(q);
-      const matchSource = (course.sourcePlatform || '').toLowerCase().includes(q);
-      const matchTags = course.tags && course.tags.some(t => t.toLowerCase().includes(q));
-      
-      const matchLessons = course.chapters.some(ch =>
-        ch.lessons.some(l => l.title.toLowerCase().includes(q))
-      );
-
-      return matchTitle || matchDesc || matchInstructor || matchSource || matchTags || matchLessons;
-    }
-
-    return true;
+  // View Mode: 'grid' (Card Gallery) vs 'table' (Compact Management List)
+  const [layoutMode, setLayoutMode] = useState<'grid' | 'table'>(() => {
+    return (localStorage.getItem('myedu_layout_mode_v1') as 'grid' | 'table') || 'grid';
   });
 
+  const handleToggleLayoutMode = (mode: 'grid' | 'table') => {
+    setLayoutMode(mode);
+    localStorage.setItem('myedu_layout_mode_v1', mode);
+  };
+
+  // Batch selection states for Table view
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [isBatchCategoryModalOpen, setIsBatchCategoryModalOpen] = useState<boolean>(false);
+  const [batchTargetCategory, setBatchTargetCategory] = useState<string>(categories[0] || 'Chung');
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState<boolean>(false);
+  const [failedImageUrls, setFailedImageUrls] = useState<Record<string, boolean>>({});
+
+  // Triple-dimension multi-filter
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) => {
+      // 1. Filter by category
+      if (selectedCategory && selectedCategory !== 'Tất cả') {
+        const selectedNorm = selectedCategory.trim().toLowerCase();
+        const courseNorm = (course.category || '').trim().toLowerCase();
+        if (courseNorm !== selectedNorm) {
+          return false;
+        }
+      }
+
+      // 2. Filter by source platform
+      if (selectedSource && selectedSource !== 'Tất cả') {
+        const selectedSrcNorm = selectedSource.trim().toLowerCase();
+        const courseSrcNorm = (course.sourcePlatform || '').trim().toLowerCase();
+        if (courseSrcNorm !== selectedSrcNorm) {
+          return false;
+        }
+      }
+
+      // 3. Filter by instructor / author
+      if (selectedInstructor && selectedInstructor !== 'Tất cả') {
+        const selectedInstNorm = selectedInstructor.trim().toLowerCase();
+        const courseInstNorm = (course.instructor || '').trim().toLowerCase();
+        if (courseInstNorm !== selectedInstNorm) {
+          return false;
+        }
+      }
+
+      // 4. Filter by search query (Title, Description, Tags, Instructor, Lessons)
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = course.title.toLowerCase().includes(q);
+        const matchDesc = (course.description || '').toLowerCase().includes(q);
+        const matchInstructor = (course.instructor || '').toLowerCase().includes(q);
+        const matchSource = (course.sourcePlatform || '').toLowerCase().includes(q);
+        const matchTags = course.tags && course.tags.some(t => t.toLowerCase().includes(q));
+        
+        const matchLessons = course.chapters.some(ch =>
+          ch.lessons.some(l => l.title.toLowerCase().includes(q))
+        );
+
+        return matchTitle || matchDesc || matchInstructor || matchSource || matchTags || matchLessons;
+      }
+
+      return true;
+    });
+  }, [courses, selectedCategory, selectedSource, selectedInstructor, searchQuery]);
+
+  // Batch Handlers
+  const handleToggleSelectAll = () => {
+    if (selectedCourseIds.length === filteredCourses.length) {
+      setSelectedCourseIds([]);
+    } else {
+      setSelectedCourseIds(filteredCourses.map(c => c.id));
+    }
+  };
+
+  const handleToggleSelectCourse = (courseId: string) => {
+    setSelectedCourseIds(prev => 
+      prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]
+    );
+  };
+
+  const handleExecuteBulkDelete = () => {
+    if (onBatchDeleteCourses) {
+      onBatchDeleteCourses(selectedCourseIds);
+    } else {
+      selectedCourseIds.forEach(id => onDeleteCourse(id));
+    }
+    setSelectedCourseIds([]);
+    setIsBulkDeleteConfirmOpen(false);
+  };
+
+  const handleExecuteBatchCategory = () => {
+    if (onBatchUpdateCategory) {
+      onBatchUpdateCategory(selectedCourseIds, batchTargetCategory);
+    }
+    setIsBatchCategoryModalOpen(false);
+    setSelectedCourseIds([]);
+  };
+
+  const handleExportSelectedCourses = () => {
+    const selectedCourses = courses.filter(c => selectedCourseIds.includes(c.id));
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(selectedCourses, null, 2));
+    const downloadAnchor = document.createElement('a');
+    const filename = `myedu_selected_${selectedCourses.length}_courses.json`;
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', filename);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const getCategoryIcon = (cat: string) => {
+    const norm = (cat || '').toLowerCase();
+    if (norm.includes('ai') || norm.includes('machine')) return <Sparkles className="w-4 h-4 text-emerald-400" />;
+    if (norm.includes('lập trình') || norm.includes('code')) return <Code className="w-4 h-4 text-teal-400" />;
+    if (norm.includes('thiết kế') || norm.includes('ui/ux') || norm.includes('đồ họa')) return <Palette className="w-4 h-4 text-purple-400" />;
+    if (norm.includes('marketing') || norm.includes('growth')) return <TrendingUp className="w-4 h-4 text-rose-400" />;
+    if (norm.includes('kinh doanh') || norm.includes('tài chính')) return <Award className="w-4 h-4 text-amber-400" />;
+    return <BookOpen className="w-4 h-4 text-emerald-400" />;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in relative pb-12">
       
       {/* 1. Integrated Cascading Filter Hub */}
       <FilterHub
@@ -109,9 +212,9 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
         onResetFilters={onResetFilters}
       />
 
-      {/* 2. Course Grid Header */}
-      <div className="flex items-center justify-between pt-2">
-        <div className="flex items-center gap-2">
+      {/* 2. Course Section Header with View Mode Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+        <div className="flex items-center gap-2.5">
           <h2 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
             {selectedCategory === 'Tất cả' ? 'Toàn Bộ Khóa Học' : selectedCategory}
           </h2>
@@ -120,17 +223,50 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
           </span>
         </div>
 
-        {/* Quick Add Button */}
-        <button
-          onClick={onAddNewCourse}
-          className="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span className="hidden sm:inline">Tạo Khóa Mới</span>
-        </button>
+        {/* Right Toolbar: View Mode Switcher & Quick Add Button */}
+        <div className="flex items-center gap-2.5">
+          
+          {/* VIEW SWITCHER: GRID VS TABLE */}
+          <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800 shadow-sm">
+            <button
+              onClick={() => handleToggleLayoutMode('grid')}
+              title="Chế độ Thẻ (Trực quan & Cảm hứng học tập)"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                layoutMode === 'grid'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Dạng Thẻ</span>
+            </button>
+
+            <button
+              onClick={() => handleToggleLayoutMode('table')}
+              title="Chế độ Bảng (Quản trị, lọc nhanh & thao tác hàng loạt)"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                layoutMode === 'table'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Dạng Bảng</span>
+            </button>
+          </div>
+
+          {/* Quick Add Button */}
+          <button
+            onClick={onAddNewCourse}
+            className="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Tạo Khóa Mới</span>
+          </button>
+        </div>
       </div>
 
-      {/* 3. Courses Grid List */}
+      {/* 3. Empty State */}
       {filteredCourses.length === 0 ? (
         <div className="py-16 text-center space-y-4 bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8">
           <div className="w-12 h-12 rounded-2xl bg-slate-800 text-slate-500 mx-auto flex items-center justify-center">
@@ -149,8 +285,10 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
             Đặt lại tất cả bộ lọc
           </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      ) : layoutMode === 'grid' ? (
+        
+        /* 4A. GRID CARD GALLERY VIEW (Learner Focus) */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
           {filteredCourses.map((course) => (
             <CourseCard
               key={course.id}
@@ -161,6 +299,386 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
               onDeleteCourse={onDeleteCourse}
             />
           ))}
+        </div>
+
+      ) : (
+
+        /* 4B. COMPACT TABLE VIEW (Editor / Admin Focus) */
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl animate-fade-in">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                  <th className="py-3.5 px-4 w-10 text-center">
+                    <button
+                      type="button"
+                      onClick={handleToggleSelectAll}
+                      className="p-1 rounded text-slate-400 hover:text-emerald-400"
+                      title="Chọn tất cả"
+                    >
+                      {selectedCourseIds.length > 0 && selectedCourseIds.length === filteredCourses.length ? (
+                        <CheckSquare className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                    </button>
+                  </th>
+                  <th className="py-3.5 px-4">Khóa Học & Giảng Viên</th>
+                  <th className="py-3.5 px-4">Chủ Đề</th>
+                  <th className="py-3.5 px-4">Nguồn</th>
+                  <th className="py-3.5 px-4">Cấu Trúc</th>
+                  <th className="py-3.5 px-4">Tiến Độ</th>
+                  <th className="py-3.5 px-5 text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {filteredCourses.map((c) => {
+                  const total = c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
+                  const completed = c.chapters.reduce(
+                    (acc, ch) => acc + ch.lessons.filter(l => l.isCompleted).length,
+                    0
+                  );
+                  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+                  const isSelected = selectedCourseIds.includes(c.id);
+                  const hasImgFailed = failedImageUrls[c.id] || !c.thumbnailUrl;
+
+                  return (
+                    <tr 
+                      key={c.id} 
+                      className={`transition-colors group ${
+                        isSelected ? 'bg-emerald-950/25 hover:bg-emerald-950/40' : 'hover:bg-slate-850/50'
+                      }`}
+                    >
+                      {/* Checkbox Column */}
+                      <td className="py-4 px-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSelectCourse(c.id)}
+                          className="p-1 rounded text-slate-400 hover:text-emerald-400"
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-emerald-400" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                      </td>
+
+                      {/* 16:9 Thumbnail & Title */}
+                      <td className="py-4 px-4 max-w-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800 shadow-sm relative flex items-center justify-center">
+                            {!hasImgFailed ? (
+                              <img 
+                                src={c.thumbnailUrl} 
+                                alt={c.title} 
+                                className="w-full h-full object-cover" 
+                                onError={() => setFailedImageUrls(prev => ({ ...prev, [c.id]: true }))}
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
+                                {getCategoryIcon(c.category)}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0">
+                            <p 
+                              onClick={() => onSelectCourse(c.id)}
+                              className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer"
+                            >
+                              {c.title}
+                            </p>
+                            {c.instructor && (
+                              <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <User className="w-3 h-3 text-emerald-400" />
+                                <span>{c.instructor}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Category */}
+                      <td className="py-4 px-4">
+                        <span className="inline-block px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                          {c.category}
+                        </span>
+                      </td>
+
+                      {/* Source */}
+                      <td className="py-4 px-4">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                          <Globe className="w-3.5 h-3.5 text-teal-400" />
+                          <span>{c.sourcePlatform || 'Chưa đặt'}</span>
+                        </span>
+                      </td>
+
+                      {/* Structure */}
+                      <td className="py-4 px-4">
+                        <div className="text-xs text-slate-300 font-medium whitespace-nowrap">
+                          <span className="text-white font-bold">{c.chapters.length}</span> chương &bull; <span className="text-white font-bold">{total}</span> bài
+                        </div>
+                      </td>
+
+                      {/* Progress */}
+                      <td className="py-4 px-4">
+                        <div className="w-28 space-y-1.5">
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-slate-400">{completed}/{total}</span>
+                            <span className="text-emerald-400 font-bold">{pct}%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                            <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => onSelectCourse(c.id)}
+                            className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                          >
+                            Vào Học
+                          </button>
+
+                          <button
+                            onClick={() => onEditCourse(c)}
+                            title="Chỉnh sửa thông tin & giáo trình"
+                            className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 transition-colors"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+
+                          {onDuplicateCourse && (
+                            <button
+                              onClick={() => onDuplicateCourse(c)}
+                              title="Nhân bản (Tạo bản sao khóa học này)"
+                              className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-purple-400 border border-slate-800 transition-colors"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => onOpenBulkImport(c.id)}
+                            title="Nạp thêm bài học vào khóa này"
+                            className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-slate-800 transition-colors"
+                          >
+                            <PlusCircle className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => setCourseToDelete(c)}
+                            title="Xóa khóa học này"
+                            className="p-1.5 rounded-xl bg-slate-950 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING BATCH ACTIONS (When items selected in Table View) */}
+      {selectedCourseIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 border border-emerald-500/50 rounded-3xl p-3 sm:px-6 shadow-2xl shadow-emerald-950/50 backdrop-blur-md flex items-center gap-3 sm:gap-5 animate-slide-up flex-wrap justify-center">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-bold text-white">
+              Đã chọn <span className="text-emerald-400 font-extrabold">{selectedCourseIds.length}</span> khóa học
+            </span>
+          </div>
+
+          <div className="h-4 w-[1px] bg-slate-800 hidden sm:block" />
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsBatchCategoryModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <Tags className="w-3.5 h-3.5 text-teal-400" />
+              <span>Đổi Danh Mục</span>
+            </button>
+
+            <button
+              onClick={handleExportSelectedCourses}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Xuất JSON</span>
+            </button>
+
+            <button
+              onClick={() => setIsBulkDeleteConfirmOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-600/25 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa Đã Chọn</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCourseIds([])}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Bỏ chọn tất cả"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SINGLE COURSE DELETE MODAL */}
+      {courseToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-3xl p-6 space-y-4 shadow-2xl shadow-rose-950/40">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold flex-shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white leading-tight">
+                  Xác Nhận Xóa Khóa Học?
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Hành động này không thể hoàn tác sau khi thực hiện.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <p className="font-bold text-sm text-white line-clamp-1">{courseToDelete.title}</p>
+              <p className="text-xs text-slate-400">
+                Chứa <span className="text-emerald-400 font-bold">{courseToDelete.chapters.length} chương</span> và <span className="text-emerald-400 font-bold">{courseToDelete.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0)} bài giảng</span>.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setCourseToDelete(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+              >
+                Hủy Bỏ
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onDeleteCourse(courseToDelete.id);
+                  setCourseToDelete(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-md shadow-rose-600/20"
+              >
+                Xóa Khóa Học
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK DELETE MODAL */}
+      {isBulkDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-3xl p-6 space-y-4 shadow-2xl shadow-rose-950/40">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold flex-shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white leading-tight">
+                  Xác Nhận Xóa Hàng Loạt?
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Bạn đang chuẩn bị xóa cùng lúc nhiều khóa học.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+              Bạn có chắc chắn muốn xóa vĩnh viễn <strong className="text-rose-400">{selectedCourseIds.length} khóa học</strong> đã chọn khỏi thư viện học tập cá nhân không?
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteConfirmOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+              >
+                Hủy Bỏ
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExecuteBulkDelete}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-md shadow-rose-600/20"
+              >
+                Xóa {selectedCourseIds.length} Khóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BATCH MOVE CATEGORY MODAL */}
+      {isBatchCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-teal-500/40 rounded-3xl p-6 space-y-4 shadow-2xl shadow-teal-950/40">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center font-bold flex-shrink-0">
+                <Tags className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white leading-tight">
+                  Chuyển Danh Mục Hàng Loạt
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Áp dụng danh mục mới cho {selectedCourseIds.length} khóa học đã chọn.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-300">
+                Chọn Danh Mục Đích:
+              </label>
+              <select
+                value={batchTargetCategory}
+                onChange={(e) => setBatchTargetCategory(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 text-xs text-white font-bold rounded-2xl p-3 focus:border-teal-500"
+              >
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsBatchCategoryModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+              >
+                Hủy Bỏ
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExecuteBatchCategory}
+                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors shadow-md shadow-teal-600/20"
+              >
+                Áp Dụng Chuyển
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

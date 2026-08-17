@@ -636,7 +636,16 @@ export const App: React.FC = () => {
               }}
               onEditCourse={handleEditCourse}
               onDeleteCourse={handleDeleteCourse}
+              onDuplicateCourse={handleDuplicateCourse}
               onAddNewCourse={handleAddNewCourse}
+              onBatchDeleteCourses={(ids) => {
+                const updated = courses.filter(c => !ids.includes(c.id));
+                updateCoursesState(updated);
+              }}
+              onBatchUpdateCategory={(ids, newCat) => {
+                const updated = courses.map(c => ids.includes(c.id) ? { ...c, category: newCat } : c);
+                updateCoursesState(updated);
+              }}
             />
           </div>
         )}

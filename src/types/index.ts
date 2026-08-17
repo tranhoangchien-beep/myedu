@@ -49,3 +49,11 @@ export interface ContinueProgress {
   videoSource: string;
   timestamp: string;
 }
+
+export interface UserStats {
+  streak: number;
+  lastStudyDate: string; // YYYY-MM-DD
+  todayCompletedCount: number;
+  totalCompletedCount: number;
+}
+

@@ -1,9 +1,10 @@
-import { Course, ContinueProgress, CategoryType } from '../types';
+import { Course, ContinueProgress, CategoryType, UserStats } from '../types';
 
 const STORAGE_KEY_COURSES = 'myedu_courses_v1';
 const STORAGE_KEY_CONTINUE = 'myedu_continue_progress_v1';
 const STORAGE_KEY_CATEGORIES = 'myedu_categories_v1';
 const STORAGE_KEY_SOURCES = 'myedu_sources_v1';
+const STORAGE_KEY_STATS = 'myedu_user_stats_v1';
 
 export const DEFAULT_CATEGORIES: string[] = [
   'AI & Machine Learning',
@@ -245,3 +246,95 @@ export function saveContinueProgress(progress: ContinueProgress): void {
     console.error('Failed to save continue progress', error);
   }
 }
+
+export function getStoredUserStats(): UserStats {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const data = localStorage.getItem(STORAGE_KEY_STATS);
+    if (!data) {
+      const defaultStats: UserStats = {
+        streak: 1,
+        lastStudyDate: today,
+        todayCompletedCount: 0,
+        totalCompletedCount: 0
+      };
+      localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(defaultStats));
+      return defaultStats;
+    }
+    const parsed: UserStats = JSON.parse(data);
+    
+    // Check if new day -> reset todayCompletedCount
+    if (parsed.lastStudyDate !== today) {
+      const d1 = new Date(today);
+      const d2 = new Date(parsed.lastStudyDate);
+      const diffDays = Math.round((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
+      
+      let newStreak = parsed.streak;
+      if (diffDays === 1) {
+        // Kept streak
+      } else if (diffDays > 1) {
+        // Missed day
+        newStreak = 1;
+      }
+      
+      const updatedStats: UserStats = {
+        ...parsed,
+        streak: newStreak,
+        todayCompletedCount: 0
+      };
+      localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(updatedStats));
+      return updatedStats;
+    }
+    return parsed;
+  } catch {
+    return {
+      streak: 1,
+      lastStudyDate: new Date().toISOString().split('T')[0],
+      todayCompletedCount: 0,
+      totalCompletedCount: 0
+    };
+  }
+}
+
+export function saveUserStats(stats: UserStats): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(stats));
+  } catch (error) {
+    console.error('Failed to save user stats', error);
+  }
+}
+
+export function recordLessonCompletionStats(isNowCompleted: boolean): UserStats {
+  const current = getStoredUserStats();
+  const today = new Date().toISOString().split('T')[0];
+  
+  const d1 = new Date(today);
+  const d2 = new Date(current.lastStudyDate);
+  const diffDays = Math.round((d1.getTime() - d2.getTime()) / (1000 * 60 * 60 * 24));
+  
+  let newStreak = current.streak;
+  if (diffDays === 1) {
+    newStreak += 1;
+  } else if (diffDays > 1) {
+    newStreak = 1;
+  }
+
+  const todayCount = isNowCompleted 
+    ? (current.todayCompletedCount + 1)
+    : Math.max(0, current.todayCompletedCount - 1);
+
+  const totalCount = isNowCompleted
+    ? (current.totalCompletedCount + 1)
+    : Math.max(0, current.totalCompletedCount - 1);
+
+  const updated: UserStats = {
+    streak: Math.max(1, newStreak),
+    lastStudyDate: today,
+    todayCompletedCount: todayCount,
+    totalCompletedCount: totalCount
+  };
+
+  saveUserStats(updated);
+  return updated;
+}
+

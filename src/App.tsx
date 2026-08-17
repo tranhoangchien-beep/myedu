@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Course, Lesson, CategoryType, Chapter, ContinueProgress } from './types';
+import { Course, Lesson, CategoryType, Chapter, ContinueProgress, UserStats } from './types';
 import { 
   getStoredCourses, 
   saveCourses, 
@@ -8,7 +8,9 @@ import {
   getStoredCategories,
   saveCategories,
   getStoredSources,
-  saveSources
+  saveSources,
+  getStoredUserStats,
+  recordLessonCompletionStats
 } from './lib/storage';
 import { Navbar } from './components/layout/Navbar';
 import { ContinueBanner } from './components/layout/ContinueBanner';
@@ -28,6 +30,7 @@ export const App: React.FC = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [sources, setSources] = useState<string[]>([]);
   const [continueProgress, setContinueProgress] = useState<ContinueProgress | null>(null);
+  const [userStats, setUserStats] = useState<UserStats>(getStoredUserStats());
 
   // Navigation & View States
   const [currentView, setCurrentView] = useState<'home' | 'player' | 'favorites'>('home');
@@ -42,6 +45,7 @@ export const App: React.FC = () => {
 
   // Player preferences
   const [isTheaterMode, setIsTheaterMode] = useState<boolean>(false);
+  const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [autoPlayNext, setAutoPlayNext] = useState<boolean>(true);
 
   // Modals
@@ -259,6 +263,7 @@ export const App: React.FC = () => {
     const cId = courseIdParam || activeCourseId;
     if (!cId) return;
 
+    let isNowCompleted = false;
     const updated = courses.map(course => {
       if (course.id !== cId) return course;
       return {
@@ -267,7 +272,8 @@ export const App: React.FC = () => {
           ...ch,
           lessons: ch.lessons.map(l => {
             if (l.id === lessonId) {
-              return { ...l, isCompleted: !l.isCompleted };
+              isNowCompleted = !l.isCompleted;
+              return { ...l, isCompleted: isNowCompleted };
             }
             return l;
           })
@@ -275,6 +281,10 @@ export const App: React.FC = () => {
       };
     });
     updateCoursesState(updated);
+
+    // Update streak and today's completed count
+    const updatedStats = recordLessonCompletionStats(isNowCompleted);
+    setUserStats(updatedStats);
   }, [activeCourseId, courses]);
 
   // Action: Toggle Lesson Star
@@ -408,10 +418,16 @@ export const App: React.FC = () => {
           handlePrevLesson();
         } else if (e.key === 't' || e.key === 'T') {
           setIsTheaterMode(prev => !prev);
+        } else if (e.key === 'z' || e.key === 'Z') {
+          setIsZenMode(prev => !prev);
         }
       }
 
       if (e.key === 'Escape') {
+        if (isZenMode) {
+          setIsZenMode(false);
+          return;
+        }
         if (isBulkModalOpen) setIsBulkModalOpen(false);
         if (isCourseEditorOpen) setIsCourseEditorOpen(false);
         if (isCategoryManagerOpen) setIsCategoryManagerOpen(false);
@@ -422,34 +438,56 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, handleNextLesson, handlePrevLesson, isBulkModalOpen, isCourseEditorOpen, isCategoryManagerOpen, isShortcutsOpen, isBackupOpen]);
+  }, [currentView, handleNextLesson, handlePrevLesson, isZenMode, isBulkModalOpen, isCourseEditorOpen, isCategoryManagerOpen, isShortcutsOpen, isBackupOpen]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 selection:bg-emerald-500 selection:text-white">
       
-      {/* Top Navigation */}
-      <Navbar
-        currentView={currentView}
-        onNavigateHome={() => {
-          setCurrentView('home');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onNavigateFavorites={() => {
-          setCurrentView('favorites');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onOpenBulkImport={() => {
-          setBulkCourseId(undefined);
-          setIsBulkModalOpen(true);
-        }}
-        onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
-        onOpenBackup={() => setIsBackupOpen(true)}
-        onOpenShortcuts={() => setIsShortcutsOpen(true)}
-        totalCoursesCount={courses.length}
-        starredCount={starredCount}
-      />
+      {/* Zen Mode Floating Exit Bar */}
+      {isZenMode && currentView === 'player' && (
+        <div className="sticky top-2 z-50 flex justify-center px-4 animate-fade-in pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-900/90 border border-teal-500/40 shadow-2xl backdrop-blur-md text-xs">
+            <span className="flex items-center gap-1.5 font-bold text-teal-300">
+              <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
+              Zen Focus Mode Đang Bật
+            </span>
+            <span className="text-slate-400 hidden sm:inline">&bull; Ẩn xao nhãng</span>
+            <button
+              onClick={() => setIsZenMode(false)}
+              className="px-2.5 py-0.5 rounded-full bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 font-bold text-[11px] transition-all"
+            >
+              Thoát (Phím Z / Esc)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Top Navigation (Hidden in Zen Mode) */}
+      {!isZenMode && (
+        <Navbar
+          currentView={currentView}
+          onNavigateHome={() => {
+            setCurrentView('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigateFavorites={() => {
+            setCurrentView('favorites');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onOpenBulkImport={() => {
+            setBulkCourseId(undefined);
+            setIsBulkModalOpen(true);
+          }}
+          onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
+          onOpenBackup={() => setIsBackupOpen(true)}
+          onOpenShortcuts={() => setIsShortcutsOpen(true)}
+          totalCoursesCount={courses.length}
+          starredCount={starredCount}
+          userStats={userStats}
+        />
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -493,7 +531,28 @@ export const App: React.FC = () => {
         {/* VIEW 2: Player Workspace */}
         {currentView === 'player' && activeCourse && activeLesson && (
           <div className="space-y-6">
-            {isTheaterMode ? (
+            {isZenMode ? (
+              // Zen Focus Mode: Distraction-free max container
+              <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+                <AbyssPlayer
+                  course={activeCourse}
+                  currentLesson={activeLesson}
+                  hasPrevLesson={hasPrevLesson}
+                  hasNextLesson={hasNextLesson}
+                  onPrevLesson={handlePrevLesson}
+                  onNextLesson={handleNextLesson}
+                  onToggleComplete={(lId) => handleToggleComplete(lId)}
+                  onToggleStar={(lId) => handleToggleStar(lId)}
+                  onUpdateNotes={handleUpdateNotes}
+                  isTheaterMode={isTheaterMode}
+                  onToggleTheaterMode={() => setIsTheaterMode(prev => !prev)}
+                  isZenMode={isZenMode}
+                  onToggleZenMode={() => setIsZenMode(prev => !prev)}
+                  autoPlayNext={autoPlayNext}
+                  onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
+                />
+              </div>
+            ) : isTheaterMode ? (
               // Theater Mode: Player on top taking full width, sidebar below
               <div className="space-y-6">
                 <AbyssPlayer
@@ -508,6 +567,8 @@ export const App: React.FC = () => {
                   onUpdateNotes={handleUpdateNotes}
                   isTheaterMode={isTheaterMode}
                   onToggleTheaterMode={() => setIsTheaterMode(prev => !prev)}
+                  isZenMode={isZenMode}
+                  onToggleZenMode={() => setIsZenMode(prev => !prev)}
                   autoPlayNext={autoPlayNext}
                   onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
                 />
@@ -543,6 +604,8 @@ export const App: React.FC = () => {
                     onUpdateNotes={handleUpdateNotes}
                     isTheaterMode={isTheaterMode}
                     onToggleTheaterMode={() => setIsTheaterMode(prev => !prev)}
+                    isZenMode={isZenMode}
+                    onToggleZenMode={() => setIsZenMode(prev => !prev)}
                     autoPlayNext={autoPlayNext}
                     onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
                   />
@@ -634,9 +697,11 @@ export const App: React.FC = () => {
       />
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <p>MyEdu Personal Learning Workspace &bull; Powered by Google Antigravity 2.0 &bull; Abyss Video Cloud</p>
-      </footer>
+      {!isZenMode && (
+        <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+          <p>MyEdu Personal Learning Workspace &bull; Powered by Google Antigravity 2.0 &bull; Abyss Video Cloud</p>
+        </footer>
+      )}
 
     </div>
   );

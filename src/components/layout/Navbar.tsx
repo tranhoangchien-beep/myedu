@@ -7,8 +7,11 @@ import {
   Keyboard, 
   Home, 
   Bookmark, 
-  Tags 
+  Tags,
+  Flame,
+  CheckCircle2
 } from 'lucide-react';
+import { UserStats } from '../../types';
 
 interface NavbarProps {
   currentView: 'home' | 'player' | 'favorites';
@@ -22,6 +25,7 @@ interface NavbarProps {
   onOpenShortcuts: () => void;
   totalCoursesCount: number;
   starredCount: number;
+  userStats: UserStats;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -36,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenShortcuts,
   totalCoursesCount,
   starredCount,
+  userStats,
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur-md">
@@ -82,6 +87,28 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2">
+            
+            {/* Learning Streak & Today's Goal Pills */}
+            <div className="hidden sm:flex items-center gap-1.5 mr-1">
+              <div 
+                title={`Chuỗi học liên tục: ${userStats.streak} ngày`}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 text-xs font-bold"
+              >
+                <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span>{userStats.streak} ngày</span>
+              </div>
+
+              {userStats.todayCompletedCount > 0 && (
+                <div 
+                  title={`Hôm nay đã hoàn thành ${userStats.todayCompletedCount} bài giảng`}
+                  className="flex items-center gap-1 px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>+{userStats.todayCompletedCount} bài</span>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={onNavigateHome}
               title="Trang chủ"

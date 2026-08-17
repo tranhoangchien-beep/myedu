@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Lesson, Course } from '../../types';
-import { getAbyssEmbedUrl, extractAbyssId } from '../../lib/abyss';
+import { getAbyssEmbedUrl, extractAbyssId, parseUniversalVideo } from '../../lib/abyss';
 import { 
   CheckCircle2, 
   Circle, 
@@ -61,8 +61,9 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const embedUrl = currentLesson.videoSource ? getAbyssEmbedUrl(currentLesson.videoSource) : null;
-  const rawId = currentLesson.videoSource ? extractAbyssId(currentLesson.videoSource) : null;
+  const parsedVideo = parseUniversalVideo(currentLesson.videoSource || '');
+  const embedUrl = parsedVideo.embedUrl;
+  const rawId = extractAbyssId(currentLesson.videoSource || '');
 
   // Sync notes when lesson changes
   useEffect(() => {
@@ -156,7 +157,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
           </div>
         </div>
       ) : (
-        // Video Player (for 'video' and 'mixed' types)
+        // Universal Video Player (supports Abyss, YouTube, Vimeo, MP4, custom iframe)
         <div 
           ref={playerContainerRef}
           className={`relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 transition-all ${
@@ -164,22 +165,34 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
           }`}
         >
           {embedUrl ? (
-            <iframe
-              key={embedUrl}
-              src={embedUrl}
-              title={currentLesson.title}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
-              referrerPolicy="no-referrer"
-            />
+            parsedVideo.isDirectVideo ? (
+              <video
+                key={embedUrl}
+                src={embedUrl}
+                controls
+                autoPlay
+                className="w-full h-full object-contain"
+              >
+                Trình duyệt không hỗ trợ phát dạng video MP4 trực tiếp này.
+              </video>
+            ) : (
+              <iframe
+                key={embedUrl}
+                src={embedUrl}
+                title={currentLesson.title}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            )
           ) : (
             <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-400 bg-slate-950">
               <AlertCircle className="w-12 h-12 text-amber-500 mb-3" />
-              <p className="font-semibold text-slate-200">Không thể tải video từ mã nhúng Abyss</p>
+              <p className="font-semibold text-slate-200">Bài giảng này chưa có link video hoặc nhúng mã</p>
               <p className="text-xs text-slate-500 mt-1 max-w-md">
-                Nguồn video hiện tại: <code className="text-emerald-400">{currentLesson.videoSource}</code>
+                Hãy bấm <strong className="text-emerald-400">Quản Trị -&gt; Sửa khóa học</strong> để dán link Abyss, YouTube, Vimeo, MP4 hoặc mã &lt;iframe...&gt; nhúng video.
               </p>
             </div>
           )}
@@ -202,16 +215,16 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
       {/* 2. Structured 2-Tier Header & Action Toolbar */}
       <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
         
-        {/* Tier 1: Category, ID, Star & Full Title */}
+        {/* Tier 1: Category, ID & Full Title */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 {course.category}
               </span>
-              {rawId && (
-                <span className="text-[11px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                  ID: {rawId}
+              {parsedVideo.label && parsedVideo.provider !== 'unknown' && (
+                <span className="text-[11px] font-mono text-slate-300 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
+                  {parsedVideo.label}
                 </span>
               )}
             </div>

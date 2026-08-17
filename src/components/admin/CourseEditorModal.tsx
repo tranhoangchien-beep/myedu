@@ -24,7 +24,7 @@ import {
   AlertTriangle,
   Check
 } from 'lucide-react';
-import { extractAbyssId } from '../../lib/abyss';
+import { extractAbyssId, parseUniversalVideo } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
 import { RichTextEditor } from '../common/RichTextEditor';
 
@@ -919,7 +919,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                             }`}
                           >
                             <Video className="w-3.5 h-3.5" />
-                            <span>Video Abyss</span>
+                            <span>Video Bài Giảng</span>
                           </button>
 
                           <button
@@ -1009,24 +1009,35 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                     {/* Video Configuration (If video or mixed) */}
                     {(activeLesson.type === 'video' || activeLesson.type === 'mixed' || !activeLesson.type) && (
                       <div className="p-5 rounded-3xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-md">
-                        <label className="block text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                          <Video className="w-4 h-4" />
-                          <span>Nguồn Video Abyss (URL hoặc Iframe embed code)</span>
-                        </label>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                            <Video className="w-4 h-4" />
+                            <span>Nguồn Video Bài Giảng (Abyss, YouTube, Vimeo, MP4 hoặc mã nhúng Iframe bất kỳ)</span>
+                          </label>
+                          
+                          {activeLesson.videoSource && (
+                            <span className={`text-[10px] font-mono font-bold px-3 py-1 rounded-xl border whitespace-nowrap ${
+                              parseUniversalVideo(activeLesson.videoSource).provider === 'youtube'
+                                ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                : parseUniversalVideo(activeLesson.videoSource).provider === 'vimeo'
+                                ? 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                                : parseUniversalVideo(activeLesson.videoSource).provider === 'mp4'
+                                ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            }`}>
+                              {parseUniversalVideo(activeLesson.videoSource).label}
+                            </span>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
                             value={activeLesson.videoSource || ''}
                             onChange={(e) => handleUpdateActiveLesson('videoSource', e.target.value)}
-                            placeholder="Dán link Abyss: https://abyssplayer.com/ID hoặc mã <iframe...>"
+                            placeholder="Dán link Abyss, YouTube, Vimeo, MP4 trực tiếp hoặc mã <iframe src=...>"
                             className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-slate-200 placeholder-slate-500 focus:border-emerald-500 font-mono text-[11px]"
                           />
-                          {activeLesson.videoSource && extractAbyssId(activeLesson.videoSource) && (
-                            <span className="text-[10px] font-mono font-bold px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
-                              ID: {extractAbyssId(activeLesson.videoSource)}
-                            </span>
-                          )}
                         </div>
                       </div>
                     )}

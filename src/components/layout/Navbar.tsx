@@ -7,7 +7,8 @@ import {
   Home, 
   Bookmark, 
   Flame,
-  CheckCircle2
+  CheckCircle2,
+  LogOut
 } from 'lucide-react';
 import { UserStats } from '../../types';
 
@@ -19,6 +20,7 @@ interface NavbarProps {
   onSearchChange: (q: string) => void;
   onOpenStudio: () => void;
   onOpenShortcuts: () => void;
+  onLogout?: () => void;
   totalCoursesCount: number;
   starredCount?: number;
   userStats: UserStats;
@@ -31,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   onOpenStudio,
   onOpenShortcuts,
+  onLogout,
   totalCoursesCount,
   userStats,
 }) => {
@@ -137,6 +140,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Keyboard className="w-4 h-4" />
             </button>
+
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                title="Đăng xuất Master QTV"
+                className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 

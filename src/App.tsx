@@ -25,8 +25,13 @@ import { CourseEditorModal } from './components/admin/CourseEditorModal';
 import { CourseStudioView } from './components/admin/CourseStudioView';
 import { ShortcutModal } from './components/common/ShortcutModal';
 import { Breadcrumb } from './components/layout/Breadcrumb';
+import { MasterLoginView } from './components/auth/MasterLoginView';
+import { isAuthenticated, clearAuthenticatedSession } from './lib/auth';
 
 export const App: React.FC = () => {
+  // Authentication State (Master QTV Gate)
+  const [isAuth, setIsAuth] = useState<boolean>(() => isAuthenticated());
+
   // Main Data States
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -585,6 +590,11 @@ export const App: React.FC = () => {
     }, 0);
   }, [courses]);
 
+  // Master Admin Authentication Gate (Blocks entire application if not logged in)
+  if (!isAuth) {
+    return <MasterLoginView onLoginSuccess={() => setIsAuth(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-slate-950">
       
@@ -605,6 +615,10 @@ export const App: React.FC = () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           onOpenShortcuts={() => setIsShortcutsOpen(true)}
+          onLogout={() => {
+            clearAuthenticatedSession();
+            setIsAuth(false);
+          }}
           totalCoursesCount={courses.length}
           userStats={userStats}
         />

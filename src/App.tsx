@@ -27,6 +27,7 @@ import { ShortcutModal } from './components/common/ShortcutModal';
 import { Breadcrumb } from './components/layout/Breadcrumb';
 import { MasterLoginView } from './components/auth/MasterLoginView';
 import { isAuthenticated, clearAuthenticatedSession } from './lib/auth';
+import { fetchFromCloud, syncToCloud, subscribeToCloudChanges, isFirebaseConfigured } from './lib/firebase';
 
 export const App: React.FC = () => {
   // Authentication State (Master QTV Gate)
@@ -65,7 +66,7 @@ export const App: React.FC = () => {
 
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
 
-  // Initialize data on mount
+  // Initialize data on mount + Connect Realtime Cloud Firestore
   useEffect(() => {
     const loadedCourses = getStoredCourses();
     setCourses(loadedCourses);
@@ -77,6 +78,61 @@ export const App: React.FC = () => {
     setInstructors(loadedInstructors);
     const loadedProgress = getContinueProgress();
     setContinueProgress(loadedProgress);
+
+    // Setup Cloud Firestore Real-time Sync if configured
+    if (isFirebaseConfigured) {
+      // 1. Initial Cloud Check: Seed cloud if cloud is empty, otherwise sync from cloud
+      fetchFromCloud().then(cloudData => {
+        if (!cloudData || !cloudData.courses || cloudData.courses.length === 0) {
+          syncToCloud({
+            courses: loadedCourses,
+            categories: loadedCategories,
+            sources: loadedSources,
+            continueProgress: loadedProgress,
+            userStats: getStoredUserStats()
+          });
+        } else {
+          setCourses(cloudData.courses);
+          saveCourses(cloudData.courses);
+          if (cloudData.categories) {
+            setCategories(cloudData.categories);
+            saveCategories(cloudData.categories);
+          }
+          if (cloudData.sources) {
+            setSources(cloudData.sources);
+            saveSources(cloudData.sources);
+          }
+          if (cloudData.continueProgress) {
+            setContinueProgress(cloudData.continueProgress);
+            saveContinueProgress(cloudData.continueProgress);
+          }
+        }
+      });
+
+      // 2. Realtime listener for cross-device automatic updates
+      const unsubscribe = subscribeToCloudChanges((cloudData) => {
+        if (cloudData && Array.isArray(cloudData.courses) && cloudData.courses.length > 0) {
+          setCourses(cloudData.courses);
+          saveCourses(cloudData.courses);
+          if (cloudData.categories) {
+            setCategories(cloudData.categories);
+            saveCategories(cloudData.categories);
+          }
+          if (cloudData.sources) {
+            setSources(cloudData.sources);
+            saveSources(cloudData.sources);
+          }
+          if (cloudData.continueProgress) {
+            setContinueProgress(cloudData.continueProgress);
+            saveContinueProgress(cloudData.continueProgress);
+          }
+        }
+      });
+
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
+    }
   }, []);
 
   // Hash Router Listener & Deep Linking (Back/Forward & Direct URL support)
@@ -115,10 +171,13 @@ export const App: React.FC = () => {
     };
   }, [courses]);
 
-  // Sync courses to storage whenever modified
+  // Sync courses to storage & Cloud Firestore whenever modified
   const updateCoursesState = (newCourses: Course[]) => {
     setCourses(newCourses);
     saveCourses(newCourses);
+    if (isFirebaseConfigured) {
+      syncToCloud({ courses: newCourses });
+    }
   };
 
   // Cascading Filter Handlers

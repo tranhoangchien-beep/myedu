@@ -83,9 +83,10 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [collapsedChapterIds, setCollapsedChapterIds] = useState<Record<string, boolean>>({});
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
-  // Drag and Drop state (ONLY triggered on the Grip handle)
+  // Drag and Drop state & ref (ONLY triggered on the Grip handle / Chapter header)
   const [draggedLessonInfo, setDraggedLessonInfo] = useState<{ chIdx: number; lIdx: number } | null>(null);
   const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
+  const draggedChapterIdxRef = useRef<number | null>(null);
 
   // Modal alert confirmation for unsaved changes
   const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
@@ -451,28 +452,35 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     });
   };
 
-  // Drag and drop for Chapters (Handle Only)
+  // Drag and drop for Chapters
   const handleChapterDragStart = (chIdx: number, e: React.DragEvent) => {
-    e.stopPropagation();
-    e.dataTransfer.setData('text/plain', `chapter:${chIdx}`);
+    try {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', `chapter:${chIdx}`);
+    } catch {}
+    draggedChapterIdxRef.current = chIdx;
     setDraggedChapterIdx(chIdx);
   };
 
   const handleChapterDrop = (targetChIdx: number, e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (draggedChapterIdx === null || draggedChapterIdx === targetChIdx) {
+    const srcIdx = draggedChapterIdxRef.current !== null ? draggedChapterIdxRef.current : draggedChapterIdx;
+    
+    if (srcIdx === null || srcIdx === targetChIdx) {
+      draggedChapterIdxRef.current = null;
       setDraggedChapterIdx(null);
       return;
     }
 
     setChapters(prev => {
       const updated = [...prev];
-      const [moved] = updated.splice(draggedChapterIdx, 1);
+      const [moved] = updated.splice(srcIdx, 1);
       updated.splice(targetChIdx, 0, moved);
       return updated.map((ch, idx) => ({ ...ch, order: idx + 1 }));
     });
 
+    draggedChapterIdxRef.current = null;
     setDraggedChapterIdx(null);
   };
 
@@ -682,33 +690,46 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                         <div 
                           key={chapter.id}
                           onDragOver={(e) => {
-                            if (draggedChapterIdx !== null) e.preventDefault();
+                            e.preventDefault();
+                            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
                           }}
                           onDrop={(e) => {
-                            if (draggedChapterIdx !== null) handleChapterDrop(chIdx, e);
+                            if (draggedChapterIdxRef.current !== null || draggedChapterIdx !== null) {
+                              handleChapterDrop(chIdx, e);
+                            }
                           }}
                           className={`border rounded-2xl bg-slate-900/60 overflow-hidden shadow-sm transition-all ${
                             draggedChapterIdx === chIdx ? 'opacity-40 border-emerald-500 border-dashed' : 'border-slate-800/80'
                           }`}
                         >
                           {/* Chapter Title Row with Drag handle & Expand/Collapse button */}
-                          <div className="p-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between gap-2 group">
+                          <div 
+                            draggable
+                            onDragStart={(e) => handleChapterDragStart(chIdx, e)}
+                            onDragEnd={() => {
+                              draggedChapterIdxRef.current = null;
+                              setDraggedChapterIdx(null);
+                            }}
+                            className="p-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between gap-2 group cursor-grab active:cursor-grabbing hover:bg-slate-850/80 transition-colors"
+                          >
                             <div className="flex items-center gap-1.5 flex-1 min-w-0">
                               
-                              {/* CHAPTER DRAG HANDLE */}
+                              {/* CHAPTER DRAG HANDLE ICON */}
                               <div
-                                draggable
-                                onDragStart={(e) => handleChapterDragStart(chIdx, e)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-emerald-400 flex-shrink-0"
-                                title="Kéo thả để sắp xếp vị trí chương"
+                                className="p-0.5 text-slate-500 group-hover:text-emerald-400 flex-shrink-0"
+                                title="Nắm kéo để sắp xếp vị trí chương"
                               >
                                 <GripVertical className="w-3.5 h-3.5" />
                               </div>
 
                               <button
                                 type="button"
-                                onClick={(e) => toggleChapterCollapse(chapter.id, e)}
+                                draggable={false}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleChapterCollapse(chapter.id, e);
+                                }}
+                                onMouseDown={(e) => e.stopPropagation()}
                                 className="p-0.5 text-slate-400 hover:text-white flex-shrink-0"
                                 title={isCollapsed ? 'Mở rộng chương' : 'Thu gọn chương'}
                               >
@@ -721,21 +742,33 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
                               <input
                                 type="text"
+                                draggable={false}
                                 value={chapter.title}
                                 onChange={(e) => handleUpdateChapterTitle(chapter.id, e.target.value)}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
                                 placeholder="Tên chương..."
-                                className="text-xs font-bold text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-emerald-500 px-1 py-0.5 flex-1 focus:outline-none"
+                                className="text-xs font-bold text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-emerald-500 px-1 py-0.5 flex-1 focus:outline-none cursor-text"
                               />
 
-                              <span className="text-[10px] text-slate-500 font-normal">
+                              <span className="text-[10px] text-slate-500 font-normal select-none">
                                 ({chapter.lessons.length})
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-1 flex-shrink-0">
+                            <div 
+                              className="flex items-center gap-1 flex-shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
                               <button
                                 type="button"
-                                onClick={(e) => handleAddLesson(chapter.id, e)}
+                                draggable={false}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddLesson(chapter.id, e);
+                                }}
                                 title="Thêm bài học vào chương này"
                                 className="p-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-[11px]"
                               >
@@ -745,7 +778,11 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                               {chapters.length > 1 && (
                                 <button
                                   type="button"
-                                  onClick={(e) => handleDeleteChapter(chapter.id, e)}
+                                  draggable={false}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteChapter(chapter.id, e);
+                                  }}
                                   title="Xóa chương này"
                                   className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800"
                                 >

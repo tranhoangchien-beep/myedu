@@ -157,3 +157,10 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
       - Tự động quét và hợp nhất (Auto-Merge) toàn bộ giảng viên đang được gán trong các khóa học vào kho lưu trữ Quản trị tập trung (`myedu_instructors_v1`).
       - Nhờ đó, cả ở **Quản trị (`CourseStudioView`)**, **Bộ lọc (`FilterHub`)** và **Modal Tạo/Sửa khóa học (`CourseEditorModal`)** đều hiển thị đồng nhất 100% cả `Chiến` và `Trần Hoàng Chiến` (cùng số khóa học thực tế tương ứng).
       - Mọi thao tác Thêm, Sửa tên, hoặc Xóa giảng viên sẽ được phản ánh đồng bộ ngay tức thì ở mọi nơi.
+16. **Tối Ưu Giao Diện Tinh Tế & Kéo Thả Sắp Xếp Chương Học (Chapter Drag-and-Drop & Icon Polish)**:
+    * **Bỏ hoàn toàn các icon lặp thừa**:
+      - Sửa nút `+ Tạo Khóa Học Mới` thành `Tạo Khóa Học Mới` (đã có icon `<Plus>` bên cạnh, không bị trùng `+ +`).
+      - Loại bỏ các emoji thừa (`👨‍🏫`, `🏷️`, `🌐`) ở text button trong subtab Phân loại & Giảng viên (vì đã có icon SVG Lucide tương ứng).
+    * **Tính Năng Kéo Thả Sắp Xếp Chương Học (Chapter Reordering via Drag-and-Drop)**:
+      - Thêm icon tay nắm kéo thả (`GripVertical`) vào tiêu đề từng **Chương Học** ở thanh mục lục bên trái trong `CourseEditorModal`.
+      - Giờ đây người dùng có thể dễ dàng nắm kéo và thả đổi vị trí giữa các Chương học tương tự như bài giảng!

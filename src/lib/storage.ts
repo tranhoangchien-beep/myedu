@@ -8,6 +8,7 @@ const STORAGE_KEY_INSTRUCTORS = 'myedu_instructors_v1';
 const STORAGE_KEY_STATS = 'myedu_user_stats_v1';
 
 export const DEFAULT_CATEGORIES: string[] = [
+  'Tài chính',
   'AI & Machine Learning',
   'Lập trình',
   'Marketing',
@@ -29,6 +30,7 @@ export const DEFAULT_SOURCES: string[] = [
 ];
 
 export const DEFAULT_INSTRUCTORS: string[] = [
+  '8xTrading',
   'Andrew Ng & Hoàng Minh',
   'Alex Đặng (Tech Lead)',
   'Sarah Jenkins (Senior Product Designer)',
@@ -52,6 +54,220 @@ export const DEFAULT_INSTRUCTORS: string[] = [
 ];
 
 export const INITIAL_SAMPLE_COURSES: Course[] = [
+  {
+    id: 'course-8xtrading-footprint-trading',
+    title: '[8xTrading] - Khóa Học Footprint Trading',
+    description: 'Chinh phục phương pháp giao dịch Footprint Chart, Volume Profile, Thuyết đấu giá thị trường, logic Wyckoff và hoàn thiện hệ thống giao dịch chuyên nghiệp cùng 8xTrading.',
+    category: 'Tài chính',
+    instructor: '8xTrading',
+    sourcePlatform: 'Khác',
+    tags: ['Trading', 'Footprint', 'Volume Profile', 'Wyckoff', 'Price Action', 'Order Flow', 'Tài chính'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80',
+    createdAt: '2026-08-17T09:00:00Z',
+    updatedAt: '2026-08-17T16:20:00Z',
+    lastWatchedLessonId: 'les-fp-101',
+    chapters: [
+      {
+        id: 'ch-fp-1',
+        title: 'Chương 1: Nền tảng thị trường và hành vi giá',
+        order: 1,
+        lessons: [
+          {
+            id: 'les-fp-101',
+            title: '1: Đối tượng tham gia thị trường – Hình thái giá',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/EXACKx46w" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-fp-102',
+            title: '2: Volume Profile',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/z9L7UYsIY" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-103',
+            title: '3: Thuyết đấu giá thị trường',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/7hdMEBRH9" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-104',
+            title: '4: Price Action and Footprint',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/0NG-vP3UC" allowfullscreen></iframe>',
+            durationMinutes: 35,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-105',
+            title: '4.1: Sửa bài tập Price Action and Footprint',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/sH7VS_tPl" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      },
+      {
+        id: 'ch-fp-2',
+        title: 'Chương 2: Logic giao dịch nâng cao',
+        order: 2,
+        lessons: [
+          {
+            id: 'les-fp-201',
+            title: '5: Wyckoff Logic',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/hN4NRLFAH" allowfullscreen></iframe>',
+            durationMinutes: 32,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-fp-202',
+            title: '6: Footprint Extreme Part 1',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/C0-cA--Ri" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-203',
+            title: '6.1: Footprint Extreme Part 2',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/PvykfhFeMm" allowfullscreen></iframe>',
+            durationMinutes: 26,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-204',
+            title: '6.2: Footprint Extreme Part 3',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Lam9pxY0K" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-205',
+            title: '6.3: Footprint Extreme Part 4',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/oBoT9ImFX" allowfullscreen></iframe>',
+            durationMinutes: 25,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-206',
+            title: '7: Sửa bài tập Footprint Extreme Part 1',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/D7AYhQAlS" allowfullscreen></iframe>',
+            durationMinutes: 20,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-207',
+            title: '7.1: Sửa bài tập Footprint Extreme Part 2',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/ymDAerGRK" allowfullscreen></iframe>',
+            durationMinutes: 22,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-208',
+            title: '8: Footprint Extreme Delta',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/L-UoDTbLL" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      },
+      {
+        id: 'ch-fp-3',
+        title: 'Chương 3: Thiết lập chiến lược và setup giao dịch',
+        order: 3,
+        lessons: [
+          {
+            id: 'les-fp-301',
+            title: '9: Mẹ bồng con Trading Setup Part 1',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/dXJ4vcPc_" allowfullscreen></iframe>',
+            durationMinutes: 28,
+            isCompleted: false,
+            isStarred: true
+          },
+          {
+            id: 'les-fp-302',
+            title: '9.1: Mẹ bồng con Trading Setup Part 2',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/BlLNu6iF2" allowfullscreen></iframe>',
+            durationMinutes: 32,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-303',
+            title: '10: Sửa bài tập Mẹ bồng con + Trading Setup',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/eIfLTkIaZ" allowfullscreen></iframe>',
+            durationMinutes: 24,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-304',
+            title: '11: Thế đánh Stack Imbalance Delta tích lũy Part 1',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/YZJ6Ak6h1" allowfullscreen></iframe>',
+            durationMinutes: 35,
+            isCompleted: false,
+            isStarred: false
+          },
+          {
+            id: 'les-fp-305',
+            title: '11.1: Thế đánh Stack Imbalance Delta tích lũy Part 2',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/BqbRC5yN1" allowfullscreen></iframe>',
+            durationMinutes: 30,
+            isCompleted: false,
+            isStarred: false
+          }
+        ]
+      },
+      {
+        id: 'ch-fp-4',
+        title: 'Chương 4: Hoàn thiện hệ thống giao dịch',
+        order: 4,
+        lessons: [
+          {
+            id: 'les-fp-401',
+            title: '12: Sửa bài tập – Hoàn thiện Trading System',
+            type: 'video',
+            videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/I4rwhb48K" allowfullscreen></iframe>',
+            durationMinutes: 40,
+            isCompleted: false,
+            isStarred: true
+          }
+        ]
+      }
+    ]
+  },
   {
     id: 'course-ai-generative-mastery',
     title: 'Làm Chủ Trí Tuệ Nhân Tạo & Generative AI Thực Chiến',
@@ -1071,10 +1287,16 @@ export function getStoredCourses(): Course[] {
       return INITIAL_SAMPLE_COURSES;
     }
     const parsed: Course[] = JSON.parse(data);
-    // Auto-migrate if older initial sample dataset is detected (e.g. fewer than 20 courses or older ids)
-    if (Array.isArray(parsed) && (parsed.length < 20 || parsed[0].id === 'course-ai-mastery' || parsed[0].id === 'course-web-dev')) {
-      localStorage.setItem(STORAGE_KEY_COURSES, JSON.stringify(INITIAL_SAMPLE_COURSES));
-      return INITIAL_SAMPLE_COURSES;
+    // Auto-migrate if older initial sample dataset is detected or ensure 8xTrading is present
+    if (Array.isArray(parsed)) {
+      const has8xTrading = parsed.some(c => c.id === 'course-8xtrading-footprint-trading');
+      if (!has8xTrading || parsed.length < 21 || parsed[0]?.id === 'course-ai-mastery' || parsed[0]?.id === 'course-web-dev') {
+        const existingIds = new Set(parsed.map(c => c.id));
+        const missingFromInitial = INITIAL_SAMPLE_COURSES.filter(c => !existingIds.has(c.id));
+        const updated = [...missingFromInitial, ...parsed];
+        localStorage.setItem(STORAGE_KEY_COURSES, JSON.stringify(updated));
+        return updated;
+      }
     }
     return parsed;
   } catch (error) {

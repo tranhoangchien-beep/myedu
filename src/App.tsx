@@ -12,7 +12,8 @@ import {
   getStoredInstructors,
   saveInstructors,
   getStoredUserStats,
-  recordLessonCompletionStats
+  recordLessonCompletionStats,
+  INITIAL_SAMPLE_COURSES
 } from './lib/storage';
 import { Navbar } from './components/layout/Navbar';
 import { ContinueBanner } from './components/layout/ContinueBanner';
@@ -81,26 +82,40 @@ export const App: React.FC = () => {
 
     // Setup Cloud Firestore Real-time Sync if configured
     if (isFirebaseConfigured) {
-      // 1. Initial Cloud Check: Seed cloud if cloud is empty, otherwise sync from cloud
+      // 1. Initial Cloud Check: Seed cloud if cloud is empty, otherwise merge & sync from cloud
       fetchFromCloud().then(cloudData => {
         if (!cloudData || !cloudData.courses || cloudData.courses.length === 0) {
           syncToCloud({
             courses: loadedCourses,
             categories: loadedCategories,
             sources: loadedSources,
+            instructors: loadedInstructors,
             continueProgress: loadedProgress,
             userStats: getStoredUserStats()
           });
         } else {
-          setCourses(cloudData.courses);
-          saveCourses(cloudData.courses);
+          // Merge any newly introduced initial sample courses (like 8xTrading) into cloud dataset
+          const existingCloudIds = new Set(cloudData.courses.map(c => c.id));
+          const missingInitial = INITIAL_SAMPLE_COURSES.filter(c => !existingCloudIds.has(c.id));
+          const mergedCourses = missingInitial.length > 0 ? [...missingInitial, ...cloudData.courses] : cloudData.courses;
+
+          setCourses(mergedCourses);
+          saveCourses(mergedCourses);
+
+          // If newly standardized courses were missing in cloud, sync back immediately
+          if (missingInitial.length > 0) {
+            syncToCloud({ courses: mergedCourses });
+          }
+
           if (cloudData.categories) {
-            setCategories(cloudData.categories);
-            saveCategories(cloudData.categories);
+            const mergedCats = Array.from(new Set([...cloudData.categories, ...loadedCategories]));
+            setCategories(mergedCats);
+            saveCategories(mergedCats);
           }
           if (cloudData.sources) {
-            setSources(cloudData.sources);
-            saveSources(cloudData.sources);
+            const mergedSources = Array.from(new Set([...cloudData.sources, ...loadedSources]));
+            setSources(mergedSources);
+            saveSources(mergedSources);
           }
           if (cloudData.continueProgress) {
             setContinueProgress(cloudData.continueProgress);

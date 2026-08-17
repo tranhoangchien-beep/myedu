@@ -38,6 +38,7 @@ export interface CloudDatabasePayload {
   courses: Course[];
   categories: string[];
   sources: string[];
+  instructors?: string[];
   continueProgress: ContinueProgress | null;
   userStats: UserStats;
   updatedAt: string;

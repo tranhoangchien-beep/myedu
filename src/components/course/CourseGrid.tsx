@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Course } from '../../types';
 import { CourseCard } from './CourseCard';
 import { FilterHub } from './FilterHub';
@@ -23,7 +23,9 @@ import {
   X,
   Tags,
   Download,
-  AlertTriangle
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface CourseGridProps {
@@ -80,6 +82,10 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
     setLayoutMode(mode);
     localStorage.setItem('myedu_layout_mode_v1', mode);
   };
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number | 'all'>(12);
 
   // Batch selection states for Table view
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
@@ -139,12 +145,26 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
     });
   }, [courses, selectedCategory, selectedSource, selectedInstructor, searchQuery]);
 
+  // Reset page to 1 whenever filters or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedSource, selectedInstructor, searchQuery, pageSize]);
+
+  // Calculate Paginated subset of courses
+  const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(filteredCourses.length / pageSize));
+  
+  const paginatedCourses = useMemo(() => {
+    if (pageSize === 'all') return filteredCourses;
+    const startIdx = (currentPage - 1) * pageSize;
+    return filteredCourses.slice(startIdx, startIdx + pageSize);
+  }, [filteredCourses, currentPage, pageSize]);
+
   // Batch Handlers
   const handleToggleSelectAll = () => {
-    if (selectedCourseIds.length === filteredCourses.length) {
+    if (selectedCourseIds.length === paginatedCourses.length) {
       setSelectedCourseIds([]);
     } else {
-      setSelectedCourseIds(filteredCourses.map(c => c.id));
+      setSelectedCourseIds(paginatedCourses.map(c => c.id));
     }
   };
 
@@ -212,9 +232,9 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
         onResetFilters={onResetFilters}
       />
 
-      {/* 2. Course Section Header with View Mode Switcher */}
+      {/* 2. Course Section Header with View Mode Switcher & Page Size Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <h2 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
             {selectedCategory === 'Tất cả' ? 'Toàn Bộ Khóa Học' : selectedCategory}
           </h2>
@@ -223,9 +243,25 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
           </span>
         </div>
 
-        {/* Right Toolbar: View Mode Switcher & Quick Add Button */}
-        <div className="flex items-center gap-2.5">
+        {/* Right Toolbar: Page Size + View Switcher + Quick Add Button */}
+        <div className="flex items-center gap-2.5 flex-wrap">
           
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-2xl border border-slate-800 text-xs">
+            <span className="text-slate-400 text-[11px]">Xem:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+              className="bg-transparent border-0 text-xs text-white font-bold focus:ring-0 cursor-pointer p-0"
+            >
+              <option value={8} className="bg-slate-950">8</option>
+              <option value={12} className="bg-slate-950">12</option>
+              <option value={24} className="bg-slate-950">24</option>
+              <option value={48} className="bg-slate-950">48</option>
+              <option value="all" className="bg-slate-950">Tất cả</option>
+            </select>
+          </div>
+
           {/* VIEW SWITCHER: GRID VS TABLE */}
           <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800 shadow-sm">
             <button
@@ -288,203 +324,303 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
       ) : layoutMode === 'grid' ? (
         
         /* 4A. GRID CARD GALLERY VIEW (Learner Focus) */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
-          {filteredCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              onSelectCourse={onSelectCourse}
-              onOpenBulkImport={onOpenBulkImport}
-              onEditCourse={onEditCourse}
-              onDeleteCourse={onDeleteCourse}
-            />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+            {paginatedCourses.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                onSelectCourse={onSelectCourse}
+                onOpenBulkImport={onOpenBulkImport}
+                onEditCourse={onEditCourse}
+                onDeleteCourse={onDeleteCourse}
+              />
+            ))}
+          </div>
+
+          {/* GRID PAGINATION CONTROLS */}
+          {pageSize !== 'all' && totalPages > 1 && (
+            <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-md">
+              <div className="text-slate-400">
+                Hiển thị <span className="text-white font-bold">{(currentPage - 1) * pageSize + 1}</span> - <span className="text-white font-bold">{Math.min(currentPage * pageSize, filteredCourses.length)}</span> trên <span className="text-white font-bold">{filteredCourses.length}</span> khóa học
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Trước</span>
+                </button>
+
+                <div className="flex items-center gap-1 px-1">
+                  {Array.from({ length: totalPages }).map((_, idx) => {
+                    const pageNum = idx + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-7 h-7 rounded-xl font-bold text-xs transition-all ${
+                          currentPage === pageNum
+                            ? 'bg-emerald-600 text-white shadow-md'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                >
+                  <span>Sau</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
       ) : (
 
         /* 4B. COMPACT TABLE VIEW (Editor / Admin Focus) */
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl animate-fade-in">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
-                <tr>
-                  <th className="py-3.5 px-4 w-10 text-center">
-                    <button
-                      type="button"
-                      onClick={handleToggleSelectAll}
-                      className="p-1 rounded text-slate-400 hover:text-emerald-400"
-                      title="Chọn tất cả"
-                    >
-                      {selectedCourseIds.length > 0 && selectedCourseIds.length === filteredCourses.length ? (
-                        <CheckSquare className="w-4 h-4 text-emerald-400" />
-                      ) : (
-                        <Square className="w-4 h-4" />
-                      )}
-                    </button>
-                  </th>
-                  <th className="py-3.5 px-4">Khóa Học & Giảng Viên</th>
-                  <th className="py-3.5 px-4">Chủ Đề</th>
-                  <th className="py-3.5 px-4">Nguồn</th>
-                  <th className="py-3.5 px-4">Cấu Trúc</th>
-                  <th className="py-3.5 px-4">Tiến Độ</th>
-                  <th className="py-3.5 px-5 text-right">Thao Tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredCourses.map((c) => {
-                  const total = c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
-                  const completed = c.chapters.reduce(
-                    (acc, ch) => acc + ch.lessons.filter(l => l.isCompleted).length,
-                    0
-                  );
-                  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-                  const isSelected = selectedCourseIds.includes(c.id);
-                  const hasImgFailed = failedImageUrls[c.id] || !c.thumbnailUrl;
+        <div className="space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl animate-fade-in">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
+                  <tr>
+                    <th className="py-3.5 px-4 w-10 text-center">
+                      <button
+                        type="button"
+                        onClick={handleToggleSelectAll}
+                        className="p-1 rounded text-slate-400 hover:text-emerald-400"
+                        title="Chọn tất cả"
+                      >
+                        {selectedCourseIds.length > 0 && selectedCourseIds.length === paginatedCourses.length ? (
+                          <CheckSquare className="w-4 h-4 text-emerald-400" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
+                    <th className="py-3.5 px-4">Khóa Học & Giảng Viên</th>
+                    <th className="py-3.5 px-4">Chủ Đề</th>
+                    <th className="py-3.5 px-4">Nguồn</th>
+                    <th className="py-3.5 px-4">Cấu Trúc</th>
+                    <th className="py-3.5 px-4">Tiến Độ</th>
+                    <th className="py-3.5 px-5 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {paginatedCourses.map((c) => {
+                    const total = c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
+                    const completed = c.chapters.reduce(
+                      (acc, ch) => acc + ch.lessons.filter(l => l.isCompleted).length,
+                      0
+                    );
+                    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+                    const isSelected = selectedCourseIds.includes(c.id);
+                    const hasImgFailed = failedImageUrls[c.id] || !c.thumbnailUrl;
 
-                  return (
-                    <tr 
-                      key={c.id} 
-                      className={`transition-colors group ${
-                        isSelected ? 'bg-emerald-950/25 hover:bg-emerald-950/40' : 'hover:bg-slate-850/50'
-                      }`}
-                    >
-                      {/* Checkbox Column */}
-                      <td className="py-4 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSelectCourse(c.id)}
-                          className="p-1 rounded text-slate-400 hover:text-emerald-400"
-                        >
-                          {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-emerald-400" />
-                          ) : (
-                            <Square className="w-4 h-4" />
-                          )}
-                        </button>
-                      </td>
-
-                      {/* 16:9 Thumbnail & Title */}
-                      <td className="py-4 px-4 max-w-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800 shadow-sm relative flex items-center justify-center">
-                            {!hasImgFailed ? (
-                              <img 
-                                src={c.thumbnailUrl} 
-                                alt={c.title} 
-                                className="w-full h-full object-cover" 
-                                onError={() => setFailedImageUrls(prev => ({ ...prev, [c.id]: true }))}
-                              />
+                    return (
+                      <tr 
+                        key={c.id} 
+                        className={`transition-colors group ${
+                          isSelected ? 'bg-emerald-950/25 hover:bg-emerald-950/40' : 'hover:bg-slate-850/50'
+                        }`}
+                      >
+                        {/* Checkbox Column */}
+                        <td className="py-4 px-4 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSelectCourse(c.id)}
+                            className="p-1 rounded text-slate-400 hover:text-emerald-400"
+                          >
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-emerald-400" />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-                                {getCategoryIcon(c.category)}
-                              </div>
+                              <Square className="w-4 h-4" />
                             )}
-                          </div>
+                          </button>
+                        </td>
 
-                          <div className="min-w-0">
-                            <p 
-                              onClick={() => onSelectCourse(c.id)}
-                              className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer"
-                            >
-                              {c.title}
-                            </p>
-                            {c.instructor && (
-                              <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                                <User className="w-3 h-3 text-emerald-400" />
-                                <span>{c.instructor}</span>
+                        {/* 16:9 Thumbnail & Title */}
+                        <td className="py-4 px-4 max-w-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800 shadow-sm relative flex items-center justify-center">
+                              {!hasImgFailed ? (
+                                <img 
+                                  src={c.thumbnailUrl} 
+                                  alt={c.title} 
+                                  className="w-full h-full object-cover" 
+                                  onError={() => setFailedImageUrls(prev => ({ ...prev, [c.id]: true }))}
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
+                                  {getCategoryIcon(c.category)}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="min-w-0">
+                              <p 
+                                onClick={() => onSelectCourse(c.id)}
+                                className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer"
+                              >
+                                {c.title}
                               </p>
-                            )}
+                              {c.instructor && (
+                                <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                  <User className="w-3 h-3 text-emerald-400" />
+                                  <span>{c.instructor}</span>
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Category */}
-                      <td className="py-4 px-4">
-                        <span className="inline-block px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
-                          {c.category}
-                        </span>
-                      </td>
+                        {/* Category */}
+                        <td className="py-4 px-4">
+                          <span className="inline-block px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                            {c.category}
+                          </span>
+                        </td>
 
-                      {/* Source */}
-                      <td className="py-4 px-4">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-300 font-medium">
-                          <Globe className="w-3.5 h-3.5 text-teal-400" />
-                          <span>{c.sourcePlatform || 'Chưa đặt'}</span>
-                        </span>
-                      </td>
+                        {/* Source */}
+                        <td className="py-4 px-4">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                            <Globe className="w-3.5 h-3.5 text-teal-400" />
+                            <span>{c.sourcePlatform || 'Chưa đặt'}</span>
+                          </span>
+                        </td>
 
-                      {/* Structure */}
-                      <td className="py-4 px-4">
-                        <div className="text-xs text-slate-300 font-medium whitespace-nowrap">
-                          <span className="text-white font-bold">{c.chapters.length}</span> chương &bull; <span className="text-white font-bold">{total}</span> bài
-                        </div>
-                      </td>
-
-                      {/* Progress */}
-                      <td className="py-4 px-4">
-                        <div className="w-28 space-y-1.5">
-                          <div className="flex justify-between text-[11px]">
-                            <span className="text-slate-400">{completed}/{total}</span>
-                            <span className="text-emerald-400 font-bold">{pct}%</span>
+                        {/* Structure */}
+                        <td className="py-4 px-4">
+                          <div className="text-xs text-slate-300 font-medium whitespace-nowrap">
+                            <span className="text-white font-bold">{c.chapters.length}</span> chương &bull; <span className="text-white font-bold">{total}</span> bài
                           </div>
-                          <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                            <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style={{ width: `${pct}%` }} />
+                        </td>
+
+                        {/* Progress */}
+                        <td className="py-4 px-4">
+                          <div className="w-28 space-y-1.5">
+                            <div className="flex justify-between text-[11px]">
+                              <span className="text-slate-400">{completed}/{total}</span>
+                              <span className="text-emerald-400 font-bold">{pct}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                              <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style={{ width: `${pct}%` }} />
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Actions */}
-                      <td className="py-4 px-5 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => onSelectCourse(c.id)}
-                            className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
-                          >
-                            Vào Học
-                          </button>
-
-                          <button
-                            onClick={() => onEditCourse(c)}
-                            title="Chỉnh sửa thông tin & giáo trình"
-                            className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 transition-colors"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-
-                          {onDuplicateCourse && (
+                        {/* Actions */}
+                        <td className="py-4 px-5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => onDuplicateCourse(c)}
-                              title="Nhân bản (Tạo bản sao khóa học này)"
-                              className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-purple-400 border border-slate-800 transition-colors"
+                              onClick={() => onSelectCourse(c.id)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
                             >
-                              <Copy className="w-4 h-4" />
+                              Vào Học
                             </button>
-                          )}
 
-                          <button
-                            onClick={() => onOpenBulkImport(c.id)}
-                            title="Nạp thêm bài học vào khóa này"
-                            className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-slate-800 transition-colors"
-                          >
-                            <PlusCircle className="w-4 h-4" />
-                          </button>
+                            <button
+                              onClick={() => onEditCourse(c)}
+                              title="Chỉnh sửa thông tin & giáo trình"
+                              className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 transition-colors"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
 
-                          <button
-                            onClick={() => setCourseToDelete(c)}
-                            title="Xóa khóa học này"
-                            className="p-1.5 rounded-xl bg-slate-950 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            {onDuplicateCourse && (
+                              <button
+                                onClick={() => onDuplicateCourse(c)}
+                                title="Nhân bản (Tạo bản sao khóa học này)"
+                                className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-purple-400 border border-slate-800 transition-colors"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => onOpenBulkImport(c.id)}
+                              title="Nạp thêm bài học vào khóa này"
+                              className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-slate-800 transition-colors"
+                            >
+                              <PlusCircle className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => setCourseToDelete(c)}
+                              title="Xóa khóa học này"
+                              className="p-1.5 rounded-xl bg-slate-950 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* TABLE PAGINATION CONTROLS */}
+          {pageSize !== 'all' && totalPages > 1 && (
+            <div className="p-4 bg-slate-900/90 border border-slate-800 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-md">
+              <div className="text-slate-400">
+                Hiển thị <span className="text-white font-bold">{(currentPage - 1) * pageSize + 1}</span> - <span className="text-white font-bold">{Math.min(currentPage * pageSize, filteredCourses.length)}</span> trên <span className="text-white font-bold">{filteredCourses.length}</span> khóa học
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Trước</span>
+                </button>
+
+                <div className="flex items-center gap-1 px-1">
+                  {Array.from({ length: totalPages }).map((_, idx) => {
+                    const pageNum = idx + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-7 h-7 rounded-xl font-bold text-xs transition-all ${
+                          currentPage === pageNum
+                            ? 'bg-emerald-600 text-white shadow-md'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                >
+                  <span>Sau</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

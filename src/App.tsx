@@ -20,7 +20,7 @@ import { AbyssPlayer } from './components/player/AbyssPlayer';
 import { LessonSidebar } from './components/player/LessonSidebar';
 import { BulkImportModal } from './components/course/BulkImportModal';
 import { CourseEditorModal } from './components/admin/CourseEditorModal';
-import { CourseStudioModal } from './components/admin/CourseStudioModal';
+import { CourseStudioView } from './components/admin/CourseStudioView';
 import { ShortcutModal } from './components/common/ShortcutModal';
 import { Breadcrumb } from './components/layout/Breadcrumb';
 
@@ -32,8 +32,8 @@ export const App: React.FC = () => {
   const [continueProgress, setContinueProgress] = useState<ContinueProgress | null>(null);
   const [userStats, setUserStats] = useState<UserStats>(getStoredUserStats());
 
-  // Navigation & View States
-  const [currentView, setCurrentView] = useState<'home' | 'player' | 'favorites'>('home');
+  // Navigation & View States: 'home' | 'player' | 'favorites' | 'studio'
+  const [currentView, setCurrentView] = useState<'home' | 'player' | 'favorites' | 'studio'>('home');
   const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
 
@@ -47,8 +47,7 @@ export const App: React.FC = () => {
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [autoPlayNext, setAutoPlayNext] = useState<boolean>(true);
 
-  // Studio & Sub-Modals
-  const [isStudioOpen, setIsStudioOpen] = useState<boolean>(false);
+  // Sub-Modals
   const [isBulkModalOpen, setIsBulkModalOpen] = useState<boolean>(false);
   const [bulkCourseId, setBulkCourseId] = useState<string | undefined>(undefined);
   
@@ -74,7 +73,9 @@ export const App: React.FC = () => {
   useEffect(() => {
     const parseHashRoute = () => {
       const hash = window.location.hash || '';
-      if (hash.startsWith('#/favorites')) {
+      if (hash.startsWith('#/studio')) {
+        setCurrentView('studio');
+      } else if (hash.startsWith('#/favorites')) {
         setCurrentView('favorites');
       } else if (hash.startsWith('#/course/')) {
         const parts = hash.replace('#/course/', '').split('/lesson/');
@@ -218,6 +219,8 @@ export const App: React.FC = () => {
       document.title = `${activeLesson.title} - ${activeCourse.title} | MyEdu`;
     } else if (currentView === 'favorites') {
       document.title = 'Bài Giảng Đã Ghim | MyEdu';
+    } else if (currentView === 'studio') {
+      document.title = 'Trung Tâm Quản Trị Khóa Học | MyEdu';
     } else {
       document.title = 'MyEdu - Không Gian Học Tập Cá Nhân';
     }
@@ -483,7 +486,6 @@ export const App: React.FC = () => {
           setIsZenMode(false);
           return;
         }
-        if (isStudioOpen) setIsStudioOpen(false);
         if (isBulkModalOpen) setIsBulkModalOpen(false);
         if (isCourseEditorOpen) setIsCourseEditorOpen(false);
         if (isShortcutsOpen) setIsShortcutsOpen(false);
@@ -492,7 +494,7 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, handleNextLesson, handlePrevLesson, isZenMode, isStudioOpen, isBulkModalOpen, isCourseEditorOpen, isShortcutsOpen]);
+  }, [currentView, handleNextLesson, handlePrevLesson, isZenMode, isBulkModalOpen, isCourseEditorOpen, isShortcutsOpen]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 selection:bg-emerald-500 selection:text-white">
@@ -532,7 +534,11 @@ export const App: React.FC = () => {
           }}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onOpenStudio={() => setIsStudioOpen(true)}
+          onOpenStudio={() => {
+            setCurrentView('studio');
+            window.location.hash = '#/studio';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           onOpenShortcuts={() => setIsShortcutsOpen(true)}
           totalCoursesCount={courses.length}
           starredCount={starredCount}
@@ -672,34 +678,43 @@ export const App: React.FC = () => {
             onSelectLesson={(cId, lId) => handleSelectCourseAndLesson(cId, lId)}
             onToggleStar={(cId, lId) => handleToggleStar(lId, cId)}
             onToggleComplete={(cId, lId) => handleToggleComplete(lId, cId)}
-            onBackToHome={() => setCurrentView('home')}
+            onBackToHome={() => {
+              setCurrentView('home');
+              window.location.hash = '#/';
+            }}
+          />
+        )}
+
+        {/* VIEW 4: Course Studio Full-Page View */}
+        {currentView === 'studio' && (
+          <CourseStudioView
+            courses={courses}
+            categories={categories}
+            sources={sources}
+            onBackToLearning={() => {
+              setCurrentView('home');
+              window.location.hash = '#/';
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onAddNewCourse={handleAddNewCourse}
+            onEditCourse={handleEditCourse}
+            onDeleteCourse={handleDeleteCourse}
+            onOpenBulkImport={(cId) => {
+              setBulkCourseId(cId);
+              setIsBulkModalOpen(true);
+            }}
+            onAddCategory={handleAddCategory}
+            onRenameCategory={handleRenameCategory}
+            onDeleteCategory={handleDeleteCategory}
+            onAddSource={handleAddSource}
+            onRenameSource={handleRenameSource}
+            onDeleteSource={handleDeleteSource}
+            onRestoreCourses={handleRestoreCourses}
+            onSelectCourseAndLesson={(cId, lId) => handleSelectCourseAndLesson(cId, lId)}
           />
         )}
 
       </main>
-
-      {/* Unified Course Studio Management Hub Modal */}
-      <CourseStudioModal
-        isOpen={isStudioOpen}
-        onClose={() => setIsStudioOpen(false)}
-        courses={courses}
-        categories={categories}
-        sources={sources}
-        onAddNewCourse={handleAddNewCourse}
-        onEditCourse={handleEditCourse}
-        onDeleteCourse={handleDeleteCourse}
-        onOpenBulkImport={(cId) => {
-          setBulkCourseId(cId);
-          setIsBulkModalOpen(true);
-        }}
-        onAddCategory={handleAddCategory}
-        onRenameCategory={handleRenameCategory}
-        onDeleteCategory={handleDeleteCategory}
-        onAddSource={handleAddSource}
-        onRenameSource={handleRenameSource}
-        onDeleteSource={handleDeleteSource}
-        onRestoreCourses={handleRestoreCourses}
-      />
 
       {/* Course Editor CRUD Modal */}
       <CourseEditorModal
@@ -711,7 +726,8 @@ export const App: React.FC = () => {
         onSaveCourse={handleSaveCourse}
         onOpenCategoryManager={() => {
           setIsCourseEditorOpen(false);
-          setIsStudioOpen(true);
+          setCurrentView('studio');
+          window.location.hash = '#/studio';
         }}
       />
 

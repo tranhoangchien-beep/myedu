@@ -29,7 +29,7 @@ export const DEFAULT_SOURCES: string[] = [
 
 export const INITIAL_SAMPLE_COURSES: Course[] = [
   {
-    id: 'course_ai_mastery',
+    id: 'course-ai-mastery',
     title: 'Làm Chủ Trí Tuệ Nhân Tạo & AI Generative Ứng Dụng',
     description: 'Khóa học thực chiến ứng dụng AI, Large Language Models và tự động hóa quy trình công việc hiện đại.',
     category: 'AI & Machine Learning',
@@ -41,42 +41,42 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
     updatedAt: '2026-08-16T10:00:00Z',
     chapters: [
       {
-        id: 'ch_1',
+        id: 'ch-1',
         title: 'Chương 1: Nền tảng AI & Tư duy Thiết kế Prompt',
         order: 1,
         lessons: [
           {
-            id: 'les_ai_1',
+            id: 'les-ai-1',
             title: 'Bài 1: Giới thiệu Kiến trúc AI & Bối cảnh phát triển',
             videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/Ld3tfGRGA" allowfullscreen></iframe>',
             durationMinutes: 24,
             isCompleted: true,
             isStarred: true,
             attachments: [
-              { id: 'att_1', name: 'Slide Bài giảng Chương 1 (PDF)', url: 'https://drive.google.com', type: 'pdf' },
-              { id: 'att_2', name: 'Kho Prompt Mẫu Thực chiến', url: 'https://github.com', type: 'github' }
+              { id: 'att-1', name: 'Slide Bài giảng Chương 1 (PDF)', url: 'https://drive.google.com', type: 'pdf' },
+              { id: 'att-2', name: 'Kho Prompt Mẫu Thực chiến', url: 'https://github.com', type: 'github' }
             ]
           },
           {
-            id: 'les_ai_2',
+            id: 'les-ai-2',
             title: 'Bài 2: Thực hành Kỹ thuật Prompt Nâng cao & Chain-of-Thought',
             videoSource: '<iframe width="640" height="360" src="https://abyssplayer.com/bGOgQoLE0" allowfullscreen></iframe>',
             durationMinutes: 32,
             isCompleted: false,
             isStarred: false,
             attachments: [
-              { id: 'att_3', name: 'Tài liệu Thực hành Google Colab', url: 'https://colab.research.google.com', type: 'link' }
+              { id: 'att-3', name: 'Tài liệu Thực hành Google Colab', url: 'https://colab.research.google.com', type: 'link' }
             ]
           }
         ]
       },
       {
-        id: 'ch_2',
+        id: 'ch-2',
         title: 'Chương 2: Tự động hóa Quy trình với AI Agents',
         order: 2,
         lessons: [
           {
-            id: 'les_ai_3',
+            id: 'les-ai-3',
             title: 'Bài 3: Xây dựng AI Agent cá nhân tự động hóa việc học',
             videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
             durationMinutes: 40,
@@ -88,7 +88,7 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
     ]
   },
   {
-    id: 'course_fullstack_dev',
+    id: 'course-fullstack-dev',
     title: 'Xây Dựng Web App Toàn Diện Với React, Next.js & TypeScript',
     description: 'Từ tư duy cấu trúc mã nguồn, tối ưu hóa giao diện đa thiết bị đến triển khai ứng dụng Cloud.',
     category: 'Lập trình',
@@ -100,12 +100,12 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
     updatedAt: '2026-08-16T11:00:00Z',
     chapters: [
       {
-        id: 'ch_dev_1',
+        id: 'ch-dev-1',
         title: 'Phần 1: Kiến trúc Component & State Management',
         order: 1,
         lessons: [
           {
-            id: 'les_dev_1',
+            id: 'les-dev-1',
             title: 'Bài 1: Thiết lập môi trường & Chuẩn hóa TypeScript',
             videoSource: 'https://abyssplayer.com/bGOgQoLE0',
             durationMinutes: 28,
@@ -113,7 +113,7 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
             isStarred: false,
           },
           {
-            id: 'les_dev_2',
+            id: 'les-dev-2',
             title: 'Bài 2: Tối ưu Iframe Video Player & Phím tắt bàn phím',
             videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
             durationMinutes: 35,
@@ -125,7 +125,7 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
     ]
   },
   {
-    id: 'course_growth_marketing',
+    id: 'course-growth-marketing',
     title: 'Chiến Lược Growth Marketing & Tối Ưu Hóa Chuyển Đổi',
     description: 'Phương pháp xây dựng phễu khách hàng, phân tích chỉ số CAC, LTV và tăng trưởng doanh thu bền vững.',
     category: 'Marketing',
@@ -137,12 +137,12 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
     updatedAt: '2026-08-16T12:00:00Z',
     chapters: [
       {
-        id: 'ch_mkt_1',
+        id: 'ch-mkt-1',
         title: 'Chương 1: Phễu Chuyển Đổi & Tâm Lý Khách Hàng',
         order: 1,
         lessons: [
           {
-            id: 'les_mkt_1',
+            id: 'les-mkt-1',
             title: 'Bài 1: Bản đồ hành trình khách hàng trong kỷ nguyên số',
             videoSource: 'https://abyssplayer.com/Ld3tfGRGA',
             durationMinutes: 22,

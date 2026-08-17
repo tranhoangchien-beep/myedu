@@ -497,10 +497,9 @@ export const App: React.FC = () => {
     const targetLessonId = lessonId || course.lastWatchedLessonId || course.chapters[0]?.lessons[0]?.id;
     setActiveLessonId(targetLessonId);
 
-    // Update continue watching progress with timestamp preservation
+    // Update continue watching progress
     const targetLesson = course.chapters.flatMap(ch => ch.lessons).find(l => l.id === targetLessonId) || course.chapters[0]?.lessons[0];
     if (targetLesson) {
-      const isSameLesson = continueProgress?.courseId === course.id && continueProgress?.lessonId === targetLesson.id;
       const progress: ContinueProgress = {
         courseId: course.id,
         courseTitle: course.title,
@@ -509,8 +508,6 @@ export const App: React.FC = () => {
         category: course.category,
         videoSource: targetLesson.videoSource,
         timestamp: new Date().toISOString(),
-        timestampSeconds: isSameLesson ? continueProgress.timestampSeconds : 0,
-        durationSeconds: isSameLesson ? continueProgress.durationSeconds : (targetLesson.durationMinutes ? targetLesson.durationMinutes * 60 : undefined),
       };
       setContinueProgress(progress);
       saveContinueProgress(progress);
@@ -522,32 +519,6 @@ export const App: React.FC = () => {
     setCurrentView('player');
     window.location.hash = `#/course/${course.id}/lesson/${targetLessonId}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Update real-time video timestamp in continue progress & cloud
-  const handleUpdateTimestamp = (seconds: number, duration?: number) => {
-    if (!activeCourseId || !activeLessonId) return;
-    const course = courses.find(c => c.id === activeCourseId);
-    if (!course) return;
-    const targetLesson = course.chapters.flatMap(ch => ch.lessons).find(l => l.id === activeLessonId);
-    if (!targetLesson) return;
-
-    const updatedProgress: ContinueProgress = {
-      courseId: course.id,
-      courseTitle: course.title,
-      lessonId: targetLesson.id,
-      lessonTitle: targetLesson.title,
-      category: course.category,
-      videoSource: targetLesson.videoSource,
-      timestamp: new Date().toISOString(),
-      timestampSeconds: seconds,
-      durationSeconds: duration,
-    };
-    setContinueProgress(updatedProgress);
-    saveContinueProgress(updatedProgress);
-    if (isFirebaseConfigured) {
-      syncToCloud({ continueProgress: updatedProgress });
-    }
   };
 
   // Toggle Lesson Completion
@@ -876,8 +847,6 @@ export const App: React.FC = () => {
                   onToggleZenMode={() => setIsZenMode(prev => !prev)}
                   autoPlayNext={autoPlayNext}
                   onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
-                  currentTimestampSeconds={continueProgress?.lessonId === activeLesson?.id ? continueProgress?.timestampSeconds : 0}
-                  onUpdateTimestamp={handleUpdateTimestamp}
                 />
               </div>
 

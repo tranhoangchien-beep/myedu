@@ -19,12 +19,7 @@ import {
   Eye,
   Clock,
   Sparkles,
-  Minimize2,
-  Timer,
-  RotateCcw,
-  RotateCw,
-  Bookmark,
-  Play
+  Minimize2
 } from 'lucide-react';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 
@@ -42,21 +37,6 @@ interface AbyssPlayerProps {
   onToggleZenMode: () => void;
   autoPlayNext: boolean;
   onToggleAutoPlayNext: () => void;
-  currentTimestampSeconds?: number;
-  onUpdateTimestamp?: (seconds: number, duration?: number) => void;
-}
-
-// Helper: Format seconds to MM:SS or HH:MM:SS
-function formatTime(seconds: number): string {
-  if (isNaN(seconds) || seconds < 0) return '00:00';
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-
-  if (hrs > 0) {
-    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
@@ -73,26 +53,14 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   onToggleZenMode,
   autoPlayNext,
   onToggleAutoPlayNext,
-  currentTimestampSeconds = 0,
-  onUpdateTimestamp
 }) => {
   const [notes, setNotes] = useState<string>(currentLesson.notes || '');
   const [isSavedNotes, setIsSavedNotes] = useState<boolean>(false);
   const [noteViewMode, setNoteViewMode] = useState<'edit' | 'preview'>('edit');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [liveTimestamp, setLiveTimestamp] = useState<number>(currentTimestampSeconds);
-  const [videoDuration, setVideoDuration] = useState<number>((currentLesson.durationMinutes || 25) * 60);
-  const [isTimestampSavedFeedback, setIsTimestampSavedFeedback] = useState<boolean>(false);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Sync timestamp when lesson changes
-  useEffect(() => {
-    setLiveTimestamp(currentTimestampSeconds);
-    setVideoDuration((currentLesson.durationMinutes || 25) * 60);
-  }, [currentLesson.id, currentTimestampSeconds]);
 
   const parsedVideo = parseUniversalVideo(currentLesson.videoSource || '');
   const embedUrl = parsedVideo.embedUrl;
@@ -113,19 +81,6 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const handleSeek = (newTime: number) => {
-    const clamped = Math.max(0, Math.min(videoDuration, newTime));
-    setLiveTimestamp(clamped);
-    if (videoRef.current) {
-      videoRef.current.currentTime = clamped;
-    }
-    if (onUpdateTimestamp) {
-      onUpdateTimestamp(clamped, videoDuration);
-    }
-    setIsTimestampSavedFeedback(true);
-    setTimeout(() => setIsTimestampSavedFeedback(false), 2000);
-  };
-
   const handleSaveNotes = () => {
     onUpdateNotes(currentLesson.id, notes);
     setIsSavedNotes(true);
@@ -143,7 +98,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   };
 
   const insertTimestampTemplate = () => {
-    const template = `\n- [${formatTime(liveTimestamp)}] `;
+    const template = '\n- [00:00] ';
     setNotes(prev => prev + template);
     setNoteViewMode('edit');
     setTimeout(() => {
@@ -213,31 +168,10 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
           {embedUrl ? (
             parsedVideo.isDirectVideo ? (
               <video
-                ref={videoRef}
                 key={embedUrl}
                 src={embedUrl}
                 controls
                 autoPlay
-                onTimeUpdate={() => {
-                  if (videoRef.current) {
-                    const cur = Math.floor(videoRef.current.currentTime);
-                    const dur = Math.floor(videoRef.current.duration) || videoDuration;
-                    setLiveTimestamp(cur);
-                    if (dur > 0) setVideoDuration(dur);
-                    if (onUpdateTimestamp && cur % 5 === 0) {
-                      onUpdateTimestamp(cur, dur);
-                    }
-                  }
-                }}
-                onLoadedMetadata={() => {
-                  if (videoRef.current) {
-                    const dur = Math.floor(videoRef.current.duration) || videoDuration;
-                    setVideoDuration(dur);
-                    if (currentTimestampSeconds > 0) {
-                      videoRef.current.currentTime = currentTimestampSeconds;
-                    }
-                  }
-                }}
                 className="w-full h-full object-contain"
               >
                 Trình duyệt không hỗ trợ phát dạng video MP4 trực tiếp này.
@@ -263,72 +197,6 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
               </p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* 2. Intelligent Video Time Tracker & Timestamp Bookmark Bar */}
-      {lessonType !== 'article' && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center">
-              <Timer className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white">
-                  Đang xem dở: <span className="font-mono text-teal-400 font-extrabold">{formatTime(liveTimestamp)}</span> / {formatTime(videoDuration)}
-                </span>
-                {isTimestampSavedFeedback && (
-                  <span className="text-[11px] font-bold text-emerald-400 animate-fade-in bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                    ✓ Đã lưu mốc!
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400">
-                Tự động nhớ mốc thời gian để lần sau mở ra tiếp tục học ngay
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              type="button"
-              onClick={() => handleSeek(liveTimestamp - 30)}
-              title="Lùi 30 giây"
-              className="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1 transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-              <span>-30s</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSeek(liveTimestamp + 30)}
-              title="Tua tới 30 giây"
-              className="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1 transition-colors"
-            >
-              <RotateCw className="w-3.5 h-3.5 text-slate-400" />
-              <span>+30s</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSeek(liveTimestamp + 300)}
-              title="Tua tới 5 phút"
-              className="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1 transition-colors hidden sm:flex"
-            >
-              <span>+5m</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSeek(liveTimestamp)}
-              className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-teal-600/20 transition-all active:scale-95"
-            >
-              <Bookmark className="w-3.5 h-3.5" />
-              <span>Lưu Mốc Này</span>
-            </button>
-          </div>
         </div>
       )}
 

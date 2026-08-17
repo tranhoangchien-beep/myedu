@@ -129,16 +129,19 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
       - Hỗ trợ thêm giảng viên mới, sửa tên giảng viên (tự động đồng bộ hàng loạt vào tất cả khóa học liên quan), xóa giảng viên khỏi danh sách kèm cảnh báo số lượng khóa học.
 12. **Nâng Cấp Toàn Diện Dashboard Quản Trị Khóa Học (Course Studio 2.0)**:
     * **Thanh Mini KPI Metrics đầu trang**: Thống kê thời gian thực 4 chỉ số cốt lõi (Tổng số khóa học, tổng bài giảng phân loại Video/Bài đọc, % Tiến độ hoàn thành chung, Tổng số lượng chủ đề & giảng viên).
-    * **Bộ lọc & Sắp xếp chuyên sâu trên Bảng**:
+    * **Bộ điều khiển Lọc & Sắp xếp chuyên sâu trên Bảng**:
       - Tabs lọc nhanh trạng thái học: `Tất cả` | `Đang học` | `Chưa học` | `Đã xong (100%)`.
       - Dropdown lọc kết hợp theo Chủ đề và Nền tảng nguồn.
       - Dropdown Sắp xếp: *Mới cập nhật gần nhất*, *Tên A-Z*, *Tiến độ học*, *Số lượng bài học*.
+      - Phân trang thông minh (`10` | `20` | `50` | `Tất cả`) kèm nút điều hướng Trang trước / Trang sau.
+    * **Tính Năng Nhân Bản Khóa Học 1-Click (Duplicate / Clone Course)**:
+      - Bổ sung nút `[📋 Nhân bản]` cạnh nút Sửa: Cho phép nhân bản tức thì toàn bộ cấu trúc chương, bài học và tài liệu của khóa học có sẵn.
     * **Tối ưu Thumbnail chuẩn 16:9 & Thematic Fallback**:
       - Tỷ lệ ảnh 16:9 sắc nét, bo góc chuẩn mực.
       - Khi ảnh bị lỗi link hoặc chưa có: Tự động render huy hiệu biểu tượng Gradient theo danh mục (AI, Code, Design, Marketing, Finance...) thay vì text vỡ.
     * **Thao tác hàng loạt (Floating Batch Actions Toolbar)**:
       - Checkbox chọn nhiều khóa học (kèm nút Chọn tất cả).
       - Thanh công cụ nổi thông minh: Xóa hàng loạt, Đổi danh mục hàng loạt, Xuất JSON riêng cho các khóa được chọn.
-    * **Modal Xác Nhận Xóa Tùy Chỉnh (Custom Dark Confirmation Modals)**:
-      - Loại bỏ hoàn toàn `confirm()` trắng mặc định của trình duyệt.
-      - Modal Dark mode chuyên nghiệp hiển thị chi tiết tên khóa học, số chương, số bài giảng sắp xóa để phòng tránh nhầm lẫn.
+    * **Thước Đo Sức Khỏe Bộ Nhớ Thiết Bị (Offline Storage Health Meter)**:
+      - Hiển thị trực quan dung lượng LocalStorage đang sử dụng (KB/MB) so với giới hạn an toàn 5MB của trình duyệt.
+    * **Modal Xác Nhận Xóa Tùy Chỉnh (Custom Dark Confirmation Modals)** & **Phím tắt Studio (`/` để tìm kiếm, `Esc` để hủy chọn)**.

@@ -420,9 +420,9 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {paginatedCourses.map((c) => {
-                    const total = c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
-                    const completed = c.chapters.reduce(
-                      (acc, ch) => acc + ch.lessons.filter(l => l.isCompleted).length,
+                    const total = (c.chapters || []).reduce((acc, ch) => acc + (ch.lessons || []).length, 0);
+                    const completed = (c.chapters || []).reduce(
+                      (acc, ch) => acc + (ch.lessons || []).filter(l => l.isCompleted).length,
                       0
                     );
                     const pct = total > 0 ? Math.round((completed / total) * 100) : 0;

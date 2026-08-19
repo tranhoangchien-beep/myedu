@@ -22,8 +22,8 @@ export const CourseCard: React.FC<CourseCardProps> = ({
   let totalLessons = 0;
   let completedLessons = 0;
 
-  course.chapters.forEach((ch) => {
-    ch.lessons.forEach((l) => {
+  (course.chapters || []).forEach((ch) => {
+    (ch.lessons || []).forEach((l) => {
       totalLessons += 1;
       if (l.isCompleted) completedLessons += 1;
     });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Course, Lesson, CategoryType, Chapter, ContinueProgress, UserStats } from './types';
 import { 
   getStoredCourses, 
@@ -78,6 +78,9 @@ export const App: React.FC = () => {
 
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
 
+  const isInitialSyncDoneRef = useRef<boolean>(false);
+  const lastLocalWriteTimeRef = useRef<number>(0);
+
   // Initialize data on mount + Connect Realtime Cloud Firestore
   useEffect(() => {
     const loadedCourses = getStoredCourses();
@@ -90,11 +93,13 @@ export const App: React.FC = () => {
     setInstructors(loadedInstructors);
     const loadedProgress = getContinueProgress();
     setContinueProgress(loadedProgress);
+    const loadedStats = getStoredUserStats();
+    setUserStats(loadedStats);
 
     // Setup Cloud Firestore Real-time Sync if configured
     if (isFirebaseConfigured) {
-      // 1. Initial Cloud Fetch
-      fetchFromCloud().then(cloudData => {
+      // 1. Initial Cloud Fetch with timeout protection
+      fetchFromCloud(5000).then(cloudData => {
         if (!cloudData || !cloudData.courses) {
           // Seed cloud only if cloud is completely uninitialized
           syncToCloud({
@@ -103,8 +108,8 @@ export const App: React.FC = () => {
             sources: loadedSources,
             instructors: loadedInstructors,
             continueProgress: loadedProgress,
-            userStats: getStoredUserStats()
-          });
+            userStats: loadedStats
+          }).catch(err => console.warn('Failed initial cloud seed:', err));
         } else {
           // Cloud Firestore is the Single Source of Truth
           let currentCloudCourses = Array.isArray(cloudData.courses) ? cloudData.courses : [];
@@ -125,7 +130,7 @@ export const App: React.FC = () => {
 
           if (missingToMerge.length > 0) {
             currentCloudCourses = [...missingToMerge, ...currentCloudCourses];
-            syncToCloud({ courses: currentCloudCourses });
+            syncToCloud({ courses: currentCloudCourses }).catch(err => console.warn('Failed course merge sync:', err));
           }
 
           setCourses(currentCloudCourses);
@@ -143,7 +148,7 @@ export const App: React.FC = () => {
           let currentInstructors = (cloudData.instructors && Array.isArray(cloudData.instructors)) ? cloudData.instructors : loadedInstructors;
           if (!currentInstructors.includes('Thành Công TC')) {
             currentInstructors = ['Thành Công TC', ...currentInstructors];
-            syncToCloud({ instructors: currentInstructors });
+            syncToCloud({ instructors: currentInstructors }).catch(err => console.warn('Failed instructor sync:', err));
           }
           setInstructors(currentInstructors);
           saveInstructors(currentInstructors);
@@ -156,11 +161,24 @@ export const App: React.FC = () => {
               localStorage.removeItem('myedu_continue_progress_v1');
             }
           }
+
+          if (cloudData.userStats) {
+            setUserStats(cloudData.userStats);
+          }
         }
+        isInitialSyncDoneRef.current = true;
+      }).catch(err => {
+        console.warn('⚠️ Cloud fetch error, proceeding with local data:', err);
+        isInitialSyncDoneRef.current = true;
       });
 
       // 2. Realtime listener for cross-device automatic updates
       const unsubscribe = subscribeToCloudChanges((cloudData) => {
+        // Skip echo updates if we just performed a local write in the last 1500ms
+        if (Date.now() - lastLocalWriteTimeRef.current < 1500) {
+          return;
+        }
+
         if (cloudData) {
           if (Array.isArray(cloudData.courses)) {
             setCourses(cloudData.courses);
@@ -185,6 +203,9 @@ export const App: React.FC = () => {
             } else {
               localStorage.removeItem('myedu_continue_progress_v1');
             }
+          }
+          if (cloudData.userStats) {
+            setUserStats(cloudData.userStats);
           }
         }
       });
@@ -219,9 +240,7 @@ export const App: React.FC = () => {
       }
     };
 
-    if (courses.length > 0) {
-      parseHashRoute();
-    }
+    parseHashRoute();
 
     window.addEventListener('hashchange', parseHashRoute);
     window.addEventListener('popstate', parseHashRoute);
@@ -229,14 +248,15 @@ export const App: React.FC = () => {
       window.removeEventListener('hashchange', parseHashRoute);
       window.removeEventListener('popstate', parseHashRoute);
     };
-  }, [courses]);
+  }, []);
 
   // Sync courses to storage & Cloud Firestore whenever modified
   const updateCoursesState = (newCourses: Course[]) => {
+    lastLocalWriteTimeRef.current = Date.now();
     setCourses(newCourses);
     saveCourses(newCourses);
     if (isFirebaseConfigured) {
-      syncToCloud({ courses: newCourses });
+      syncToCloud({ courses: newCourses }).catch(err => console.warn('Cloud sync error:', err));
     }
   };
 
@@ -295,26 +315,29 @@ export const App: React.FC = () => {
 
   // Dedicated Taxonomy Sync Helpers (Local Storage + Cloud Firestore)
   const updateCategoriesState = (updated: string[]) => {
+    lastLocalWriteTimeRef.current = Date.now();
     setCategories(updated);
     saveCategories(updated);
     if (isFirebaseConfigured) {
-      syncToCloud({ categories: updated });
+      syncToCloud({ categories: updated }).catch(err => console.warn('Category sync error:', err));
     }
   };
 
   const updateSourcesState = (updated: string[]) => {
+    lastLocalWriteTimeRef.current = Date.now();
     setSources(updated);
     saveSources(updated);
     if (isFirebaseConfigured) {
-      syncToCloud({ sources: updated });
+      syncToCloud({ sources: updated }).catch(err => console.warn('Source sync error:', err));
     }
   };
 
   const updateInstructorsState = (updated: string[]) => {
+    lastLocalWriteTimeRef.current = Date.now();
     setInstructors(updated);
     saveInstructors(updated);
     if (isFirebaseConfigured) {
-      syncToCloud({ instructors: updated });
+      syncToCloud({ instructors: updated }).catch(err => console.warn('Instructor sync error:', err));
     }
   };
 
@@ -557,7 +580,7 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Toggle Lesson Completion
+    // Toggle Lesson Completion
   const handleToggleComplete = (lessonId: string, specificCourseId?: string) => {
     const targetCourseId = specificCourseId || activeCourseId;
     if (!targetCourseId) return;
@@ -566,9 +589,9 @@ export const App: React.FC = () => {
 
     const updatedCourses = courses.map((c) => {
       if (c.id === targetCourseId) {
-        const updatedChapters = c.chapters.map((ch) => ({
+        const updatedChapters = (c.chapters || []).map((ch) => ({
           ...ch,
-          lessons: ch.lessons.map((l) => {
+          lessons: (ch.lessons || []).map((l) => {
             if (l.id === lessonId) {
               const nextStatus = !l.isCompleted;
               if (nextStatus) justMarkedComplete = true;
@@ -588,6 +611,9 @@ export const App: React.FC = () => {
     if (justMarkedComplete) {
       const updatedStats = recordLessonCompletionStats(true);
       setUserStats(updatedStats);
+      if (isFirebaseConfigured) {
+        syncToCloud({ userStats: updatedStats }).catch(err => console.warn('Stats sync error:', err));
+      }
     }
   };
 
@@ -598,9 +624,9 @@ export const App: React.FC = () => {
 
     const updatedCourses = courses.map((c) => {
       if (c.id === targetCourseId) {
-        const updatedChapters = c.chapters.map((ch) => ({
+        const updatedChapters = (c.chapters || []).map((ch) => ({
           ...ch,
-          lessons: ch.lessons.map((l) => (l.id === lessonId ? { ...l, isStarred: !l.isStarred } : l)),
+          lessons: (ch.lessons || []).map((l) => (l.id === lessonId ? { ...l, isStarred: !l.isStarred } : l)),
         }));
         return { ...c, chapters: updatedChapters };
       }
@@ -610,15 +636,15 @@ export const App: React.FC = () => {
     updateCoursesState(updatedCourses);
   };
 
-  // Update Notes for current lesson
-  const handleUpdateNotes = (notes: string) => {
-    if (!activeCourseId || !activeLessonId) return;
+  // Update Notes for specific lesson
+  const handleUpdateNotes = (lessonId: string, notes: string) => {
+    if (!activeCourseId || !lessonId) return;
 
     const updatedCourses = courses.map((c) => {
       if (c.id === activeCourseId) {
-        const updatedChapters = c.chapters.map((ch) => ({
+        const updatedChapters = (c.chapters || []).map((ch) => ({
           ...ch,
-          lessons: ch.lessons.map((l) => (l.id === activeLessonId ? { ...l, notes } : l)),
+          lessons: (ch.lessons || []).map((l) => (l.id === lessonId ? { ...l, notes } : l)),
         }));
         return { ...c, chapters: updatedChapters };
       }

@@ -37,8 +37,8 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
   let totalLessons = 0;
   let completedCount = 0;
 
-  course.chapters.forEach((ch) => {
-    ch.lessons.forEach((l) => {
+  (course.chapters || []).forEach((ch) => {
+    (ch.lessons || []).forEach((l) => {
       totalLessons += 1;
       if (l.isCompleted) completedCount += 1;
     });

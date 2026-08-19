@@ -24,9 +24,9 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
     lesson: Course['chapters'][0]['lessons'][0];
   }[] = [];
 
-  courses.forEach((c) => {
-    c.chapters.forEach((ch) => {
-      ch.lessons.forEach((l) => {
+  (courses || []).forEach((c) => {
+    (c.chapters || []).forEach((ch) => {
+      (ch.lessons || []).forEach((l) => {
         if (l.isStarred) {
           starredItems.push({
             course: c,

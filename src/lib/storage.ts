@@ -1,4 +1,4 @@
-import { Course, ContinueProgress, CategoryType, UserStats } from '../types';
+import { Course, ContinueProgress, CategoryType, UserStats, Chapter, Lesson } from '../types';
 
 const STORAGE_KEY_COURSES = 'myedu_courses_v1';
 const STORAGE_KEY_CONTINUE = 'myedu_continue_progress_v1';

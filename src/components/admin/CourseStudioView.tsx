@@ -214,9 +214,9 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
     let articleLessons = 0;
     let totalMinutes = 0;
 
-    courses.forEach(c => {
-      c.chapters.forEach(ch => {
-        ch.lessons.forEach(l => {
+    (courses || []).forEach(c => {
+      (c.chapters || []).forEach(ch => {
+        (ch.lessons || []).forEach(l => {
           totalLessons++;
           if (l.isCompleted) completedLessons++;
           if (l.type === 'article') articleLessons++;
@@ -286,9 +286,9 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
         }
 
         // Status Filter
-        const total = c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
-        const completed = c.chapters.reduce(
-          (acc, ch) => acc + ch.lessons.filter(l => l.isCompleted).length,
+        const total = (c.chapters || []).reduce((acc, ch) => acc + (ch.lessons || []).length, 0);
+        const completed = (c.chapters || []).reduce(
+          (acc, ch) => acc + (ch.lessons || []).filter(l => l.isCompleted).length,
           0
         );
         const pct = total > 0 ? (completed / total) * 100 : 0;
@@ -301,13 +301,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
       })
       .sort((a, b) => {
         const getPct = (c: Course) => {
-          const total = c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
-          const comp = c.chapters.reduce((acc, ch) => acc + ch.lessons.filter(l => l.isCompleted).length, 0);
+          const total = (c.chapters || []).reduce((acc, ch) => acc + (ch.lessons || []).length, 0);
+          const comp = (c.chapters || []).reduce((acc, ch) => acc + (ch.lessons || []).filter(l => l.isCompleted).length, 0);
           return total > 0 ? comp / total : 0;
         };
 
         const getTotalLessons = (c: Course) => {
-          return c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
+          return (c.chapters || []).reduce((acc, ch) => acc + (ch.lessons || []).length, 0);
         };
 
         switch (sortBy) {
@@ -591,12 +591,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
       try {
         const content = event.target?.result as string;
         const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-          onRestoreCourses(parsed);
-          setBackupSuccess(`Khôi phục thành công ${parsed.length} khóa học!`);
+        const validated = validateCoursesSchema(parsed);
+        if (validated.length > 0) {
+          onRestoreCourses(validated);
+          setBackupSuccess(`Khôi phục thành công ${validated.length} khóa học!`);
           setTimeout(() => setBackupSuccess(''), 3000);
         } else {
-          setBackupError('Định dạng tệp JSON không hợp lệ.');
+          setBackupError('Định dạng tệp JSON không hợp lệ hoặc không có khóa học.');
           setTimeout(() => setBackupError(''), 3000);
         }
       } catch {
@@ -984,9 +985,9 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                       </tr>
                     ) : (
                       paginatedCourses.map((c) => {
-                        const total = c.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
-                        const completed = c.chapters.reduce(
-                          (acc, ch) => acc + ch.lessons.filter(l => l.isCompleted).length,
+                        const total = (c.chapters || []).reduce((acc, ch) => acc + (ch.lessons || []).length, 0);
+                        const completed = (c.chapters || []).reduce(
+                          (acc, ch) => acc + (ch.lessons || []).filter(l => l.isCompleted).length,
                           0
                         );
                         const pct = total > 0 ? Math.round((completed / total) * 100) : 0;

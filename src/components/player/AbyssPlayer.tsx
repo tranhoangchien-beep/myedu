@@ -163,8 +163,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
         // Universal Video Player (supports Abyss, YouTube, Vimeo, MP4, custom iframe)
         <div 
           ref={playerContainerRef}
-          className={`relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 transition-all ${
-            isZenMode ? 'ring-2 ring-teal-500/50 shadow-emerald-950/40' : ''
+          className={`relative w-full aspect-video max-h-[70vh] bg-black rounded-2xl overflow-hidden shadow-2xl border border-slate-800 transition-all ${
+            isZenMode ? 'ring-2 ring-emerald-500/40 shadow-emerald-950/40' : ''
           }`}
         >
           {embedUrl ? (

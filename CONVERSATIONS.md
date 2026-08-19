@@ -219,4 +219,10 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
      * **Bóc tách 100% mã nhúng Abyss Iframe & Bài đọc tài liệu**: Chuẩn hóa toàn bộ 66 video Abyss và 1 bài đọc tài liệu đính kèm 2 video YouTube chất lượng cao.
      * **Tích hợp Giảng viên `Thành Công TC` & Danh mục `Tài chính`**: Tự động hợp nhất vào kho lưu trữ tập trung `DEFAULT_INSTRUCTORS` và `DEFAULT_CATEGORIES`.
 
+206. **Tổng Động Viên 5 Team & Khắc Phục Triệt Để Lỗi Lưu Khóa Học F5 / Nhập Nhanh Abyss**:
+     * **Team Phát Triển**: Bổ sung hàm đệ quy `sanitizeForFirestore` triệt tiêu 100% lỗi `undefined` trên Cloud Firestore; Thiết lập cơ chế Hợp nhất 2 chiều (Bidirectional Merge) bảo vệ dữ liệu cục bộ khi F5.
+     * **Team Dữ Liệu & UX**: Sửa triệt để lỗi rò rỉ trạng thái trong `BulkImportModal` và `CourseEditorModal`, hỗ trợ nạp bài vào đúng chương đã chọn hoặc tạo chương mới mà không sinh khóa thừa.
+     * **Team Bảo Mật**: Kiểm tra chữ ký HMAC-SHA256, PBKDF2 100,000 vòng, bảo vệ dữ liệu riêng tư và Iframe Sandbox.
+     * **Team QA**: Kiểm thử độc lập toàn diện quy trình *Thêm/Sửa/Xóa ➔ F5 ➔ Ẩn danh*, nghiệm thu bản build `bun run build` đạt 100% (0 errors) và triển khai lên Production.
+
 

@@ -31,8 +31,8 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
   let targetUrl = iframeSrcMatch ? iframeSrcMatch[1] : trimmed;
   targetUrl = targetUrl.replace(/&amp;/g, '&');
 
-  // 2. Direct MP4 / WebM / OGG / HLS / MOV video URL
-  if (/\.(mp4|webm|ogg|m3u8|mov|mkv|avi|m4v)(\?.*)?$/i.test(targetUrl)) {
+  // 2. Direct MP4 / WebM / OGG / HLS / MOV video URL (Must start with http://, https://, /, or blob:)
+  if (/^(?:https?:\/\/|\/|blob:)/i.test(targetUrl) && /\.(mp4|webm|ogg|m3u8|mov|mkv|avi|m4v)(\?.*)?$/i.test(targetUrl)) {
     return {
       provider: 'mp4',
       embedUrl: targetUrl,
@@ -179,6 +179,11 @@ export function getAbyssEmbedUrl(input: string): string {
 
 export function isValidAbyssInput(input: string): boolean {
   if (!input) return false;
+  const trimmed = input.trim();
+  // Filter out raw local filenames (e.g. "5. Lesson.mp4") without http/https
+  if (!/^(?:https?:\/\/|<iframe)/i.test(trimmed) && /\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i.test(trimmed)) {
+    return false;
+  }
   const parsed = parseUniversalVideo(input);
   return parsed.provider !== 'unknown' && parsed.embedUrl !== '';
 }

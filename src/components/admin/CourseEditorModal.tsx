@@ -157,8 +157,32 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
         setThumbnailUrl(courseToEdit.thumbnailUrl || '');
         setTagsInput(courseToEdit.tags?.join(', ') || '');
         
-        // Deep copy chapters to ensure complete mutation isolation
-        const clonedChapters: Chapter[] = JSON.parse(JSON.stringify(courseToEdit.chapters || []));
+        // Deep copy chapters with auto-healing for any inverted titles and video sources
+        const clonedChapters: Chapter[] = (courseToEdit.chapters || []).map(ch => ({
+          ...ch,
+          lessons: (ch.lessons || []).map(les => {
+            let finalTitle = les.title;
+            let finalSource = les.videoSource;
+            if (
+              (finalTitle?.startsWith('<iframe') || finalTitle?.startsWith('http://') || finalTitle?.startsWith('https://')) &&
+              finalSource && !finalSource.startsWith('<iframe') && !finalSource.startsWith('http://') && !finalSource.startsWith('https://')
+            ) {
+              const actualSource = finalTitle;
+              let actualTitle = finalSource.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+              const prefixMatch = actualTitle.match(/^(?:Bài|Lesson|Chuong|Chương)?\s*(\d+)[\.\s:_-]+(.+)/i);
+              if (prefixMatch) {
+                actualTitle = `Bài ${prefixMatch[1]}: ${prefixMatch[2].trim()}`;
+              }
+              finalTitle = actualTitle;
+              finalSource = actualSource;
+            }
+            return {
+              ...les,
+              title: finalTitle,
+              videoSource: finalSource
+            };
+          })
+        }));
         setChapters(clonedChapters);
         setCollapsedChapterIds({});
 

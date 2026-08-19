@@ -2128,11 +2128,29 @@ export function validateSingleCourse(raw: any): Course | null {
               }));
           }
 
+          let finalTitle = lesTitle;
+          let finalVideoSource = videoSource;
+
+          // Auto-healing guard: Fix inverted title and videoSource
+          if (
+            (finalTitle.startsWith('<iframe') || finalTitle.startsWith('http://') || finalTitle.startsWith('https://')) &&
+            finalVideoSource && !finalVideoSource.startsWith('<iframe') && !finalVideoSource.startsWith('http://') && !finalVideoSource.startsWith('https://')
+          ) {
+            const actualSource = finalTitle;
+            let actualTitle = finalVideoSource.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+            const prefixMatch = actualTitle.match(/^(?:Bài|Lesson|Chuong|Chương)?\s*(\d+)[\.\s:_-]+(.+)/i);
+            if (prefixMatch) {
+              actualTitle = `Bài ${prefixMatch[1]}: ${prefixMatch[2].trim()}`;
+            }
+            finalTitle = actualTitle;
+            finalVideoSource = actualSource;
+          }
+
           return {
             id: lesId,
-            title: lesTitle,
+            title: finalTitle,
             type,
-            videoSource,
+            videoSource: finalVideoSource,
             content,
             durationMinutes,
             isCompleted,

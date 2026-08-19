@@ -184,8 +184,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
-                sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups"
-                referrerPolicy="no-referrer-when-downgrade"
+                sandbox="allow-scripts allow-same-origin allow-presentation"
+                referrerPolicy="no-referrer"
               />
             )
           ) : (
@@ -308,22 +308,25 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
 
           {currentLesson.attachments && currentLesson.attachments.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {currentLesson.attachments.map((att) => (
-                <a
-                  key={att.id}
-                  href={att.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  referrerPolicy="no-referrer"
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-white transition-all group"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                    <span className="font-medium truncate">{att.name}</span>
-                  </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
-                </a>
-              ))}
+              {currentLesson.attachments.map((att) => {
+                const safeUrl = /^(javascript|vbscript|data):/i.test(att.url.trim()) ? '#' : att.url;
+                return (
+                  <a
+                    key={att.id}
+                    href={safeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    referrerPolicy="no-referrer"
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-white transition-all group"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      <span className="font-medium truncate">{att.name}</span>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
+                  </a>
+                );
+              })}
             </div>
           ) : (
             <p className="text-xs text-slate-500 italic py-1">

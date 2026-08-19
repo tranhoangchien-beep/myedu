@@ -30,46 +30,54 @@ export function parseBulkLessonInput(
     // Pattern A: Abyss 3-part or 2-part pipe format: "Filename.mp4 | URL | <iframe...>"
     if (line.includes('|')) {
       const parts = line.split('|').map(p => p.trim());
-      let rawTitle = parts[0];
+      
+      // Find candidate title and candidate video source
+      let rawTitle = '';
+      let detectedSource = '';
 
-      // Strip video file extensions (.mp4, .webm, .mkv, .avi, .mov, .flv, .wmv, .ts, etc.)
-      rawTitle = rawTitle.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v)$/i, '').trim();
-
-      // Check if filename starts with a number like "7 Xác định..." or "07. Lãi suất..."
-      const numMatch = rawTitle.match(/^(\d+)[\.\s_-]+(.+)/);
-      if (numMatch) {
-        lessonNumber = parseInt(numMatch[1], 10);
-        title = `Bài ${numMatch[1]}: ${numMatch[2].trim()}`;
-      } else {
-        title = rawTitle;
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (!detectedSource && (part.startsWith('http') || part.startsWith('<iframe') || isValidAbyssInput(part))) {
+          detectedSource = part;
+        } else if (!rawTitle) {
+          rawTitle = part;
+        }
       }
 
-      // Extract source URL (prefer part 1 if valid URL/iframe, else part 2)
-      if (parts[1] && (parts[1].startsWith('http') || parts[1].startsWith('<iframe'))) {
-        videoSource = parts[1];
-      } else if (parts[2] && (parts[2].startsWith('http') || parts[2].startsWith('<iframe'))) {
-        videoSource = parts[2];
+      if (!detectedSource) {
+        detectedSource = parts[parts.length - 1];
+      }
+      videoSource = detectedSource;
+
+      // Strip video file extensions (.mp4, .webm, .mkv, .avi, .mov, .flv, .wmv, .ts, .m4v, .3gp)
+      rawTitle = (rawTitle || parts[0]).replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+
+      // Check if filename starts with a number like "7 Xác định...", "07. Lãi suất...", "Bài 7: ..."
+      const prefixMatch = rawTitle.match(/^(?:Bài|Lesson|Chuong|Chương)?\s*(\d+)[\.\s:_-]+(.+)/i);
+      if (prefixMatch) {
+        lessonNumber = parseInt(prefixMatch[1], 10);
+        title = `Bài ${prefixMatch[1]}: ${prefixMatch[2].trim()}`;
       } else {
-        videoSource = parts.slice(1).join('|');
+        title = rawTitle;
       }
     } else if (line.includes(' - http') || line.includes(' - <iframe') || line.includes(' : http')) {
       // Pattern B: "Title - Link" or "Title : Link"
       const parts = line.split(/ - | : /);
-      let rawTitle = parts[0].replace(/\.(mp4|webm|mkv|avi|mov)$/i, '').trim();
-      const numMatch = rawTitle.match(/^(\d+)[\.\s_-]+(.+)/);
-      if (numMatch) {
-        lessonNumber = parseInt(numMatch[1], 10);
-        title = `Bài ${numMatch[1]}: ${numMatch[2].trim()}`;
+      let rawTitle = parts[0].replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+      const prefixMatch = rawTitle.match(/^(?:Bài|Lesson)?\s*(\d+)[\.\s:_-]+(.+)/i);
+      if (prefixMatch) {
+        lessonNumber = parseInt(prefixMatch[1], 10);
+        title = `Bài ${prefixMatch[1]}: ${prefixMatch[2].trim()}`;
       } else {
         title = rawTitle;
       }
       videoSource = parts.slice(1).join(' - ').trim();
     } else {
       // Pattern C: Single line link or iframe or filename
-      const numMatch = line.match(/^(\d+)[\.\s_-]+(.+)/);
-      if (numMatch) {
-        lessonNumber = parseInt(numMatch[1], 10);
-        title = `Bài ${numMatch[1]}: ${numMatch[2].trim()}`;
+      const prefixMatch = line.match(/^(?:Bài|Lesson)?\s*(\d+)[\.\s:_-]+(.+)/i);
+      if (prefixMatch) {
+        lessonNumber = parseInt(prefixMatch[1], 10);
+        title = `Bài ${prefixMatch[1]}: ${prefixMatch[2].trim()}`;
       }
     }
 
@@ -95,10 +103,13 @@ export function createLessonsFromParsed(
   parsed: ParsedLessonItem[]
 ): Lesson[] {
   return parsed.map((item, index) => ({
-    id: `lesson_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`,
+    id: `les-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`,
     title: item.title,
+    type: 'video',
     videoSource: item.videoSource,
+    durationMinutes: 15,
     isCompleted: false,
+    isStarred: false,
     attachments: [],
   }));
 }

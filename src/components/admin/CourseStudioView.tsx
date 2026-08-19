@@ -49,7 +49,7 @@ import {
   Smile,
   CheckCheck
 } from 'lucide-react';
-import { INITIAL_SAMPLE_COURSES } from '../../lib/storage';
+import { INITIAL_SAMPLE_COURSES, validateCoursesSchema } from '../../lib/storage';
 
 interface CourseStudioViewProps {
   courses: Course[];

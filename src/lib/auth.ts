@@ -196,11 +196,11 @@ export async function verifyAdminCredentials(username: string, pass: string): Pr
 }
 
 /**
- * Verifies dynamic session token validity and cryptographically checks signature
+ * Verifies dynamic session token validity and cryptographically checks HMAC-SHA256 signature
  */
-export function isAuthenticated(): boolean {
+export async function verifySessionToken(tokenInput?: string): Promise<boolean> {
   try {
-    const token = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+    const token = tokenInput || localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (!token || !token.includes('.')) return false;
 
     const parts = token.split('.');
@@ -210,13 +210,54 @@ export function isAuthenticated(): boolean {
     const payloadStr = atob(encodedPayload);
     const payload = JSON.parse(payloadStr);
 
-    // Check expiration
+    // 1. Check expiration
     if (!payload.exp || Date.now() > payload.exp) {
       clearAuthenticatedSession();
       return false;
     }
 
-    // Synchronous check of payload structural integrity
+    // 2. Check structural integrity
+    if (!payload.ts || !payload.nonce) {
+      clearAuthenticatedSession();
+      return false;
+    }
+
+    // 3. Cryptographic HMAC-SHA256 signature verification with constant-time equality
+    const expectedSignature = await generateSignature(payloadStr);
+    const isValid = constantTimeEquals(signature, expectedSignature);
+    if (!isValid) {
+      clearAuthenticatedSession();
+      return false;
+    }
+
+    return true;
+  } catch {
+    clearAuthenticatedSession();
+    return false;
+  }
+}
+
+/**
+ * Fast synchronous session check for initial UI render
+ */
+export function isAuthenticated(): boolean {
+  try {
+    const token = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
+    if (!token || !token.includes('.')) return false;
+
+    const parts = token.split('.');
+    if (parts.length !== 2) return false;
+
+    const [encodedPayload] = parts;
+    const payloadStr = atob(encodedPayload);
+    const payload = JSON.parse(payloadStr);
+
+    // Fast expiration & integrity check
+    if (!payload.exp || Date.now() > payload.exp) {
+      clearAuthenticatedSession();
+      return false;
+    }
+
     if (!payload.ts || !payload.nonce) {
       clearAuthenticatedSession();
       return false;

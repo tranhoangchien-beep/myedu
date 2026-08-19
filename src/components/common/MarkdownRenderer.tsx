@@ -93,10 +93,12 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
       // 6. Links: [text](url)
       const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
       if (linkMatch) {
+        const rawUrl = linkMatch[2].trim();
+        const safeUrl = /^(javascript|vbscript|data):/i.test(rawUrl) ? '#' : rawUrl;
         parts.push(
           <a
             key={`link-${key++}`}
-            href={linkMatch[2]}
+            href={safeUrl}
             target="_blank"
             rel="noopener noreferrer"
             referrerPolicy="no-referrer"

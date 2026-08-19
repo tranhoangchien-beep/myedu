@@ -55,6 +55,9 @@ export function sanitizeForFirestore(obj: any): any {
   if (obj === null || obj === undefined) {
     return null;
   }
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
   if (Array.isArray(obj)) {
     return obj.map(item => sanitizeForFirestore(item));
   }
@@ -72,17 +75,25 @@ export function sanitizeForFirestore(obj: any): any {
 }
 
 /**
- * Tải toàn bộ dữ liệu từ Cloud Firestore về máy
+ * Tải toàn bộ dữ liệu từ Cloud Firestore về máy kèm Timeout Guard (chống treo khi mạng yếu)
  */
-export async function fetchFromCloud(): Promise<CloudDatabasePayload | null> {
+export async function fetchFromCloud(timeoutMs: number = 4000): Promise<CloudDatabasePayload | null> {
   if (!db) return null;
   try {
-    const docRef = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as CloudDatabasePayload;
-    }
-    return null;
+    const fetchPromise = (async () => {
+      const docRef = doc(db as Firestore, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data() as CloudDatabasePayload;
+      }
+      return null;
+    })();
+
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), timeoutMs);
+    });
+
+    return await Promise.race([fetchPromise, timeoutPromise]);
   } catch (error) {
     console.warn('⚠️ Cloud fetch error (will use local cache):', error);
     return null;
@@ -95,7 +106,7 @@ export async function fetchFromCloud(): Promise<CloudDatabasePayload | null> {
 export async function syncToCloud(payload: Partial<CloudDatabasePayload>): Promise<boolean> {
   if (!db) return false;
   try {
-    const docRef = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
+    const docRef = doc(db as Firestore, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
     const cleanPayload = sanitizeForFirestore({
       ...payload,
       updatedAt: new Date().toISOString()
@@ -116,15 +127,16 @@ export function subscribeToCloudChanges(
 ): Unsubscribe | null {
   if (!db) return null;
   try {
-    const docRef = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
+    const docRef = doc(db as Firestore, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
     return onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         onUpdate(docSnap.data() as CloudDatabasePayload);
       }
     }, (error) => {
-      console.warn('⚠️ Realtime sync listener warning:', error);
+      console.warn('⚠️ Realtime sync listener warning (offline or permission):', error);
     });
-  } catch {
+  } catch (error) {
+    console.warn('⚠️ Failed to initialize cloud snapshot listener:', error);
     return null;
   }
 }

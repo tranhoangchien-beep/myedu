@@ -2047,6 +2047,152 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
   }
 ];
 
+/**
+ * Schema Validation & Normalization for Courses & Lessons
+ * Đảm bảo 100% dữ liệu không bao giờ bị hỏng hoặc sinh khóa học rác
+ */
+export function validateSingleCourse(raw: any): Course | null {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const id = typeof raw.id === 'string' && raw.id.trim()
+    ? raw.id.trim()
+    : `course-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  const title = typeof raw.title === 'string' && raw.title.trim()
+    ? raw.title.trim()
+    : 'Khóa học chưa đặt tên';
+  const description = typeof raw.description === 'string' ? raw.description : '';
+  const category = typeof raw.category === 'string' && raw.category.trim()
+    ? raw.category.trim()
+    : 'Tài chính';
+  const instructor = typeof raw.instructor === 'string' && raw.instructor.trim()
+    ? raw.instructor.trim()
+    : undefined;
+  const sourcePlatform = typeof raw.sourcePlatform === 'string' && raw.sourcePlatform.trim()
+    ? raw.sourcePlatform.trim()
+    : undefined;
+  const thumbnailUrl = typeof raw.thumbnailUrl === 'string' && raw.thumbnailUrl.trim()
+    ? raw.thumbnailUrl.trim()
+    : undefined;
+  const tags = Array.isArray(raw.tags)
+    ? raw.tags.filter((t: any) => typeof t === 'string' && t.trim()).map((t: string) => t.trim())
+    : [];
+  const createdAt = typeof raw.createdAt === 'string' && raw.createdAt.trim()
+    ? raw.createdAt
+    : new Date().toISOString();
+  const updatedAt = typeof raw.updatedAt === 'string' && raw.updatedAt.trim()
+    ? raw.updatedAt
+    : new Date().toISOString();
+  const lastWatchedLessonId = typeof raw.lastWatchedLessonId === 'string'
+    ? raw.lastWatchedLessonId
+    : undefined;
+
+  let chapters: Chapter[] = [];
+  if (Array.isArray(raw.chapters) && raw.chapters.length > 0) {
+    chapters = raw.chapters.map((ch: any, chIdx: number) => {
+      const chId = typeof ch.id === 'string' && ch.id.trim()
+        ? ch.id.trim()
+        : `ch-${id}-${chIdx + 1}`;
+      const chTitle = typeof ch.title === 'string' && ch.title.trim()
+        ? ch.title.trim()
+        : `Chương ${chIdx + 1}`;
+      const order = typeof ch.order === 'number' ? ch.order : chIdx + 1;
+
+      let lessons: Lesson[] = [];
+      if (Array.isArray(ch.lessons)) {
+        lessons = ch.lessons.map((les: any, lesIdx: number) => {
+          const lesId = typeof les.id === 'string' && les.id.trim()
+            ? les.id.trim()
+            : `les-${chId}-${lesIdx + 1}`;
+          const lesTitle = typeof les.title === 'string' && les.title.trim()
+            ? les.title.trim()
+            : `Bài ${lesIdx + 1}`;
+          const type = (les.type === 'video' || les.type === 'article' || les.type === 'mixed')
+            ? les.type
+            : (les.videoSource ? 'video' : 'article');
+          const videoSource = typeof les.videoSource === 'string' ? les.videoSource.trim() : undefined;
+          const content = typeof les.content === 'string' ? les.content : undefined;
+          const durationMinutes = typeof les.durationMinutes === 'number' ? les.durationMinutes : 15;
+          const isCompleted = Boolean(les.isCompleted);
+          const isStarred = Boolean(les.isStarred);
+          const notes = typeof les.notes === 'string' ? les.notes : undefined;
+
+          let attachments = [];
+          if (Array.isArray(les.attachments)) {
+            attachments = les.attachments
+              .filter((att: any) => att && typeof att.name === 'string' && typeof att.url === 'string')
+              .map((att: any, attIdx: number) => ({
+                id: typeof att.id === 'string' ? att.id : `att-${lesId}-${attIdx + 1}`,
+                name: String(att.name),
+                url: String(att.url),
+                type: att.type || 'link',
+              }));
+          }
+
+          return {
+            id: lesId,
+            title: lesTitle,
+            type,
+            videoSource,
+            content,
+            durationMinutes,
+            isCompleted,
+            isStarred,
+            notes,
+            attachments,
+          };
+        });
+      }
+
+      return {
+        id: chId,
+        title: chTitle,
+        order,
+        lessons,
+      };
+    });
+  }
+
+  // Ensure at least 1 chapter exists
+  if (chapters.length === 0) {
+    chapters = [{
+      id: `ch-${id}-1`,
+      title: 'Chương 1: Bài giảng mở đầu',
+      order: 1,
+      lessons: [],
+    }];
+  }
+
+  return {
+    id,
+    title,
+    description,
+    category,
+    instructor,
+    sourcePlatform,
+    tags,
+    thumbnailUrl,
+    chapters,
+    lastWatchedLessonId,
+    createdAt,
+    updatedAt,
+  };
+}
+
+export function validateCoursesSchema(data: any): Course[] {
+  if (!data) return [];
+  const list = Array.isArray(data) ? data : [data];
+  const validated: Course[] = [];
+
+  for (const item of list) {
+    const course = validateSingleCourse(item);
+    if (course) {
+      validated.push(course);
+    }
+  }
+
+  return validated;
+}
+
 export function getStoredCourses(): Course[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_COURSES);
@@ -2054,9 +2200,10 @@ export function getStoredCourses(): Course[] {
       localStorage.setItem(STORAGE_KEY_COURSES, JSON.stringify(INITIAL_SAMPLE_COURSES));
       return INITIAL_SAMPLE_COURSES;
     }
-    const parsed: Course[] = JSON.parse(data);
-    if (Array.isArray(parsed)) {
-      return parsed;
+    const parsed = JSON.parse(data);
+    const validated = validateCoursesSchema(parsed);
+    if (validated.length > 0) {
+      return validated;
     }
     return INITIAL_SAMPLE_COURSES;
   } catch (error) {

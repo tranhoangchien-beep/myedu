@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Course } from '../../types';
 import { X, Database, Download, Upload, Check, AlertCircle, RefreshCw } from 'lucide-react';
-import { INITIAL_SAMPLE_COURSES } from '../../lib/storage';
+import { INITIAL_SAMPLE_COURSES, validateCoursesSchema } from '../../lib/storage';
 
 interface BackupModalProps {
   isOpen: boolean;
@@ -47,15 +47,16 @@ export const BackupModal: React.FC<BackupModalProps> = ({
       try {
         const content = event.target?.result as string;
         const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-          onRestoreCourses(parsed);
-          setSuccessMessage(`Khôi phục thành công ${parsed.length} khóa học!`);
+        const validated = validateCoursesSchema(parsed);
+        if (validated.length > 0) {
+          onRestoreCourses(validated);
+          setSuccessMessage(`Khôi phục thành công ${validated.length} khóa học!`);
           setTimeout(() => {
             setSuccessMessage('');
             onClose();
           }, 1500);
         } else {
-          setErrorMessage('Định dạng tệp JSON không hợp lệ.');
+          setErrorMessage('Định dạng tệp JSON không hợp lệ hoặc không có khóa học.');
         }
       } catch (err) {
         setErrorMessage('Không thể đọc tệp sao lưu. Vui lòng kiểm tra lại!');

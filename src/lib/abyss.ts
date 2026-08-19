@@ -21,13 +21,18 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
 
   const trimmed = input.trim();
 
+  // Security Hardening: Reject dangerous URI schemes
+  if (/^(javascript|vbscript|data):/i.test(trimmed)) {
+    return { provider: 'unknown', embedUrl: '', rawInput: trimmed, isDirectVideo: false, label: 'Nguồn video không hợp lệ' };
+  }
+
   // 1. Kiểm tra nếu là thẻ iframe full HTML: <iframe ... src="URL" ...>
   const iframeSrcMatch = trimmed.match(/src=["']([^"']+)["']/i);
   let targetUrl = iframeSrcMatch ? iframeSrcMatch[1] : trimmed;
   targetUrl = targetUrl.replace(/&amp;/g, '&');
 
-  // 2. Direct MP4 / WebM / OGG / HLS video URL
-  if (/\.(mp4|webm|ogg|m3u8)(\?.*)?$/i.test(targetUrl)) {
+  // 2. Direct MP4 / WebM / OGG / HLS / MOV video URL
+  if (/\.(mp4|webm|ogg|m3u8|mov|mkv|avi|m4v)(\?.*)?$/i.test(targetUrl)) {
     return {
       provider: 'mp4',
       embedUrl: targetUrl,
@@ -38,8 +43,8 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
   }
 
   // 3. YouTube Embed hoặc Link
-  // Formats: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID, youtube.com/shorts/ID
-  const ytMatch = targetUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+  // Formats: youtube.com/watch?v=ID, youtube.com/watch?t=10&v=ID, youtu.be/ID, youtube.com/embed/ID, youtube.com/shorts/ID, youtube.com/live/ID, youtube.com/v/ID
+  const ytMatch = targetUrl.match(/(?:(?:youtube\.com\/(?:(?:watch\?(?:.*&)?v=)|(?:embed|shorts|v|live)\/))|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
   if (ytMatch && ytMatch[1]) {
     const videoId = ytMatch[1];
     return {
@@ -71,8 +76,8 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
   }
 
   // 5. Vimeo Embed hoặc Link
-  // Formats: vimeo.com/ID hoặc player.vimeo.com/video/ID
-  const vimeoMatch = targetUrl.match(/(?:vimeo\.com\/(?:video\/)?)([0-9]+)/i);
+  // Formats: vimeo.com/ID, player.vimeo.com/video/ID, vimeo.com/channels/.../ID
+  const vimeoMatch = targetUrl.match(/(?:vimeo\.com\/(?:video\/|channels\/[\w-]+\/|groups\/[\w-]+\/videos\/)?|player\.vimeo\.com\/video\/)([0-9]+)/i);
   if (vimeoMatch && vimeoMatch[1]) {
     const videoId = vimeoMatch[1];
     return {
@@ -85,8 +90,8 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
     };
   }
 
-  // 6. Google Drive Video (tự động chuyển /view thành /preview cho iframe nhúng)
-  const gdriveMatch = targetUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  // 6. Google Drive Video (tự động chuyển /view, /open?id= thành /preview cho iframe nhúng)
+  const gdriveMatch = targetUrl.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:.*&)?id=)([a-zA-Z0-9_-]+)/i);
   if (gdriveMatch && gdriveMatch[1]) {
     const fileId = gdriveMatch[1];
     return {
@@ -114,7 +119,8 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
   }
 
   // 8. Abyss Player Embed hoặc Link / ID
-  const abyssMatch = targetUrl.match(/(?:player\.abyssplayer\.com|abyssplayer\.com|abyss\.to\/(?:v|e|embed))\/(?:embed\/)?([a-zA-Z0-9_-]+)/i);
+  // Formats: abyssplayer.com/ID, player.abyssplayer.com/ID, abyss.to/v/ID, abyss.to/e/ID, abyss.to/embed/ID, abysscdn.com/...
+  const abyssMatch = targetUrl.match(/(?:(?:player\.)?abyssplayer\.com|abyss\.to|abysscdn\.com|abyssto\.com)\/(?:embed\/|v\/|e\/|play\/|d\/)?([a-zA-Z0-9_-]+)/i);
   if (abyssMatch && abyssMatch[1]) {
     const videoId = abyssMatch[1];
     return {
@@ -127,8 +133,8 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
     };
   }
 
-  // Nếu người dùng dán trực tiếp ID Abyss (ví dụ: mZ2faMYp2, Ld3tfGRGA, bGOgQoLE0)
-  if (/^[a-zA-Z0-9_-]{5,25}$/.test(trimmed) && !trimmed.includes('.') && !trimmed.includes('/')) {
+  // Nếu người dùng dán trực tiếp ID Abyss (ví dụ: mZ2faMYp2, Ld3tfGRGA, bGOgQoLE0, 58_ZxuvA0, -KRykxfuK)
+  if (/^[a-zA-Z0-9_-]{5,32}$/.test(trimmed) && !trimmed.includes('.') && !trimmed.includes('/') && !trimmed.includes(' ') && !trimmed.includes(':')) {
     return {
       provider: 'abyss',
       embedUrl: `https://player.abyssplayer.com/${trimmed}`,

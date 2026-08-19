@@ -27,12 +27,23 @@ import { CourseStudioView } from './components/admin/CourseStudioView';
 import { ShortcutModal } from './components/common/ShortcutModal';
 import { Breadcrumb } from './components/layout/Breadcrumb';
 import { MasterLoginView } from './components/auth/MasterLoginView';
-import { isAuthenticated, clearAuthenticatedSession } from './lib/auth';
+import { isAuthenticated, verifySessionToken, clearAuthenticatedSession } from './lib/auth';
 import { fetchFromCloud, syncToCloud, subscribeToCloudChanges, isFirebaseConfigured } from './lib/firebase';
 
 export const App: React.FC = () => {
   // Authentication State (Master QTV Gate)
   const [isAuth, setIsAuth] = useState<boolean>(() => isAuthenticated());
+
+  // Cryptographically verify session HMAC signature on startup
+  useEffect(() => {
+    if (isAuth) {
+      verifySessionToken().then((isValid) => {
+        if (!isValid) {
+          setIsAuth(false);
+        }
+      });
+    }
+  }, [isAuth]);
 
   // Main Data States
   const [courses, setCourses] = useState<Course[]>([]);

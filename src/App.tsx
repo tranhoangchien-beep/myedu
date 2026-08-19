@@ -843,7 +843,11 @@ export const App: React.FC = () => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <main className={`flex-1 w-full mx-auto py-4 sm:py-6 transition-all duration-300 ${
+        isZenMode && currentView === 'player'
+          ? 'max-w-[96vw] 2xl:max-w-[1600px] px-2 sm:px-4 lg:px-6'
+          : 'max-w-7xl px-4 sm:px-6 lg:px-8'
+      }`}>
         
         {/* VIEW 1: Home Course Catalog */}
         {currentView === 'home' && (
@@ -915,7 +919,7 @@ export const App: React.FC = () => {
             {/* Single Persistent Player Layout (Prevents video reload when Zen Mode is toggled) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               <div className={`transition-all duration-300 space-y-6 ${
-                isZenMode ? 'lg:col-span-12 max-w-5xl mx-auto w-full pt-2' : 'lg:col-span-8'
+                isZenMode ? 'lg:col-span-12 max-w-[1440px] 2xl:max-w-[1550px] mx-auto w-full pt-1' : 'lg:col-span-8'
               }`}>
                 <AbyssPlayer
                   course={activeCourse}

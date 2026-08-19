@@ -19,7 +19,9 @@ import {
   Eye,
   Clock,
   Sparkles,
-  Minimize2
+  Minimize2,
+  Lightbulb,
+  LightbulbOff
 } from 'lucide-react';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 
@@ -262,8 +264,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
             </button>
           </div>
 
-          {/* Right: Toggle Completion & Zen Mode */}
-          <div className="flex items-center gap-2">
+          {/* Right: Toggle Completion & Zen Mode with Clear State Indicator */}
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => onToggleComplete(currentLesson.id)}
               className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all shadow-sm ${
@@ -276,21 +278,27 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
               <span>{currentLesson.isCompleted ? 'Đã Hoàn Thành' : 'Đánh Dấu Xong'}</span>
             </button>
 
+            {/* Zen Mode Button with Explicit ON / OFF Indicator */}
             <button
               onClick={onToggleZenMode}
-              title="Chế độ Zen Focus (Phím Z)"
-              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-xs font-semibold"
+              title="Bật/Tắt chế độ Zen Focus tập trung cao độ (Phím Z)"
+              className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all shadow-sm ${
+                isZenMode
+                  ? 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-300 shadow-amber-500/10 ring-1 ring-amber-500/30'
+                  : 'bg-slate-950 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
             >
-              <Sparkles className="w-4 h-4 text-emerald-400" />
-              <span className="hidden sm:inline">Zen Focus</span>
-            </button>
-
-            <button
-              onClick={handleToggleFullscreen}
-              title="Toàn màn hình (Phím F)"
-              className="p-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
-            >
-              <Maximize2 className="w-4 h-4" />
+              {isZenMode ? (
+                <>
+                  <Lightbulb className="w-4 h-4 text-amber-400 fill-amber-400/30 animate-pulse flex-shrink-0" />
+                  <span>Zen Focus: <strong className="text-amber-300 font-extrabold uppercase tracking-wide">ĐANG BẬT</strong></span>
+                </>
+              ) : (
+                <>
+                  <LightbulbOff className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                  <span>Zen Focus: <span className="text-slate-400 font-medium">Đang Tắt</span></span>
+                </>
+              )}
             </button>
           </div>
 

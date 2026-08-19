@@ -93,6 +93,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   // Modal alert confirmation for unsaved changes & Quick Abyss Embed Modal
   const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
   const [isQuickEmbedOpen, setIsQuickEmbedOpen] = useState<boolean>(false);
+  const [activeEditingCourseId, setActiveEditingCourseId] = useState<string | null>(null);
 
   const handleImportBulkLessonsToChapter = (targetChapterId: string, newLessons: Lesson[]) => {
     setChapters(prev => {
@@ -143,6 +144,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       prevCourseIdRef.current = currentCourseId;
       setShowUnsavedConfirmModal(false);
       setIsSavedRecently(false);
+      setActiveEditingCourseId(courseToEdit ? courseToEdit.id : null);
 
       if (courseToEdit) {
         // Editing existing course -> Default to 'curriculum' tab
@@ -281,8 +283,11 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       .map(t => t.trim().replace(/^#/, ''))
       .filter(Boolean);
 
+    const finalId = activeEditingCourseId || (courseToEdit ? courseToEdit.id : `course-${Date.now()}`);
+    setActiveEditingCourseId(finalId);
+
     const savedCourse: Course = {
-      id: courseToEdit ? courseToEdit.id : `course-${Date.now()}`,
+      id: finalId,
       title: title.trim(),
       description: description.trim(),
       category: category || 'Chung',

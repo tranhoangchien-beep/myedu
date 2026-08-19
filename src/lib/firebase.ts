@@ -48,6 +48,30 @@ const FIRESTORE_COLLECTION = 'myedu_workspaces';
 const FIRESTORE_DOC_ID = 'primary_workspace';
 
 /**
+ * Hàm đệ quy làm sạch dữ liệu trước khi đẩy lên Cloud Firestore
+ * Loại bỏ triệt để các trường có giá trị `undefined` (nguyên nhân gây lỗi Firebase setDoc)
+ */
+export function sanitizeForFirestore(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item));
+  }
+  if (typeof obj === 'object') {
+    const clean: Record<string, any> = {};
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      if (val !== undefined) {
+        clean[key] = sanitizeForFirestore(val);
+      }
+    }
+    return clean;
+  }
+  return obj;
+}
+
+/**
  * Tải toàn bộ dữ liệu từ Cloud Firestore về máy
  */
 export async function fetchFromCloud(): Promise<CloudDatabasePayload | null> {
@@ -72,13 +96,14 @@ export async function syncToCloud(payload: Partial<CloudDatabasePayload>): Promi
   if (!db) return false;
   try {
     const docRef = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
-    await setDoc(docRef, {
+    const cleanPayload = sanitizeForFirestore({
       ...payload,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    });
+    await setDoc(docRef, cleanPayload, { merge: true });
     return true;
   } catch (error) {
-    console.warn('⚠️ Cloud sync error:', error);
+    console.error('❌ Cloud sync error:', error);
     return false;
   }
 }

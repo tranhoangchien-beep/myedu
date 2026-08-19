@@ -23,6 +23,7 @@ interface BulkImportModalProps {
   preselectedCourseId?: string;
   onSaveNewCourse: (course: Course) => void;
   onAddChapterToCourse: (courseId: string, chapter: Chapter) => void;
+  onAppendLessonsToChapter?: (courseId: string, chapterId: string, lessons: any[]) => void;
   onAddInstructor?: (inst: string) => void;
 }
 
@@ -36,18 +37,21 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
   preselectedCourseId,
   onSaveNewCourse,
   onAddChapterToCourse,
+  onAppendLessonsToChapter,
   onAddInstructor,
 }) => {
-  const [mode, setMode] = useState<'existing' | 'new'>(preselectedCourseId ? 'existing' : 'new');
-  const [selectedCourseId, setSelectedCourseId] = useState<string>(preselectedCourseId || (courses[0]?.id || ''));
+  const [mode, setMode] = useState<'existing' | 'new'>('new');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [targetChapterOption, setTargetChapterOption] = useState<'new_chapter' | 'existing_chapter'>('new_chapter');
+  const [selectedChapterId, setSelectedChapterId] = useState<string>('');
 
   // New Course fields
   const [newTitle, setNewTitle] = useState<string>('');
-  const [newCategory, setNewCategory] = useState<string>(categories[0] || 'AI & Machine Learning');
+  const [newCategory, setNewCategory] = useState<string>(categories[0] || 'Tài chính');
   const [newInstructor, setNewInstructor] = useState<string>('');
-  const [newSourcePlatform, setNewSourcePlatform] = useState<string>(sources[0] || 'Udemy');
+  const [newSourcePlatform, setNewSourcePlatform] = useState<string>(sources[0] || 'Khác');
   const [newDescription, setNewDescription] = useState<string>('');
-  const [newTags, setNewTags] = useState<string>('AI, KhoaHoc, Abyss');
+  const [newTags, setNewTags] = useState<string>('KhóaHoc, Abyss');
   const [newThumbnailUrl, setNewThumbnailUrl] = useState<string>('');
 
   // Chapter & Bulk input
@@ -63,13 +67,27 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
     setParsedItems(items);
   }, [rawText]);
 
-  // Update selected course if preselectedCourseId changes
+  // Robust Mode & Selection Reset whenever Modal Opens
   useEffect(() => {
-    if (preselectedCourseId) {
-      setSelectedCourseId(preselectedCourseId);
-      setMode('existing');
+    if (isOpen) {
+      if (preselectedCourseId) {
+        setSelectedCourseId(preselectedCourseId);
+        setMode('existing');
+        const targetCourse = courses.find(c => c.id === preselectedCourseId);
+        if (targetCourse && targetCourse.chapters.length > 0) {
+          setSelectedChapterId(targetCourse.chapters[0].id);
+        }
+      } else {
+        setMode('new');
+        if (courses.length > 0) {
+          setSelectedCourseId(courses[0].id);
+          if (courses[0].chapters.length > 0) {
+            setSelectedChapterId(courses[0].chapters[0].id);
+          }
+        }
+      }
     }
-  }, [preselectedCourseId]);
+  }, [isOpen, preselectedCourseId, courses]);
 
   // Auto-collect unique instructors across global list and courses
   const existingInstructors = useMemo(() => {
@@ -84,6 +102,10 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
     });
     return Array.from(set);
   }, [courses, instructors]);
+
+  const targetCourse = useMemo(() => {
+    return courses.find(c => c.id === selectedCourseId) || null;
+  }, [courses, selectedCourseId]);
 
   if (!isOpen) return null;
 
@@ -136,17 +158,18 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
         return;
       }
 
-      const targetCourse = courses.find(c => c.id === selectedCourseId);
-      const nextOrder = (targetCourse?.chapters.length || 0) + 1;
-
-      const newChapter: Chapter = {
-        id: `ch-${Date.now()}`,
-        title: chapterTitle.trim() || `Chương ${nextOrder}: Bài giảng mới`,
-        order: nextOrder,
-        lessons,
-      };
-
-      onAddChapterToCourse(selectedCourseId, newChapter);
+      if (targetChapterOption === 'existing_chapter' && selectedChapterId && onAppendLessonsToChapter) {
+        onAppendLessonsToChapter(selectedCourseId, selectedChapterId, lessons);
+      } else {
+        const nextOrder = (targetCourse?.chapters.length || 0) + 1;
+        const newChapter: Chapter = {
+          id: `ch-${Date.now()}`,
+          title: chapterTitle.trim() || `Chương ${nextOrder}: Bài giảng mới`,
+          order: nextOrder,
+          lessons,
+        };
+        onAddChapterToCourse(selectedCourseId, newChapter);
+      }
     }
 
     onClose();
@@ -273,33 +296,85 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
               </div>
             </div>
           ) : (
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800/60 space-y-2">
-              <label className="block text-xs font-bold text-slate-300">Chọn Khóa Học Tiếp Nhận</label>
-              <select
-                value={selectedCourseId}
-                onChange={(e) => setSelectedCourseId(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-white focus:border-emerald-500/60"
-              >
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    [{c.category}] {c.title} {c.instructor ? `(GV: ${c.instructor})` : ''}
-                  </option>
-                ))}
-              </select>
+            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800/60 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Chọn Khóa Học Tiếp Nhận *</label>
+                <select
+                  value={selectedCourseId}
+                  onChange={(e) => setSelectedCourseId(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-white focus:border-emerald-500/60"
+                >
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      [{c.category}] {c.title} {c.instructor ? `(GV: ${c.instructor})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {targetCourse && targetCourse.chapters.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-slate-850">
+                  <label className="block text-xs font-bold text-slate-300">Vị Trí Thêm Bài Giảng</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTargetChapterOption('new_chapter')}
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-all ${
+                        targetChapterOption === 'new_chapter'
+                          ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300 shadow-sm'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span>+ Tạo thành 1 Chương Mới</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTargetChapterOption('existing_chapter')}
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-all ${
+                        targetChapterOption === 'existing_chapter'
+                          ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300 shadow-sm'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span>📥 Nạp vào Chương Đang Có</span>
+                    </button>
+                  </div>
+
+                  {targetChapterOption === 'existing_chapter' && (
+                    <div className="pt-1">
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Chọn Chương cụ thể:</label>
+                      <select
+                        value={selectedChapterId}
+                        onChange={(e) => setSelectedChapterId(e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-lg text-emerald-400 focus:border-emerald-500/60"
+                      >
+                        {targetCourse.chapters.map((ch, idx) => (
+                          <option key={ch.id} value={ch.id}>
+                            Chương {idx + 1}: {ch.title} ({ch.lessons.length} bài)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Chapter Title */}
-          <div>
-            <label className="block text-xs font-bold text-slate-300 mb-1">Tên Chương Học Tiếp Nhận</label>
-            <input
-              type="text"
-              value={chapterTitle}
-              onChange={(e) => setChapterTitle(e.target.value)}
-              placeholder="Chương 1: Danh sách bài giảng..."
-              className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500/60"
-            />
-          </div>
+          {/* Chapter Title (Only when creating a new chapter or new course) */}
+          {(mode === 'new' || targetChapterOption === 'new_chapter') && (
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Tên Chương Học Tiếp Nhận</label>
+              <input
+                type="text"
+                value={chapterTitle}
+                onChange={(e) => setChapterTitle(e.target.value)}
+                placeholder="Chương 1: Danh sách bài giảng..."
+                className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500/60"
+              />
+            </div>
+          )}
 
           {/* Raw Text Input */}
           <div className="space-y-1.5">

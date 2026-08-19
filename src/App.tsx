@@ -98,15 +98,22 @@ export const App: React.FC = () => {
           // Cloud Firestore is the Single Source of Truth
           let currentCloudCourses = Array.isArray(cloudData.courses) ? cloudData.courses : [];
           
-          // Safely check if newly standardized official courses (e.g. Thành Công TC) need one-time seeding
-          const existingCourseIds = new Set(currentCloudCourses.map(c => c.id));
-          const newStandardizedOfficialCourses = INITIAL_SAMPLE_COURSES.filter(
-            c => c.id === 'course-thanhcongtc-dau-tu-chung-chi-quy-101' || c.id === 'course-8xtrading-footprint-trading'
+          // Bidirectional Merge:
+          // 1. Any user-created course in localStorage (loadedCourses) that is not in Cloud -> preserve and sync up
+          const cloudIdSet = new Set(currentCloudCourses.map(c => c.id));
+          const localOnlyUserCourses = loadedCourses.filter(
+            lc => !cloudIdSet.has(lc.id) && lc.id.startsWith('course-') && !INITIAL_SAMPLE_COURSES.some(sc => sc.id === lc.id)
           );
-          const missingNewCourses = newStandardizedOfficialCourses.filter(c => !existingCourseIds.has(c.id));
-          
-          if (missingNewCourses.length > 0) {
-            currentCloudCourses = [...missingNewCourses, ...currentCloudCourses];
+
+          // 2. Also check if newly standardized official courses (e.g. Thành Công TC) need one-time seeding
+          const officialSeedCourses = INITIAL_SAMPLE_COURSES.filter(
+            c => (c.id === 'course-thanhcongtc-dau-tu-chung-chi-quy-101' || c.id === 'course-8xtrading-footprint-trading') && !cloudIdSet.has(c.id)
+          );
+
+          const missingToMerge = [...localOnlyUserCourses, ...officialSeedCourses.filter(sc => !localOnlyUserCourses.some(lc => lc.id === sc.id))];
+
+          if (missingToMerge.length > 0) {
+            currentCloudCourses = [...missingToMerge, ...currentCloudCourses];
             syncToCloud({ courses: currentCloudCourses });
           }
 
@@ -711,6 +718,28 @@ export const App: React.FC = () => {
     updateCoursesState(updated);
   };
 
+  const handleAppendLessonsToChapter = (targetCourseId: string, targetChapterId: string, newLessons: Lesson[]) => {
+    const updated = courses.map(c => {
+      if (c.id === targetCourseId) {
+        return {
+          ...c,
+          chapters: c.chapters.map(ch => {
+            if (ch.id === targetChapterId) {
+              return {
+                ...ch,
+                lessons: [...ch.lessons, ...newLessons]
+              };
+            }
+            return ch;
+          }),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return c;
+    });
+    updateCoursesState(updated);
+  };
+
   const handleRestoreCourses = (restoredCourses: Course[]) => {
     updateCoursesState(restoredCourses);
     const cats = Array.from(new Set(restoredCourses.map(c => c.category?.trim()).filter(Boolean))) as string[];
@@ -971,6 +1000,7 @@ export const App: React.FC = () => {
         preselectedCourseId={bulkCourseId}
         onSaveNewCourse={handleSaveNewCourseFromBulk}
         onAddChapterToCourse={handleAddChapterToCourse}
+        onAppendLessonsToChapter={handleAppendLessonsToChapter}
         onAddInstructor={handleAddInstructor}
       />
 

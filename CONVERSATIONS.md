@@ -225,4 +225,19 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
      * **Team Bảo Mật**: Kiểm tra chữ ký HMAC-SHA256, PBKDF2 100,000 vòng, bảo vệ dữ liệu riêng tư và Iframe Sandbox.
      * **Team QA**: Kiểm thử độc lập toàn diện quy trình *Thêm/Sửa/Xóa ➔ F5 ➔ Ẩn danh*, nghiệm thu bản build `bun run build` đạt 100% (0 errors) và triển khai lên Production.
 
+207. **Rà Soát Toàn Diện Data Contracts, Schema Validation & Bộ Phân Tích Video Đa Nguồn (Data Architect Audit)**:
+     * **Chuẩn hóa Data Contracts & Taxonomy**: Kiểm định toàn diện các schema `Course`, `Chapter`, `Lesson`, `ContinueProgress`, `UserStats`, `Attachment` và bộ Taxonomy tập trung (`DEFAULT_CATEGORIES`, `DEFAULT_SOURCES`, `DEFAULT_INSTRUCTORS`).
+     * **Nâng cấp Bộ phân tích Video Đa Nguồn (`parseUniversalVideo`)**:
+       - *YouTube*: Hỗ trợ mọi biến thể URL (watch?v=, watch?t=10&v=, youtu.be/, shorts/, embed/, live/, v/).
+       - *Abyss Player*: Nhận diện chính xác domain `abyssplayer.com`, `player.abyssplayer.com`, `abyss.to`, `abysscdn.com`, `abyssto.com` và short IDs có ký tự đặc biệt (`-`, `_`).
+       - *Vimeo, TikTok, Google Drive, Loom & MP4/M3U8*: Trích xuất chính xác 100% video ID và link iframe an toàn.
+     * **Nâng cấp Bộ phân tích Bulk Parser (`parseBulkLessonInput` & `createLessonsFromParsed`)**:
+       - Xử lý thông minh mọi định dạng dán hàng loạt từ Abyss (3 thành phần pipe `File|Link|Iframe`, 2 thành phần, hoặc link đơn lẻ).
+       - Tự động bóc tách số thứ tự bài học, làm sạch đuôi file video (`.mp4`, `.webm`, `.mkv`, `.mov`, `.m4v`, `.ts`, `.3gp`).
+       - Tự động sinh ID bài giảng chuẩn Kebab-case (`les-{timestamp}-{index}-{hash}`), gán mặc định `type: 'video'`, `durationMinutes: 15`.
+     * **Tích hợp Bộ Xác Thực Schema JSON (`validateCoursesSchema` & `validateSingleCourse`)**:
+       - Bảo vệ bộ nhớ `localStorage` và quy trình Import sao lưu JSON trong `BackupModal` & `CourseStudioView`.
+       - Ngăn chặn hoàn toàn hiện tượng dữ liệu hỏng, thiếu chương, mất bài hoặc sinh khóa học rác.
+     * **Kiểm định Zero-Defect**: Build pass 100% không lỗi (Vite + TypeScript), cấu trúc dữ liệu toàn vẹn tuyệt đối.
+
 

@@ -25,6 +25,7 @@ interface LessonSidebarProps {
   onUpdateDuration?: (lessonId: string, durationMinutes: number) => void;
   onBackToCourseList: () => void;
   onOpenBulkImportForCourse: (courseId: string) => void;
+  onEditCourse?: (course: Course) => void;
 }
 
 export const LessonSidebar: React.FC<LessonSidebarProps> = ({
@@ -35,7 +36,8 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
   onToggleStar,
   onUpdateDuration,
   onBackToCourseList,
-  onOpenBulkImportForCourse
+  onOpenBulkImportForCourse,
+  onEditCourse,
 }) => {
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [tempDuration, setTempDuration] = useState<string>('');
@@ -71,15 +73,29 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
       
       {/* Header & Back Button */}
       <div className="pb-3 border-b border-slate-800/80 mb-3 flex-shrink-0">
-        <button
-          onClick={onBackToCourseList}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors mb-2 group"
-        >
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Về danh sách khóa học</span>
-        </button>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <button
+            onClick={onBackToCourseList}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors group"
+          >
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            <span>Về danh sách</span>
+          </button>
 
-        <h2 className="font-bold text-sm text-white line-clamp-2 leading-tight">
+          {/* Quick Edit Course Button */}
+          {onEditCourse && (
+            <button
+              onClick={() => onEditCourse(course)}
+              title="Chỉnh sửa toàn bộ thông tin & giáo trình khóa này"
+              className="py-1 px-2.5 rounded-lg bg-teal-500/10 hover:bg-teal-500 text-teal-400 hover:text-slate-950 font-bold text-xs flex items-center gap-1 border border-teal-500/30 hover:border-teal-500 transition-all shadow-sm"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Sửa Khóa</span>
+            </button>
+          )}
+        </div>
+
+        <h2 className="font-bold text-sm text-white line-clamp-2 leading-tight" title={course.title}>
           {course.title}
         </h2>
 

@@ -29,6 +29,7 @@ import { Breadcrumb } from './components/layout/Breadcrumb';
 import { MasterLoginView } from './components/auth/MasterLoginView';
 import { isAuthenticated, verifySessionToken, clearAuthenticatedSession } from './lib/auth';
 import { fetchFromCloud, syncToCloud, subscribeToCloudChanges, isFirebaseConfigured } from './lib/firebase';
+import { Edit3, Zap } from 'lucide-react';
 
 export const App: React.FC = () => {
   // Authentication State (Master QTV Gate)
@@ -961,9 +962,9 @@ export const App: React.FC = () => {
         {currentView === 'player' && activeCourse && activeLesson && (
           <div className="space-y-4">
             
-            {/* Interactive Hierarchical Breadcrumb */}
+            {/* Interactive Hierarchical Breadcrumb & Quick Action Toolbar */}
             {!isZenMode && (
-              <div className="pb-1 border-b border-slate-800/80">
+              <div className="pb-1 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <Breadcrumb
                   category={activeCourse.category}
                   courseTitle={activeCourse.title}
@@ -981,6 +982,30 @@ export const App: React.FC = () => {
                   }}
                   onSelectCourse={(cId) => handleSelectCourseAndLesson(cId)}
                 />
+
+                {/* Direct Action Buttons for Active Course */}
+                <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                  <button
+                    onClick={() => handleEditCourse(activeCourse)}
+                    title="Chỉnh sửa toàn bộ thông tin & giáo trình khóa này"
+                    className="px-3 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500 text-teal-400 hover:text-slate-950 border border-teal-500/30 hover:border-teal-500 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Sửa Khóa Học</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setBulkCourseId(activeCourse.id);
+                      setIsBulkModalOpen(true);
+                    }}
+                    title="Nạp nhanh bài học vào khóa này"
+                    className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 hover:border-emerald-500 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>Nạp Thêm Bài</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1021,6 +1046,7 @@ export const App: React.FC = () => {
                       setBulkCourseId(cId);
                       setIsBulkModalOpen(true);
                     }}
+                    onEditCourse={handleEditCourse}
                   />
                 </div>
               )}

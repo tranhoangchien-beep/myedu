@@ -101,6 +101,8 @@ export interface DispatchProgressItem {
   streamtapeUrl?: string;
   abyssUrl?: string;
   errorMessage?: string;
+  durationMinutes?: number;
+  thumbnailUrl?: string;
 }
 
 /**
@@ -109,7 +111,7 @@ export interface DispatchProgressItem {
 export async function resolveTeraBoxDirectLink(
   teraboxUrl: string,
   token?: string
-): Promise<{ success: boolean; dlink?: string; filename?: string; error?: string }> {
+): Promise<{ success: boolean; dlink?: string; filename?: string; duration?: number; thumb?: string; error?: string }> {
   try {
     const res = await fetch('/api/terabox/resolve', {
       method: 'POST',
@@ -120,11 +122,13 @@ export async function resolveTeraBoxDirectLink(
     });
 
     const json = await res.json();
-    if (json.success && json.dlink) {
+    if (json.success) {
       return {
         success: true,
         dlink: json.dlink,
         filename: json.filename,
+        duration: json.duration,
+        thumb: json.thumb,
       };
     } else {
       return {
@@ -240,6 +244,7 @@ export function createLessonsFromDispatch(
       type: 'video',
       videoSource: primary,
       mirrorVideoSource: mirror,
+      durationMinutes: item.durationMinutes,
       isCompleted: false,
       isStarred: false,
       attachments: [

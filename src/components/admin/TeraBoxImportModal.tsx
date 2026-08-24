@@ -103,6 +103,12 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
         if (resolveRes.filename) {
           item.title = resolveRes.filename.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
         }
+        if (resolveRes.duration && resolveRes.duration > 0) {
+          item.durationMinutes = Math.max(1, Math.round(resolveRes.duration / 60));
+        }
+        if (resolveRes.thumb) {
+          item.thumbnailUrl = resolveRes.thumb;
+        }
       }
 
       // Bước 2: Đẩy sang Streamtape nếu được chọn

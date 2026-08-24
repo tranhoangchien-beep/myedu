@@ -3,7 +3,7 @@
  * Hỗ trợ bóc tách URL & ID từ Abyss Player, YouTube, TikTok, Vimeo, Google Drive, Loom, MP4/WebM trực tiếp hoặc thẻ Iframe nhúng bất kỳ.
  */
 
-export type VideoProviderType = 'abyss' | 'streamtape' | 'youtube' | 'tiktok' | 'vimeo' | 'gdrive' | 'loom' | 'mp4' | 'iframe' | 'unknown';
+export type VideoProviderType = 'abyss' | 'streamtape' | 'terabox' | 'youtube' | 'tiktok' | 'vimeo' | 'gdrive' | 'loom' | 'mp4' | 'iframe' | 'unknown';
 
 export interface ParsedVideoInfo {
   provider: VideoProviderType;
@@ -13,6 +13,22 @@ export interface ParsedVideoInfo {
   label: string;
   id?: string;
   extractedTitle?: string;
+  thumbnailUrl?: string;
+}
+
+/**
+ * Trích xuất ảnh thumbnail HD tự động từ Streamtape hoặc YouTube
+ */
+export function getThumbnailForVideo(input: string): string | undefined {
+  if (!input) return undefined;
+  const parsed = parseUniversalVideo(input);
+  if (parsed.provider === 'streamtape' && parsed.id) {
+    return `https://thumb.tapecontent.net/thumb/${parsed.id}/thumb.jpg`;
+  }
+  if (parsed.provider === 'youtube' && parsed.id) {
+    return `https://img.youtube.com/vi/${parsed.id}/hqdefault.jpg`;
+  }
+  return undefined;
 }
 
 /**
@@ -69,8 +85,8 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
   // Trích xuất tiêu đề nhúng trong URL nếu có
   const extractedTitle = extractTitleFromVideoUrl(targetUrl) || extractTitleFromVideoUrl(trimmed);
 
-  // 2. Streamtape Embed / Direct link / Shortlink / Thumbnail (Ưu tiên kiểm tra trước MP4 vì URL Streamtape có đuôi .mp4)
-  // Formats: streamtape.com/v/ID/..., streamtape.com/e/ID/..., streamtape.com/v/ID, streamtape.com/e/ID, streamta.pe/v/ID, thumb.tapecontent.net/thumb/ID/...
+  // 2. Streamtape Embed / Direct link / Shortlink / Thumbnail
+  // Tone-sur-tone Emerald Theme (?color=16,185,129)
   const streamtapeMatch = targetUrl.match(/(?:streamtape\.(?:com|to|net|xyz)|streamta\.pe|tapecontent\.net|shavetape\.cash|strtape\.cloud|strcloud\.link)\/(?:v|e|embed|thumb)\/([a-zA-Z0-9_-]+)/i)
     || trimmed.match(/(?:streamtape\.(?:com|to|net|xyz)|streamta\.pe|tapecontent\.net|shavetape\.cash|strtape\.cloud|strcloud\.link)\/(?:v|e|embed|thumb)\/([a-zA-Z0-9_-]+)/i);
 
@@ -78,16 +94,32 @@ export function parseUniversalVideo(input: string): ParsedVideoInfo {
     const videoId = streamtapeMatch[1];
     return {
       provider: 'streamtape',
-      embedUrl: `https://streamtape.com/e/${videoId}`,
+      embedUrl: `https://streamtape.com/e/${videoId}?color=16,185,129`,
       rawInput: trimmed,
       isDirectVideo: false,
       label: `Streamtape (${videoId})`,
       id: videoId,
       extractedTitle,
+      thumbnailUrl: `https://thumb.tapecontent.net/thumb/${videoId}/thumb.jpg`,
     };
   }
 
-  // 3. Direct MP4 / WebM / OGG / HLS / MOV video URL (Must start with http://, https://, /, or blob:)
+  // 2B. TeraBox Cloud Vault Link (terabox.com/s/..., 1024tera.com/s/...)
+  const teraboxMatch = targetUrl.match(/(?:terabox\.com|teraboxapp\.com|1024tera\.com|freeterabox\.com|terasharelink\.com|mirrobox\.com|nephobox\.com)\/s\/([a-zA-Z0-9_-]+)/i);
+  if (teraboxMatch && teraboxMatch[1]) {
+    const shareId = teraboxMatch[1];
+    return {
+      provider: 'terabox',
+      embedUrl: targetUrl,
+      rawInput: trimmed,
+      isDirectVideo: false,
+      label: `TeraBox Vault (${shareId.slice(0, 8)}...)`,
+      id: shareId,
+      extractedTitle,
+    };
+  }
+
+  // 3. Direct MP4 / WebM / OGG / HLS / MOV video URL
   if (/^(?:https?:\/\/|\/|blob:)/i.test(targetUrl) && /\.(mp4|webm|ogg|m3u8|mov|mkv|avi|m4v)(\?.*)?$/i.test(targetUrl)) {
     return {
       provider: 'mp4',

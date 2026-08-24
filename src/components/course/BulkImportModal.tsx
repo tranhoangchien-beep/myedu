@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Course, CategoryType, Chapter } from '../../types';
 import { parseBulkLessonInput, createLessonsFromParsed, ParsedLessonItem } from '../../lib/bulkParser';
+import { getThumbnailForVideo } from '../../lib/abyss';
 import { 
   X, 
   PlusCircle, 
@@ -137,14 +138,19 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
         lessons,
       };
 
+      let finalThumb = newThumbnailUrl.trim();
+      if (!finalThumb && lessons.length > 0 && lessons[0].videoSource) {
+        finalThumb = getThumbnailForVideo(lessons[0].videoSource) || '';
+      }
+
       const newCourse: Course = {
         id: `course-${Date.now()}`,
         title: newTitle.trim(),
-        description: newDescription.trim() || 'Khóa học được nạp hàng loạt từ Abyss Player',
+        description: newDescription.trim() || 'Khóa học được nạp hàng loạt từ Abyss / Streamtape',
         category: newCategory,
         instructor: newInstructor.trim() || undefined,
         sourcePlatform: newSourcePlatform || undefined,
-        thumbnailUrl: newThumbnailUrl.trim() || undefined,
+        thumbnailUrl: finalThumb || undefined,
         tags: newTags.split(',').map((t) => t.trim()).filter(Boolean),
         chapters: [initialChapter],
         createdAt: new Date().toISOString(),

@@ -4,14 +4,15 @@ export interface Attachment {
   id: string;
   name: string;
   url: string;
-  type?: 'pdf' | 'drive' | 'github' | 'link';
+  type?: 'pdf' | 'drive' | 'github' | 'terabox' | 'link';
 }
 
 export interface Lesson {
   id: string;
   title: string;
   type?: 'video' | 'article' | 'mixed'; // Default 'video'
-  videoSource?: string; // Abyss ID or full embed URL or iframe tag (optional if pure article)
+  videoSource?: string; // Nguồn phát chính (Streamtape, Abyss, YouTube, MP4...)
+  mirrorVideoSource?: string; // Nguồn dự phòng (Mirror Fallback - ví dụ Abyss khi chính là Streamtape)
   content?: string; // Markdown or article text content for reading lessons
   durationMinutes?: number;
   attachments?: Attachment[];

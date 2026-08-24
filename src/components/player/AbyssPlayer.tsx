@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Lesson, Course } from '../../types';
 import { getAbyssEmbedUrl, extractAbyssId, parseUniversalVideo } from '../../lib/abyss';
+import { PlayerJSController } from '../../lib/playerjs';
 import { 
   CheckCircle2, 
   Circle, 
@@ -21,7 +22,10 @@ import {
   Sparkles,
   Minimize2,
   Lightbulb,
-  LightbulbOff
+  LightbulbOff,
+  RefreshCw,
+  HardDrive,
+  Radio
 } from 'lucide-react';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 
@@ -64,21 +68,112 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isEditingDuration, setIsEditingDuration] = useState<boolean>(false);
   const [tempDuration, setTempDuration] = useState<string>(String(currentLesson.durationMinutes || 15));
+  const [useMirror, setUseMirror] = useState<boolean>(false);
+  const [currentPlaybackTime, setCurrentPlaybackTime] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const playerControllerRef = useRef<PlayerJSController | null>(null);
 
-  const parsedVideo = parseUniversalVideo(currentLesson.videoSource || '');
+  // Active video source (switching between primary and mirror)
+  const activeSource = useMirror && currentLesson.mirrorVideoSource
+    ? currentLesson.mirrorVideoSource
+    : (currentLesson.videoSource || '');
+
+  const parsedVideo = parseUniversalVideo(activeSource);
   const embedUrl = parsedVideo.embedUrl;
-  const rawId = extractAbyssId(currentLesson.videoSource || '');
+  const rawId = extractAbyssId(activeSource);
 
-  // Sync notes & duration when lesson changes
+  // Sync notes when lesson changes
   useEffect(() => {
     setNotes(currentLesson.notes || '');
     setIsSavedNotes(false);
-    setTempDuration(String(currentLesson.durationMinutes || 15));
-    setIsEditingDuration(false);
-  }, [currentLesson.id, currentLesson.notes, currentLesson.durationMinutes]);
+    setUseMirror(false);
+  }, [currentLesson.id]);
+
+  // Player.js Two-Way Communication & Smart Auto-Tracking
+  useEffect(() => {
+    if (!iframeRef.current) return;
+    const controller = new PlayerJSController(iframeRef.current);
+    playerControllerRef.current = controller;
+
+    const cleanup = controller.on((data) => {
+      if (data.event === 'timeupdate' && typeof data.value === 'object' && data.value) {
+        const seconds = data.value.seconds || 0;
+        const duration = data.value.duration || 0;
+        setCurrentPlaybackTime(seconds);
+
+        if (duration > 0) {
+          const mins = Math.max(1, Math.round(duration / 60));
+          if (onUpdateDuration && currentLesson.durationMinutes !== mins) {
+            onUpdateDuration(currentLesson.id, mins);
+          }
+
+          // Auto complete when watched >= 90%
+          if (seconds / duration >= 0.9 && !currentLesson.isCompleted) {
+            onToggleComplete(currentLesson.id);
+          }
+        }
+      } else if (data.event === 'ended') {
+        if (!currentLesson.isCompleted) {
+          onToggleComplete(currentLesson.id);
+        }
+        if (autoPlayNext && hasNextLesson) {
+          onNextLesson();
+        }
+      } else if (data.event === 'play') {
+        setIsPlaying(true);
+      } else if (data.event === 'pause') {
+        setIsPlaying(false);
+      }
+    });
+
+    return () => {
+      cleanup();
+      controller.detach();
+    };
+  }, [embedUrl, currentLesson.id, currentLesson.isCompleted, autoPlayNext, hasNextLesson, onUpdateDuration, onToggleComplete, onNextLesson]);
+
+  // Keyboard Shortcuts (Space: Play/Pause, ArrowLeft/Right: Seek ±10s, F: Fullscreen, N: Next, P: Prev)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in textarea / input
+      if (['TEXTAREA', 'INPUT', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (playerControllerRef.current) {
+          playerControllerRef.current.togglePlay(isPlaying);
+        }
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        if (playerControllerRef.current) {
+          playerControllerRef.current.seekRelative(-10, currentPlaybackTime);
+        }
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        if (playerControllerRef.current) {
+          playerControllerRef.current.seekRelative(10, currentPlaybackTime);
+        }
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        handleToggleFullscreen();
+      } else if (e.key === 'n' || e.key === 'N') {
+        if (hasNextLesson) onNextLesson();
+      } else if (e.key === 'p' || e.key === 'P') {
+        if (hasPrevLesson) onPrevLesson();
+      } else if (e.key === 'z' || e.key === 'Z') {
+        onToggleZenMode();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, currentPlaybackTime, hasNextLesson, hasPrevLesson, onNextLesson, onPrevLesson, onToggleZenMode]);
 
   // Real-time auto-detect duration from player events (Abyss postMessage, Plyr, VideoJS, YouTube)
   useEffect(() => {
@@ -243,6 +338,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
               </video>
             ) : (
               <iframe
+                ref={iframeRef}
                 key={embedUrl}
                 src={embedUrl}
                 title={currentLesson.title}
@@ -256,7 +352,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
               <AlertCircle className="w-12 h-12 text-amber-500 mb-3" />
               <p className="font-semibold text-slate-200">Bài giảng này chưa có link video hoặc nhúng mã</p>
               <p className="text-xs text-slate-500 mt-1 max-w-md">
-                Hãy bấm <strong className="text-emerald-400">Quản Trị -&gt; Sửa khóa học</strong> để dán link Abyss, YouTube, Vimeo, MP4 hoặc mã &lt;iframe...&gt; nhúng video.
+                Hãy bấm <strong className="text-emerald-400">Quản Trị -&gt; Sửa khóa học</strong> để dán link Streamtape, Abyss, YouTube, Vimeo, MP4 hoặc mã &lt;iframe...&gt; nhúng video.
               </p>
             </div>
           )}
@@ -287,8 +383,14 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                 {course.category}
               </span>
               {parsedVideo.label && parsedVideo.provider !== 'unknown' && (
-                <span className="text-[11px] font-mono text-slate-300 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
-                  {parsedVideo.label}
+                <span className="text-[11px] font-mono text-slate-300 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800 flex items-center gap-1.5">
+                  <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+                  <span>{parsedVideo.label}</span>
+                </span>
+              )}
+              {currentLesson.mirrorVideoSource && (
+                <span className="text-[11px] font-mono text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/30">
+                  {useMirror ? 'Nguồn phụ (Mirror)' : 'Nguồn chính'}
                 </span>
               )}
             </div>
@@ -302,8 +404,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
         {/* Tier 2: Dedicated Action Toolbar */}
         <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5">
           
-          {/* Left: Previous / Next Lesson Navigation */}
-          <div className="flex items-center gap-2">
+          {/* Left: Previous / Next Lesson Navigation & Dual-Source Toggle */}
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={onPrevLesson}
               disabled={!hasPrevLesson}
@@ -323,6 +425,22 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
               <span>Bài tiếp theo</span>
               <SkipForward className="w-4 h-4" />
             </button>
+
+            {/* Dual-Source Fallback Button */}
+            {currentLesson.mirrorVideoSource && (
+              <button
+                onClick={() => setUseMirror(prev => !prev)}
+                title="Chuyển đổi giữa Nguồn Chính và Nguồn Dự Phòng"
+                className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm ${
+                  useMirror
+                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 ring-1 ring-amber-500/30'
+                    : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border-slate-800'
+                }`}
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                <span>{useMirror ? 'Đang phát: Nguồn Dự Phòng' : 'Đổi Nguồn Dự Phòng'}</span>
+              </button>
+            )}
           </div>
 
           {/* Right: Toggle Completion & Zen Mode with Clear State Indicator */}
@@ -378,6 +496,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
           {currentLesson.attachments && currentLesson.attachments.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {currentLesson.attachments.map((att) => {
+                const isTeraBox = att.type === 'terabox' || att.url.includes('terabox') || att.url.includes('1024tera');
                 const safeUrl = /^(javascript|vbscript|data):/i.test(att.url.trim()) ? '#' : att.url;
                 return (
                   <a
@@ -386,13 +505,23 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     referrerPolicy="no-referrer"
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-white transition-all group"
+                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-all group ${
+                      isTeraBox
+                        ? 'bg-cyan-950/40 border-cyan-500/30 hover:border-cyan-400 text-cyan-200 hover:text-white'
+                        : 'bg-slate-950/80 border-slate-800 hover:border-emerald-500/40 text-slate-300 hover:text-white'
+                    }`}
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      {isTeraBox ? (
+                        <HardDrive className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                      ) : (
+                        <FileText className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                      )}
                       <span className="font-medium truncate">{att.name}</span>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
+                    <ExternalLink className={`w-3.5 h-3.5 transition-colors flex-shrink-0 ${
+                      isTeraBox ? 'text-cyan-400' : 'text-slate-500 group-hover:text-emerald-400'
+                    }`} />
                   </a>
                 );
               })}

@@ -23,12 +23,15 @@ import {
   BookMarked,
   AlertTriangle,
   Check,
-  Zap
+  Zap,
+  HardDrive,
+  RefreshCw
 } from 'lucide-react';
 import { extractAbyssId, parseUniversalVideo } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
 import { RichTextEditor } from '../common/RichTextEditor';
 import { QuickBulkEmbedModal } from './QuickBulkEmbedModal';
+import { TeraBoxImportModal } from './TeraBoxImportModal';
 
 interface CourseEditorModalProps {
   isOpen: boolean;
@@ -90,9 +93,10 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
   const draggedChapterIdxRef = useRef<number | null>(null);
 
-  // Modal alert confirmation for unsaved changes & Quick Abyss Embed Modal
+  // Modal alert confirmation for unsaved changes & Quick Abyss / TeraBox Embed Modal
   const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
   const [isQuickEmbedOpen, setIsQuickEmbedOpen] = useState<boolean>(false);
+  const [isTeraBoxModalOpen, setIsTeraBoxModalOpen] = useState<boolean>(false);
   const [activeEditingCourseId, setActiveEditingCourseId] = useState<string | null>(null);
 
   const handleImportBulkLessonsToChapter = (targetChapterId: string, newLessons: Lesson[]) => {
@@ -698,21 +702,31 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setIsTeraBoxModalOpen(true)}
+                          title="Bắn/Đẩy video từ kho TeraBox (1TB) sang Streamtape & Abyss"
+                          className="px-2 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all border border-cyan-500/30 shadow-sm"
+                        >
+                          <HardDrive className="w-3 h-3 text-cyan-400" />
+                          <span>Nạp TeraBox</span>
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => setIsQuickEmbedOpen(true)}
-                          title="Nhập nhanh hàng loạt bài giảng copy từ Abyss.to (Filename.mp4|URL|Iframe)"
+                          title="Nhập nhanh hàng loạt bài giảng copy từ Streamtape / Abyss"
                           className="px-2 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all border border-emerald-500/30 shadow-sm"
                         >
                           <Zap className="w-3 h-3 text-emerald-400 fill-emerald-400/20" />
-                          <span>Nhập Abyss</span>
+                          <span>Nhập Nhanh</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={handleAddChapter}
-                          className="px-2.5 py-1 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all"
+                          className="px-2 py-1 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all"
                         >
                           <Plus className="w-3 h-3" />
                           <span>Thêm Chương</span>
@@ -1099,8 +1113,30 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                             type="text"
                             value={activeLesson.videoSource || ''}
                             onChange={(e) => handleUpdateActiveLesson('videoSource', e.target.value)}
-                            placeholder="Dán link hoặc mã nhúng: TikTok, YouTube, Abyss, Vimeo, Drive, MP4 hoặc <iframe...>"
+                            placeholder="Nguồn chính: Dán link Streamtape, Abyss, YouTube, Vimeo, MP4 hoặc <iframe...>"
                             className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-slate-200 placeholder-slate-500 focus:border-emerald-500 font-mono text-[11px]"
+                          />
+                        </div>
+
+                        {/* Mirror Video Source (Nguồn Dự Phòng Dual-Source Fallback) */}
+                        <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
+                              <RefreshCw className="w-3 h-3 text-amber-400" />
+                              <span>Nguồn Dự Phòng (Mirror Fallback - ví dụ Abyss khi chính là Streamtape)</span>
+                            </label>
+                            {activeLesson.mirrorVideoSource && (
+                              <span className="text-[10px] font-mono text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/30">
+                                {parseUniversalVideo(activeLesson.mirrorVideoSource).label}
+                              </span>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={activeLesson.mirrorVideoSource || ''}
+                            onChange={(e) => handleUpdateActiveLesson('mirrorVideoSource', e.target.value)}
+                            placeholder="Nguồn dự phòng: Dán link Abyss / Streamtape / YouTube..."
+                            className="w-full px-4 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:border-amber-500 font-mono text-[11px]"
                           />
                         </div>
                       </div>
@@ -1379,11 +1415,20 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           </div>
         )}
 
-        {/* Quick Abyss Multi-Embed Bulk Import Modal */}
+        {/* Quick Streamtape / Abyss Multi-Embed Bulk Import Modal */}
         <QuickBulkEmbedModal
           isOpen={isQuickEmbedOpen}
           onClose={() => setIsQuickEmbedOpen(false)}
           chapters={chapters}
+          defaultChapterId={activeSelection?.chId || chapters[0]?.id}
+          onImportLessons={handleImportBulkLessonsToChapter}
+        />
+
+        {/* TeraBox Cloud Dispatcher & Import Modal */}
+        <TeraBoxImportModal
+          isOpen={isTeraBoxModalOpen}
+          onClose={() => setIsTeraBoxModalOpen(false)}
+          chapters={chapters.map(ch => ({ id: ch.id, title: ch.title }))}
           defaultChapterId={activeSelection?.chId || chapters[0]?.id}
           onImportLessons={handleImportBulkLessonsToChapter}
         />

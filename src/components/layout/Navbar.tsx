@@ -64,14 +64,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
+                aria-label="Tìm kiếm khóa học, giảng viên, nguồn mua, tag"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Tìm khóa học, giảng viên, nguồn mua, tag..."
-                className="w-full pl-10 pr-4 py-2 text-sm bg-slate-900/90 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-500 focus:border-emerald-500/60 transition-colors"
+                className="w-full pl-10 pr-4 py-2 text-sm bg-slate-900/90 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-400 focus:border-emerald-500/60 transition-colors"
               />
               {searchQuery && (
                 <button
                   onClick={() => onSearchChange('')}
+                  aria-label="Xóa từ khóa tìm kiếm"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
                 >
                   Xóa
@@ -101,8 +103,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={onNavigateHome}
+            <a
+              href="#/"
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  onNavigateHome();
+                }
+              }}
+              aria-label="Về trang chủ danh sách khóa học"
               title="Trang chủ"
               className={`p-2 px-3 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 ${
                 currentView === 'home'
@@ -115,11 +124,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-[11px] bg-slate-950 px-1.5 py-0.5 rounded-md text-slate-400 border border-slate-800">
                 {totalCoursesCount}
               </span>
-            </button>
+            </a>
 
             {/* Unified Course Studio Admin Hub */}
-            <button
-              onClick={onOpenStudio}
+            <a
+              href="#/studio"
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  onOpenStudio();
+                }
+              }}
+              aria-label="Mở Trung Tâm Quản Trị Khóa Học Studio"
               title="Mở Trung Tâm Quản Trị Khóa Học (Studio)"
               className={`font-bold text-xs px-3.5 py-2 rounded-xl shadow-sm transition-all flex items-center gap-2 ${
                 currentView === 'studio'
@@ -129,13 +145,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Settings className="w-4 h-4" />
               <span>Quản Trị</span>
-            </button>
+            </a>
 
             <div className="h-5 w-[1px] bg-slate-800 mx-0.5 hidden sm:block" />
 
             <button
               onClick={onOpenShortcuts}
-              title="Danh sách phím tắt"
+              aria-label="Xem danh sách phím tắt"
+              title="Danh sách phím tắt (?)"
               className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
             >
               <Keyboard className="w-4 h-4" />
@@ -144,8 +161,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             {onLogout && (
               <button
                 onClick={onLogout}
-                title="Đăng xuất Master QTV"
-                className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 transition-colors"
+                aria-label="Đăng xuất khỏi tài khoản quản trị"
+                title="Đăng xuất"
+                className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
               </button>

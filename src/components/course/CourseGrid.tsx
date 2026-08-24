@@ -215,7 +215,7 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fade-in relative pb-12">
+    <div className="space-y-6 relative pb-12">
       
       {/* 1. Integrated Cascading Filter Hub */}
       <FilterHub
@@ -248,8 +248,10 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
           
           {/* Page Size Selector */}
           <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-2xl border border-slate-800 text-xs">
-            <span className="text-slate-400 text-[11px]">Xem:</span>
+            <label htmlFor="course-page-size" className="text-slate-400 text-[11px]">Xem:</label>
             <select
+              id="course-page-size"
+              aria-label="Số lượng khóa học hiển thị mỗi trang"
               value={pageSize}
               onChange={(e) => setPageSize(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
               className="bg-transparent border-0 text-xs text-white font-bold focus:ring-0 cursor-pointer p-0"
@@ -263,9 +265,10 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
           </div>
 
           {/* VIEW SWITCHER: GRID VS TABLE */}
-          <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800 shadow-sm">
+          <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800 shadow-sm" role="group" aria-label="Chế độ xem khóa học">
             <button
               onClick={() => handleToggleLayoutMode('grid')}
+              aria-label="Chuyển sang chế độ xem dạng thẻ"
               title="Chế độ Thẻ (Trực quan & Cảm hứng học tập)"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 layoutMode === 'grid'
@@ -279,6 +282,7 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
 
             <button
               onClick={() => handleToggleLayoutMode('table')}
+              aria-label="Chuyển sang chế độ xem dạng bảng"
               title="Chế độ Bảng (Quản trị, lọc nhanh & thao tác hàng loạt)"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 layoutMode === 'table'
@@ -294,6 +298,7 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
           {/* Quick Add Button */}
           <button
             onClick={onAddNewCourse}
+            aria-label="Tạo khóa học mới"
             className="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
           >
             <PlusCircle className="w-4 h-4" />
@@ -391,7 +396,7 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
 
         /* 4B. COMPACT TABLE VIEW (Editor / Admin Focus) */
         <div className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">

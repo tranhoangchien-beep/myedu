@@ -209,17 +209,6 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
         ))}
       </div>
 
-      {/* Footer Add Button (Fixed at bottom) */}
-      <div className="pt-3 border-t border-slate-800/80 mt-2 flex-shrink-0">
-        <button
-          onClick={() => onOpenBulkImportForCourse(course.id)}
-          className="w-full py-2 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-emerald-400 hover:text-emerald-300 border border-slate-700/80 text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm"
-        >
-          <PlusCircle className="w-3.5 h-3.5" />
-          <span>Nạp thêm link Abyss vào khóa này</span>
-        </button>
-      </div>
-
     </div>
   );
 };

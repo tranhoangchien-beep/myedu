@@ -52,7 +52,21 @@ export function parseBulkLessonInput(
     .map(line => line.trim())
     .filter(line => line.length > 0);
 
-  const parsedItems: ParsedLessonItem[] = rawLines.map((line, index) => {
+  const parsedItems: ParsedLessonItem[] = rawLines.map((rawLine, index) => {
+    let line = rawLine.trim();
+
+    // 0A. Extract BBCode if whole line is wrapped: [URL="https://..."][IMG]...[/IMG][/URL]
+    const bbMatch = line.match(/\[URL=["']?([^\]"']+)["']?\]/i);
+    if (bbMatch) {
+      line = bbMatch[1];
+    }
+
+    // 0B. Extract HTML if whole line is wrapped: <a href="https://..."><img ... /></a>
+    const aMatch = line.match(/<a\s+[^>]*href=["']([^"']+)["']/i);
+    if (aMatch) {
+      line = aMatch[1];
+    }
+
     let title = '';
     let videoSource = '';
     let lessonNumber: number | undefined;
@@ -69,7 +83,7 @@ export function parseBulkLessonInput(
       if (/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i.test(s)) {
         return false;
       }
-      // Valid Abyss short ID pattern
+      // Valid Abyss / Streamtape short ID pattern
       if (/^[a-zA-Z0-9_-]{6,30}$/.test(s) && !/^(Bài|Lesson|Chương|Chuong)/i.test(s)) {
         return true;
       }
@@ -90,7 +104,7 @@ export function parseBulkLessonInput(
         }
       }
 
-      // Priority 2: Abyss ID
+      // Priority 2: Abyss / Streamtape ID
       if (!candidateSource) {
         for (const part of parts) {
           if (isVideoSource(part)) {
@@ -197,6 +211,15 @@ export function parseBulkLessonInput(
     }
 
     const universalVideo = parseUniversalVideo(videoSource);
+
+    // If title is default generic "Bài X" and URL contains a rich filename, use it!
+    if ((!title || title === `${defaultPrefix} ${index + 1}`) && universalVideo.extractedTitle) {
+      title = universalVideo.extractedTitle;
+      const prefixMatch = title.match(/^(?:Bài|Lesson|Chuong|Chương)?\s*(\d+)[\.\s:_-]+(.+)/i);
+      if (prefixMatch) {
+        lessonNumber = parseInt(prefixMatch[1], 10);
+      }
+    }
 
     return {
       title: title || `${defaultPrefix} ${index + 1}`,

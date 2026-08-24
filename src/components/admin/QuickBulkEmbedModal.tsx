@@ -54,6 +54,9 @@ export const QuickBulkEmbedModal: React.FC<QuickBulkEmbedModalProps> = ({
 6 Lãi suất kép.mp4|https://player.abyssplayer.com/i3Uz0dvOn|<iframe src="https://player.abyssplayer.com/i3Uz0dvOn"></iframe>
 1 Tài chính cá nhân là gì.mp4|https://player.abyssplayer.com/jhgvxwpVp|<iframe src="https://player.abyssplayer.com/jhgvxwpVp"></iframe>`;
 
+  const sampleStreamtapeFormat = `https://streamtape.com/v/GX1RoloXYVi1X4p/%2310.1_D%C3%B9ng_Tool_N%C3%A0o_Hi%E1%BB%87u_Qu%E1%BA%A3_T%E1%BB%91t_Nh%E1%BA%A5t.mp4
+https://streamtape.com/v/rbVq81QzpKUbm87/%2310.2_Roadmap_%C4%90%E1%BB%83_T%E1%BB%B1_H%E1%BB%8Dc_v%E1%BB%9Bi_AI.mp4`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
@@ -66,10 +69,10 @@ export const QuickBulkEmbedModal: React.FC<QuickBulkEmbedModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                Nhập Nhanh Hàng Loạt Video (Abyss Embed)
+                Nhập Nhanh Hàng Loạt Video (Streamtape & Abyss)
               </h2>
               <p className="text-xs text-slate-400">
-                Dán danh sách copy từ Abyss (TenFile.mp4|Link|Iframe) hoặc bất kỳ danh sách link bài giảng nào
+                Hỗ trợ dán trực tiếp danh sách link Streamtape, Abyss (TenFile.mp4|Link|Iframe), BBCode, HTML hoặc ID
               </p>
             </div>
           </div>

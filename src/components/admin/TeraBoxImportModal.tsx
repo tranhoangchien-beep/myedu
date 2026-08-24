@@ -19,6 +19,7 @@ import {
   getStoredCloudConfig, 
   saveStoredCloudConfig, 
   dispatchToStreamtape, 
+  dispatchToAbyss,
   createLessonsFromDispatch,
   CloudApiConfig,
   DispatchProgressItem,
@@ -91,18 +92,34 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
       item.status = 'processing';
       setProgressItems([...updatedProgress]);
 
+      let hasSuccess = false;
+
+      // 1. Đẩy sang Streamtape nếu được chọn
       if (destination === 'streamtape' || destination === 'both') {
-        const res = await dispatchToStreamtape(item.teraboxUrl, `${item.title}.mp4`, config);
-        if (res.success && res.streamtapeUrl) {
-          item.streamtapeUrl = res.streamtapeUrl;
-          item.status = 'success';
+        const stRes = await dispatchToStreamtape(item.teraboxUrl, `${item.title}.mp4`, config);
+        if (stRes.success && stRes.streamtapeUrl) {
+          item.streamtapeUrl = stRes.streamtapeUrl;
+          hasSuccess = true;
         } else {
-          item.status = 'error';
-          item.errorMessage = res.error;
+          item.errorMessage = stRes.error;
         }
-      } else {
-        // Fallback for offline/direct TeraBox link
+      }
+
+      // 2. Đẩy sang Abyss nếu được chọn
+      if (destination === 'abyss' || destination === 'both') {
+        const abRes = await dispatchToAbyss(item.teraboxUrl, `${item.title}.mp4`, config);
+        if (abRes.success && abRes.abyssUrl) {
+          item.abyssUrl = abRes.abyssUrl;
+          hasSuccess = true;
+        } else if (!hasSuccess) {
+          item.errorMessage = abRes.error;
+        }
+      }
+
+      if (hasSuccess) {
         item.status = 'success';
+      } else {
+        item.status = 'error';
       }
 
       setProgressItems([...updatedProgress]);
@@ -148,7 +165,7 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsConfigOpen(prev => !prev)}
-              title="Cấu hình API Key của Streamtape & Abyss"
+              title="Cấu hình API Key của TeraBox, Streamtape & Abyss"
               className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all ${
                 isConfigOpen 
                   ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-cyan-500/20' 
@@ -156,7 +173,7 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
               }`}
             >
               <Key className="w-4 h-4" />
-              <span className="hidden sm:inline">Cấu hình API</span>
+              <span className="hidden sm:inline">Cấu hình 3 API</span>
             </button>
 
             <button
@@ -171,47 +188,78 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
         {/* Modal Body */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
           
-          {/* API Configuration Panel */}
+          {/* API Configuration Panel for all 3 Cloud Providers */}
           {isConfigOpen && (
-            <div className="p-4 bg-slate-950/90 rounded-2xl border border-cyan-500/30 space-y-3 animate-fade-in">
-              <div className="flex items-center justify-between">
+            <div className="p-4 bg-slate-950/90 rounded-2xl border border-cyan-500/30 space-y-3.5 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <h4 className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Cấu hình API Kết nối Đám mây</span>
+                  <span>Cấu hình API Kết nối 3 Đám mây (TeraBox, Streamtape, Abyss)</span>
                 </h4>
                 <button
                   onClick={handleSaveConfig}
-                  className="px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-lg text-xs font-bold transition-colors"
+                  className="px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-lg text-xs font-bold transition-colors shadow-sm"
                 >
                   Lưu Cấu Hình
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div>
-                  <label className="text-slate-400 block mb-1 font-medium">Streamtape API-Login:</label>
-                  <input
-                    type="text"
-                    value={config.streamtapeLogin}
-                    onChange={(e) => setConfig({ ...config, streamtapeLogin: e.target.value.trim() })}
-                    placeholder="Ví dụ: y7bhafa3bxfxudzk"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:border-cyan-500 focus:outline-none"
-                  />
+              {/* 1. Streamtape Credentials */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wide">1. Streamtape Cloud API:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="text-slate-400 block mb-1 font-medium">API Login:</label>
+                    <input
+                      type="text"
+                      value={config.streamtapeLogin}
+                      onChange={(e) => setConfig({ ...config, streamtapeLogin: e.target.value.trim() })}
+                      placeholder="Ví dụ: y7bhafa3bxfxudzk"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:border-emerald-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-1 font-medium">API Key:</label>
+                    <input
+                      type="password"
+                      value={config.streamtapeKey}
+                      onChange={(e) => setConfig({ ...config, streamtapeKey: e.target.value.trim() })}
+                      placeholder="Ví dụ: dq6hzjewe27bmwdn"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:border-emerald-500 focus:outline-none font-mono"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-slate-400 block mb-1 font-medium">Streamtape API-Key:</label>
+              </div>
+
+              {/* 2. Abyss Credentials */}
+              <div className="space-y-1.5 pt-1 border-t border-slate-850">
+                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide">2. Abyss Cloud API:</span>
+                <div className="text-xs">
+                  <label className="text-slate-400 block mb-1 font-medium">Abyss API Key / Token:</label>
                   <input
                     type="password"
-                    value={config.streamtapeKey}
-                    onChange={(e) => setConfig({ ...config, streamtapeKey: e.target.value.trim() })}
-                    placeholder="Ví dụ: dq6hzjewe27bmwdn"
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:border-cyan-500 focus:outline-none"
+                    value={config.abyssApiKey}
+                    onChange={(e) => setConfig({ ...config, abyssApiKey: e.target.value.trim() })}
+                    placeholder="Ví dụ: abyss_key_993xkzlc9a88..."
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:border-amber-500 focus:outline-none font-mono"
                   />
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500">
-                * Lấy API Login & Key tại: <a href="https://streamtape.com/accpanel" target="_blank" rel="noreferrer" className="text-cyan-400 underline">streamtape.com/accpanel</a> (Tab Account Settings).
-              </p>
+
+              {/* 3. TeraBox Credentials */}
+              <div className="space-y-1.5 pt-1 border-t border-slate-850">
+                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wide">3. TeraBox Master Vault (Tùy chọn):</span>
+                <div className="text-xs">
+                  <label className="text-slate-400 block mb-1 font-medium">TeraBox Cookie ndus / Access Token (Dành cho link riêng tư/VIP):</label>
+                  <input
+                    type="password"
+                    value={config.teraboxToken}
+                    onChange={(e) => setConfig({ ...config, teraboxToken: e.target.value.trim() })}
+                    placeholder="Ví dụ: ndus=Y9aZ7xL... hoặc Bearer token"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:border-cyan-500 focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -240,7 +288,7 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
                 <Cloud className="w-3.5 h-3.5 text-cyan-400" />
                 <span>Nền tảng đích đẩy sang:</span>
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={() => setDestination('streamtape')}
@@ -250,7 +298,18 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
                       : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
                   }`}
                 >
-                  Streamtape (Ưu tiên)
+                  Streamtape
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDestination('abyss')}
+                  className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold border transition-all ${
+                    destination === 'abyss'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm'
+                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                  }`}
+                >
+                  Abyss
                 </button>
                 <button
                   type="button"
@@ -261,7 +320,7 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
                       : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
                   }`}
                 >
-                  Dự Phòng Kép
+                  Cả Hai
                 </button>
               </div>
             </div>

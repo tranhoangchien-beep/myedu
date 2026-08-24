@@ -9,6 +9,7 @@ export interface CloudApiConfig {
   streamtapeLogin: string;
   streamtapeKey: string;
   abyssApiKey: string;
+  teraboxToken: string; // Token / Cookie ndus từ TeraBox để giải mã luồng tải cao cấp
 }
 
 export const CLOUD_CONFIG_STORAGE_KEY = 'myedu_cloud_api_config';
@@ -24,6 +25,7 @@ export function getStoredCloudConfig(): CloudApiConfig {
     streamtapeLogin: '',
     streamtapeKey: '',
     abyssApiKey: '',
+    teraboxToken: '',
   };
 }
 
@@ -139,6 +141,47 @@ export async function dispatchToStreamtape(
     return {
       success: false,
       error: err.message || 'Lỗi mạng khi kết nối Streamtape API',
+    };
+  }
+}
+
+/**
+ * Gửi lệnh nạp video sang Abyss API
+ */
+export async function dispatchToAbyss(
+  teraboxUrl: string,
+  fileName: string,
+  config: CloudApiConfig
+): Promise<{ success: boolean; abyssUrl?: string; error?: string }> {
+  if (!config.abyssApiKey) {
+    return { success: false, error: 'Chưa cấu hình Abyss API Key' };
+  }
+
+  try {
+    // Gọi Abyss Remote / Upload endpoint
+    const apiUrl = `https://api.abyss.to/v1/remote/url?apiKey=${encodeURIComponent(
+      config.abyssApiKey
+    )}&url=${encodeURIComponent(teraboxUrl)}&name=${encodeURIComponent(fileName)}`;
+
+    const res = await fetch(apiUrl, { method: 'POST' });
+    const json = await res.json();
+
+    if (json && (json.slug || json.id)) {
+      const slug = json.slug || json.id;
+      return {
+        success: true,
+        abyssUrl: `https://player.abyssplayer.com/${slug}`,
+      };
+    } else {
+      return {
+        success: false,
+        error: json?.message || 'Lỗi phản hồi từ máy chủ Abyss',
+      };
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Lỗi kết nối Abyss API',
     };
   }
 }

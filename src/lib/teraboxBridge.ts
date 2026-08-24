@@ -145,6 +145,39 @@ export async function resolveTeraBoxDirectLink(
 }
 
 /**
+ * Truyền luồng trực tiếp (Direct Pipe) từ TeraBox sang Streamtape qua máy chủ Local
+ */
+export async function pipeTeraBoxToStreamtape(
+  teraboxUrl: string,
+  fileName: string,
+  config: CloudApiConfig
+): Promise<{ success: boolean; streamtapeUrl?: string; filename?: string; duration?: number; thumb?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/terabox/pipe-to-streamtape', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: teraboxUrl,
+        token: config.teraboxToken,
+        streamtapeLogin: config.streamtapeLogin,
+        streamtapeKey: config.streamtapeKey,
+        fileName,
+      }),
+    });
+
+    const json = await res.json();
+    return json;
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Lỗi kết nối bộ truyền luồng Stream Pipe',
+    };
+  }
+}
+
+/**
  * Gửi lệnh Remote Upload sang Streamtape API
  */
 export async function dispatchToStreamtape(

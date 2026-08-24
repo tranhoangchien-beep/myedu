@@ -19,6 +19,7 @@ import {
   getStoredCloudConfig, 
   saveStoredCloudConfig, 
   resolveTeraBoxDirectLink,
+  pipeTeraBoxToStreamtape,
   dispatchToStreamtape, 
   dispatchToAbyss,
   createLessonsFromDispatch,
@@ -94,36 +95,31 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
       setProgressItems([...updatedProgress]);
 
       let hasSuccess = false;
-      let directUrl = item.teraboxUrl;
 
-      // Bước 1: Thử bóc tách Direct Download Link từ TeraBox qua Resolver
-      const resolveRes = await resolveTeraBoxDirectLink(item.teraboxUrl, config.teraboxToken);
-      if (resolveRes.success && resolveRes.dlink) {
-        directUrl = resolveRes.dlink;
-        if (resolveRes.filename) {
-          item.title = resolveRes.filename.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
-        }
-        if (resolveRes.duration && resolveRes.duration > 0) {
-          item.durationMinutes = Math.max(1, Math.round(resolveRes.duration / 60));
-        }
-        if (resolveRes.thumb) {
-          item.thumbnailUrl = resolveRes.thumb;
-        }
-      }
-
-      // Bước 2: Đẩy sang Streamtape nếu được chọn
+      // 1. Truyền luồng Stream Pipe sang Streamtape nếu được chọn
       if (destination === 'streamtape' || destination === 'both') {
-        const stRes = await dispatchToStreamtape(directUrl, `${item.title}.mp4`, config);
-        if (stRes.success && stRes.streamtapeUrl) {
-          item.streamtapeUrl = stRes.streamtapeUrl;
+        const pipeRes = await pipeTeraBoxToStreamtape(item.teraboxUrl, `${item.title}.mp4`, config);
+        if (pipeRes.success && pipeRes.streamtapeUrl) {
+          item.streamtapeUrl = pipeRes.streamtapeUrl;
+          if (pipeRes.filename) {
+            item.title = pipeRes.filename.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+          }
+          if (pipeRes.duration && pipeRes.duration > 0) {
+            item.durationMinutes = Math.max(1, Math.round(pipeRes.duration / 60));
+          }
+          if (pipeRes.thumb) {
+            item.thumbnailUrl = pipeRes.thumb;
+          }
           hasSuccess = true;
         } else {
-          item.errorMessage = stRes.error;
+          item.errorMessage = pipeRes.error;
         }
       }
 
-      // Bước 3: Đẩy sang Abyss nếu được chọn
+      // 2. Đẩy sang Abyss nếu được chọn
       if (destination === 'abyss' || destination === 'both') {
+        const resolveRes = await resolveTeraBoxDirectLink(item.teraboxUrl, config.teraboxToken);
+        const directUrl = resolveRes.success && resolveRes.dlink ? resolveRes.dlink : item.teraboxUrl;
         const abRes = await dispatchToAbyss(directUrl, `${item.title}.mp4`, config);
         if (abRes.success && abRes.abyssUrl) {
           item.abyssUrl = abRes.abyssUrl;

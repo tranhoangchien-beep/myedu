@@ -32,24 +32,34 @@ export const CourseCard: React.FC<CourseCardProps> = ({
   const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
   return (
-    <div className="group relative bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 hover:border-emerald-500/40 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 flex flex-col hover:-translate-y-1">
+    <div 
+      title={course.title}
+      className="group relative bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 hover:border-emerald-500/40 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 flex flex-col hover:-translate-y-1"
+    >
       
-      {/* Thumbnail with graceful fallback */}
-      <div 
-        className="relative h-44 w-full bg-slate-800 overflow-hidden cursor-pointer"
-        onClick={() => onSelectCourse(course.id)}
+      {/* Thumbnail with graceful fallback & Multi-Tab Link */}
+      <a 
+        href={`#/course/${course.id}`}
+        title={course.title}
+        className="relative h-44 w-full bg-slate-800 overflow-hidden block cursor-pointer"
+        onClick={(e) => {
+          if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+            e.preventDefault();
+            onSelectCourse(course.id);
+          }
+        }}
       >
         {course.thumbnailUrl && !imageError ? (
           <img
             src={course.thumbnailUrl}
-            alt=""
+            alt={course.title}
             onError={() => setImageError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-tr from-slate-950 via-slate-900 to-emerald-950/50 flex flex-col items-center justify-center p-6 text-center">
             <BookOpen className="w-12 h-12 text-slate-700 group-hover:text-emerald-500/50 transition-colors mb-1" />
-            <span className="text-[11px] font-bold text-slate-500 line-clamp-1">{course.title}</span>
+            <span className="text-[11px] font-bold text-slate-500 line-clamp-2 px-2">{course.title}</span>
           </div>
         )}
 
@@ -72,7 +82,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
             <Play className="w-5 h-5 fill-current ml-0.5" />
           </div>
         </div>
-      </div>
+      </a>
 
       {/* Card Body */}
       <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
@@ -100,12 +110,24 @@ export const CourseCard: React.FC<CourseCardProps> = ({
             </div>
           )}
 
-          <h3 
-            onClick={() => onSelectCourse(course.id)}
-            className="font-bold text-base text-white hover:text-emerald-400 transition-colors line-clamp-2 cursor-pointer leading-snug"
+          <a 
+            href={`#/course/${course.id}`}
+            title={course.title}
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                e.preventDefault();
+                onSelectCourse(course.id);
+              }
+            }}
+            className="block group/title"
           >
-            {course.title}
-          </h3>
+            <h3 
+              title={course.title}
+              className="font-bold text-base text-white group-hover/title:text-emerald-400 transition-colors line-clamp-3 leading-snug cursor-pointer"
+            >
+              {course.title}
+            </h3>
+          </a>
 
           <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
             {course.description || 'Chưa có mô tả cho khóa học này.'}
@@ -128,13 +150,20 @@ export const CourseCard: React.FC<CourseCardProps> = ({
           </div>
 
           <div className="flex items-center justify-between gap-1.5">
-            <button
-              onClick={() => onSelectCourse(course.id)}
-              className="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-500/30 hover:border-emerald-500 transition-all shadow-sm"
+            <a
+              href={`#/course/${course.id}`}
+              title={`Vào học khóa: ${course.title}`}
+              onClick={(e) => {
+                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  onSelectCourse(course.id);
+                }
+              }}
+              className="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-500/30 hover:border-emerald-500 transition-all shadow-sm cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>{completedLessons > 0 ? 'Học Tiếp' : 'Vào Học'}</span>
-            </button>
+            </a>
 
             <button
               onClick={() => onEditCourse(course)}

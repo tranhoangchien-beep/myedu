@@ -250,11 +250,55 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // Cross-Tab Synchronization: Sync course edits & updates between multiple open tabs in real-time
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'myedu_courses_v1' && e.newValue) {
+        try {
+          const freshCourses = JSON.parse(e.newValue);
+          if (Array.isArray(freshCourses)) {
+            setCourses(freshCourses);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('myedu_sync_channel');
+      channel.onmessage = (event) => {
+        if (event.data && event.data.type === 'COURSES_UPDATED' && Array.isArray(event.data.courses)) {
+          setCourses(event.data.courses);
+        }
+      };
+    } catch {
+      // ignore if unsupported
+    }
+
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      if (channel) channel.close();
+    };
+  }, []);
+
   // Sync courses to storage & Cloud Firestore whenever modified
   const updateCoursesState = (newCourses: Course[]) => {
     lastLocalWriteTimeRef.current = Date.now();
     setCourses(newCourses);
     saveCourses(newCourses);
+
+    // Broadcast update to all other open browser tabs
+    try {
+      const channel = new BroadcastChannel('myedu_sync_channel');
+      channel.postMessage({ type: 'COURSES_UPDATED', courses: newCourses });
+      channel.close();
+    } catch {
+      // ignore
+    }
+
     if (isFirebaseConfigured) {
       syncToCloud({ courses: newCourses }).catch(err => console.warn('Cloud sync error:', err));
     }

@@ -281,7 +281,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
       {/* 2. Structured 2-Tier Header & Action Toolbar */}
       <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
         
-        {/* Tier 1: Category, ID, Duration & Full Title */}
+        {/* Tier 1: Category, ID & Full Title */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
@@ -293,48 +293,6 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                   {parsedVideo.label}
                 </span>
               )}
-
-              {/* Quick Duration Badge & Inline Edit */}
-              <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800 text-[11px] text-slate-300">
-                <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                {isEditingDuration ? (
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      min="1"
-                      max="999"
-                      value={tempDuration}
-                      onChange={(e) => setTempDuration(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveDuration();
-                        if (e.key === 'Escape') setIsEditingDuration(false);
-                      }}
-                      autoFocus
-                      className="w-12 px-1 py-0.2 bg-slate-900 border border-emerald-500 rounded text-emerald-400 text-xs font-bold text-center focus:outline-none"
-                    />
-                    <span className="text-[10px] text-slate-400">phút</span>
-                    <button
-                      onClick={handleSaveDuration}
-                      className="text-emerald-400 hover:text-white p-0.5"
-                      title="Lưu thời lượng"
-                    >
-                      <Check className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setTempDuration(String(currentLesson.durationMinutes || 15));
-                      setIsEditingDuration(true);
-                    }}
-                    className="hover:text-emerald-400 flex items-center gap-1 transition-colors"
-                    title="Click để sửa thời lượng thực tế"
-                  >
-                    <span>{currentLesson.durationMinutes || 15} phút</span>
-                    <Edit3 className="w-2.5 h-2.5 text-slate-500 opacity-60 hover:opacity-100" />
-                  </button>
-                )}
-              </div>
             </div>
           </div>
 

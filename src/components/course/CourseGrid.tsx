@@ -451,15 +451,25 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
                           </button>
                         </td>
 
-                        {/* 16:9 Thumbnail & Title */}
-                        <td className="py-4 px-4 max-w-sm">
+                        {/* 16:9 Thumbnail & Title with Multi-Tab Link */}
+                        <td className="py-4 px-4 max-w-md lg:max-w-xl">
                           <div className="flex items-center gap-3">
-                            <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800 shadow-sm relative flex items-center justify-center">
+                            <a
+                              href={`#/course/${c.id}`}
+                              title={c.title}
+                              onClick={(e) => {
+                                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                                  e.preventDefault();
+                                  onSelectCourse(c.id);
+                                }
+                              }}
+                              className="w-14 h-9 sm:w-16 sm:h-10 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800 shadow-sm relative flex items-center justify-center block cursor-pointer group/thumb"
+                            >
                               {!hasImgFailed ? (
                                 <img 
                                   src={c.thumbnailUrl} 
                                   alt={c.title} 
-                                  className="w-full h-full object-cover" 
+                                  className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform" 
                                   onError={() => setFailedImageUrls(prev => ({ ...prev, [c.id]: true }))}
                                 />
                               ) : (
@@ -467,19 +477,26 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
                                   {getCategoryIcon(c.category)}
                                 </div>
                               )}
-                            </div>
+                            </a>
 
-                            <div className="min-w-0">
-                              <p 
-                                onClick={() => onSelectCourse(c.id)}
-                                className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer"
+                            <div className="min-w-0 flex-1">
+                              <a 
+                                href={`#/course/${c.id}`}
+                                title={c.title}
+                                onClick={(e) => {
+                                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                                    e.preventDefault();
+                                    onSelectCourse(c.id);
+                                  }
+                                }}
+                                className="font-bold text-sm text-white hover:text-emerald-400 transition-colors line-clamp-2 hover:underline leading-snug block cursor-pointer"
                               >
                                 {c.title}
-                              </p>
+                              </a>
                               {c.instructor && (
-                                <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                                  <User className="w-3 h-3 text-emerald-400" />
-                                  <span>{c.instructor}</span>
+                                <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5" title={`Giảng viên: ${c.instructor}`}>
+                                  <User className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                                  <span className="truncate">{c.instructor}</span>
                                 </p>
                               )}
                             </div>
@@ -524,12 +541,19 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
                         {/* Actions */}
                         <td className="py-4 px-5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => onSelectCourse(c.id)}
-                              className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                            <a
+                              href={`#/course/${c.id}`}
+                              title={`Vào học: ${c.title}`}
+                              onClick={(e) => {
+                                if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+                                  e.preventDefault();
+                                  onSelectCourse(c.id);
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm block text-center cursor-pointer"
                             >
                               Vào Học
-                            </button>
+                            </a>
 
                             <button
                               onClick={() => onEditCourse(c)}

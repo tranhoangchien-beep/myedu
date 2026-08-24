@@ -161,42 +161,6 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
                               Bài đọc
                             </span>
                           )}
-                          {editingLessonId === lesson.id ? (
-                            <div className="flex items-center gap-1 bg-slate-900 px-1.5 py-0.5 rounded border border-emerald-500/60" onClick={(e) => e.stopPropagation()}>
-                              <Clock className="w-2.5 h-2.5 text-emerald-400" />
-                              <input
-                                type="number"
-                                min="1"
-                                max="999"
-                                value={tempDuration}
-                                onChange={(e) => setTempDuration(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleSaveDuration(lesson.id);
-                                  if (e.key === 'Escape') setEditingLessonId(null);
-                                }}
-                                autoFocus
-                                className="w-9 px-1 py-0 bg-slate-950 border border-emerald-500/50 rounded text-emerald-300 text-[10px] font-bold text-center focus:outline-none"
-                              />
-                              <span className="text-[9px] text-slate-400">p</span>
-                              <button
-                                onClick={() => handleSaveDuration(lesson.id)}
-                                className="text-emerald-400 hover:text-white p-0.5"
-                                title="Lưu"
-                              >
-                                <Check className="w-2.5 h-2.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span 
-                              onClick={(e) => handleStartEditDuration(e, lesson.id, lesson.durationMinutes || 15)}
-                              className="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1 cursor-pointer transition-colors group/dur" 
-                              title="Click để sửa thời lượng thực tế"
-                            >
-                              <Clock className="w-2.5 h-2.5 text-slate-500 group-hover/dur:text-emerald-400" />
-                              <span>{lesson.durationMinutes || 15} phút</span>
-                              <Edit3 className="w-2 h-2 text-slate-600 opacity-0 group-hover/dur:opacity-100 transition-opacity" />
-                            </span>
-                          )}
                           {lesson.attachments && lesson.attachments.length > 0 && (
                             <span className="text-[10px] text-slate-500 flex items-center gap-0.5" title={`${lesson.attachments.length} tài liệu đính kèm`}>
                               <Paperclip className="w-2.5 h-2.5 text-emerald-400" />

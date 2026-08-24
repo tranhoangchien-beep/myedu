@@ -8,6 +8,36 @@ export interface ParsedLessonItem {
   rawFileName?: string;
   lessonNumber?: number;
   providerLabel?: string;
+  durationMinutes?: number;
+}
+
+/**
+ * Bóc tách thời lượng video từ chuỗi văn bản nếu có
+ * Hỗ trợ: [06:10], (12:30), (01:05:20), [15m], (25p), [45 mins], 10 phút...
+ */
+export function extractDurationFromText(text: string): { durationMinutes?: number; cleanedText: string } {
+  if (!text) return { cleanedText: text };
+  let cleaned = text;
+  let durationMinutes: number | undefined;
+
+  // Pattern 1: [06:10], (12:30), (01:05:20)
+  const timeMatch = text.match(/[\[\(](?:(\d+):)?(\d{1,2}):(\d{2})[\]\)]/);
+  if (timeMatch) {
+    const hours = timeMatch[1] ? parseInt(timeMatch[1], 10) : 0;
+    const minutes = parseInt(timeMatch[2], 10);
+    const seconds = parseInt(timeMatch[3], 10);
+    durationMinutes = Math.max(1, hours * 60 + minutes + (seconds >= 30 ? 1 : 0));
+    cleaned = cleaned.replace(timeMatch[0], '').trim();
+  } else {
+    // Pattern 2: (15p), [20 phút], (25m), [30 mins], (45 min)
+    const minMatch = text.match(/[\[\(](\d+)\s*(?:p|phút|m|min|mins|minutes)[\]\)]/i);
+    if (minMatch) {
+      durationMinutes = parseInt(minMatch[1], 10);
+      cleaned = cleaned.replace(minMatch[0], '').trim();
+    }
+  }
+
+  return { durationMinutes, cleanedText: cleaned };
 }
 
 export function parseBulkLessonInput(
@@ -26,6 +56,7 @@ export function parseBulkLessonInput(
     let title = '';
     let videoSource = '';
     let lessonNumber: number | undefined;
+    let durationMinutes: number | undefined;
 
     // Helper to determine if a string segment is definitely a video source
     const isVideoSource = (str: string): boolean => {
@@ -86,6 +117,13 @@ export function parseBulkLessonInput(
 
       videoSource = candidateSource;
 
+      // Extract duration if present in candidateTitle or line
+      const parsedDur = extractDurationFromText(candidateTitle);
+      if (parsedDur.durationMinutes) {
+        durationMinutes = parsedDur.durationMinutes;
+        candidateTitle = parsedDur.cleanedText;
+      }
+
       // Clean title and extract lesson number
       let cleanTitle = candidateTitle.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
       const prefixMatch = cleanTitle.match(/^(?:Bài|Lesson|Chuong|Chương)?\s*(\d+)[\.\s:_-]+(.+)/i);
@@ -98,6 +136,13 @@ export function parseBulkLessonInput(
     } else if (line.includes(' - http') || line.includes(' - <iframe') || line.includes(' : http') || line.includes(' : <iframe')) {
       const parts = line.split(/ - | : /);
       let rawTitle = parts[0].replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+      
+      const parsedDur = extractDurationFromText(rawTitle);
+      if (parsedDur.durationMinutes) {
+        durationMinutes = parsedDur.durationMinutes;
+        rawTitle = parsedDur.cleanedText;
+      }
+
       const prefixMatch = rawTitle.match(/^(?:Bài|Lesson)?\s*(\d+)[\.\s:_-]+(.+)/i);
       if (prefixMatch) {
         lessonNumber = parseInt(prefixMatch[1], 10);
@@ -113,6 +158,12 @@ export function parseBulkLessonInput(
         title = `${defaultPrefix} ${index + 1}`;
       } else {
         let cleanTitle = line.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+        const parsedDur = extractDurationFromText(cleanTitle);
+        if (parsedDur.durationMinutes) {
+          durationMinutes = parsedDur.durationMinutes;
+          cleanTitle = parsedDur.cleanedText;
+        }
+
         const prefixMatch = cleanTitle.match(/^(?:Bài|Lesson)?\s*(\d+)[\.\s:_-]+(.+)/i);
         if (prefixMatch) {
           lessonNumber = parseInt(prefixMatch[1], 10);
@@ -131,6 +182,12 @@ export function parseBulkLessonInput(
     ) {
       const temp = title;
       title = videoSource.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+      const parsedDur = extractDurationFromText(title);
+      if (parsedDur.durationMinutes) {
+        durationMinutes = parsedDur.durationMinutes;
+        title = parsedDur.cleanedText;
+      }
+
       const prefixMatch = title.match(/^(?:Bài|Lesson|Chuong|Chương)?\s*(\d+)[\.\s:_-]+(.+)/i);
       if (prefixMatch) {
         lessonNumber = parseInt(prefixMatch[1], 10);
@@ -147,6 +204,7 @@ export function parseBulkLessonInput(
       isValid: universalVideo.provider !== 'unknown' && universalVideo.embedUrl !== '',
       lessonNumber,
       providerLabel: universalVideo.label,
+      durationMinutes,
     };
   });
 
@@ -165,7 +223,7 @@ export function createLessonsFromParsed(
     title: item.title,
     type: 'video',
     videoSource: item.videoSource,
-    durationMinutes: 15,
+    durationMinutes: item.durationMinutes || 15,
     isCompleted: false,
     isStarred: false,
     attachments: [],

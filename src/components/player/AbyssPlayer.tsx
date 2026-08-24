@@ -35,6 +35,7 @@ interface AbyssPlayerProps {
   onToggleComplete: (lessonId: string) => void;
   onToggleStar: (lessonId: string) => void;
   onUpdateNotes: (lessonId: string, notes: string) => void;
+  onUpdateDuration?: (lessonId: string, durationMinutes: number) => void;
   isZenMode: boolean;
   onToggleZenMode: () => void;
   autoPlayNext: boolean;
@@ -51,6 +52,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   onToggleComplete,
   onToggleStar,
   onUpdateNotes,
+  onUpdateDuration,
   isZenMode,
   onToggleZenMode,
   autoPlayNext,
@@ -60,6 +62,8 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   const [isSavedNotes, setIsSavedNotes] = useState<boolean>(false);
   const [noteViewMode, setNoteViewMode] = useState<'edit' | 'preview'>('edit');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isEditingDuration, setIsEditingDuration] = useState<boolean>(false);
+  const [tempDuration, setTempDuration] = useState<string>(String(currentLesson.durationMinutes || 15));
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -68,11 +72,62 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
   const embedUrl = parsedVideo.embedUrl;
   const rawId = extractAbyssId(currentLesson.videoSource || '');
 
-  // Sync notes when lesson changes
+  // Sync notes & duration when lesson changes
   useEffect(() => {
     setNotes(currentLesson.notes || '');
     setIsSavedNotes(false);
-  }, [currentLesson.id, currentLesson.notes]);
+    setTempDuration(String(currentLesson.durationMinutes || 15));
+    setIsEditingDuration(false);
+  }, [currentLesson.id, currentLesson.notes, currentLesson.durationMinutes]);
+
+  // Real-time auto-detect duration from player events (Abyss postMessage, Plyr, VideoJS, YouTube)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        if (!event.data) return;
+        let data = event.data;
+        if (typeof data === 'string') {
+          try {
+            data = JSON.parse(data);
+          } catch {
+            // not json
+          }
+        }
+
+        let detectedSeconds: number | null = null;
+
+        if (typeof data === 'object' && data !== null) {
+          if (typeof data.duration === 'number' && data.duration > 0) {
+            detectedSeconds = data.duration;
+          } else if (typeof data.value === 'number' && (data.event === 'loadedmetadata' || data.type === 'duration')) {
+            detectedSeconds = data.value;
+          } else if (data.info && typeof data.info.duration === 'number' && data.info.duration > 0) {
+            detectedSeconds = data.info.duration;
+          }
+        }
+
+        if (detectedSeconds && detectedSeconds > 0) {
+          const minutes = Math.max(1, Math.round(detectedSeconds / 60));
+          if (onUpdateDuration && currentLesson.durationMinutes !== minutes) {
+            onUpdateDuration(currentLesson.id, minutes);
+          }
+        }
+      } catch (err) {
+        // silent catch
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [currentLesson.id, currentLesson.durationMinutes, onUpdateDuration]);
+
+  const handleSaveDuration = () => {
+    const parsed = parseInt(tempDuration, 10);
+    if (!isNaN(parsed) && parsed > 0 && onUpdateDuration) {
+      onUpdateDuration(currentLesson.id, parsed);
+    }
+    setIsEditingDuration(false);
+  };
 
   // Fullscreen change listener
   useEffect(() => {
@@ -175,6 +230,14 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                 controls
                 autoPlay
                 className="w-full h-full object-contain"
+                onLoadedMetadata={(e) => {
+                  if (e.currentTarget.duration && e.currentTarget.duration > 0) {
+                    const mins = Math.max(1, Math.round(e.currentTarget.duration / 60));
+                    if (onUpdateDuration && currentLesson.durationMinutes !== mins) {
+                      onUpdateDuration(currentLesson.id, mins);
+                    }
+                  }
+                }}
               >
                 Trình duyệt không hỗ trợ phát dạng video MP4 trực tiếp này.
               </video>
@@ -218,10 +281,10 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
       {/* 2. Structured 2-Tier Header & Action Toolbar */}
       <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
         
-        {/* Tier 1: Category, ID & Full Title */}
+        {/* Tier 1: Category, ID, Duration & Full Title */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 {course.category}
               </span>
@@ -230,6 +293,48 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                   {parsedVideo.label}
                 </span>
               )}
+
+              {/* Quick Duration Badge & Inline Edit */}
+              <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800 text-[11px] text-slate-300">
+                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                {isEditingDuration ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      value={tempDuration}
+                      onChange={(e) => setTempDuration(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveDuration();
+                        if (e.key === 'Escape') setIsEditingDuration(false);
+                      }}
+                      autoFocus
+                      className="w-12 px-1 py-0.2 bg-slate-900 border border-emerald-500 rounded text-emerald-400 text-xs font-bold text-center focus:outline-none"
+                    />
+                    <span className="text-[10px] text-slate-400">phút</span>
+                    <button
+                      onClick={handleSaveDuration}
+                      className="text-emerald-400 hover:text-white p-0.5"
+                      title="Lưu thời lượng"
+                    >
+                      <Check className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setTempDuration(String(currentLesson.durationMinutes || 15));
+                      setIsEditingDuration(true);
+                    }}
+                    className="hover:text-emerald-400 flex items-center gap-1 transition-colors"
+                    title="Click để sửa thời lượng thực tế"
+                  >
+                    <span>{currentLesson.durationMinutes || 15} phút</span>
+                    <Edit3 className="w-2.5 h-2.5 text-slate-500 opacity-60 hover:opacity-100" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Course } from '../../types';
 import { 
   ChevronLeft, 
@@ -11,7 +11,9 @@ import {
   FolderOpen,
   FileText,
   Layers,
-  Paperclip
+  Paperclip,
+  Edit3,
+  Check
 } from 'lucide-react';
 
 interface LessonSidebarProps {
@@ -20,6 +22,7 @@ interface LessonSidebarProps {
   onSelectLesson: (lessonId: string) => void;
   onToggleComplete: (lessonId: string) => void;
   onToggleStar: (lessonId: string) => void;
+  onUpdateDuration?: (lessonId: string, durationMinutes: number) => void;
   onBackToCourseList: () => void;
   onOpenBulkImportForCourse: (courseId: string) => void;
 }
@@ -30,9 +33,26 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
   onSelectLesson,
   onToggleComplete,
   onToggleStar,
+  onUpdateDuration,
   onBackToCourseList,
   onOpenBulkImportForCourse
 }) => {
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [tempDuration, setTempDuration] = useState<string>('');
+
+  const handleStartEditDuration = (e: React.MouseEvent, lessonId: string, currentDuration: number) => {
+    e.stopPropagation();
+    setEditingLessonId(lessonId);
+    setTempDuration(String(currentDuration || 15));
+  };
+
+  const handleSaveDuration = (lessonId: string) => {
+    const parsed = parseInt(tempDuration, 10);
+    if (!isNaN(parsed) && parsed > 0 && onUpdateDuration) {
+      onUpdateDuration(lessonId, parsed);
+    }
+    setEditingLessonId(null);
+  };
   // Compute progress
   let totalLessons = 0;
   let completedCount = 0;
@@ -141,10 +161,40 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
                               Bài đọc
                             </span>
                           )}
-                          {lesson.durationMinutes && (
-                            <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                              <Clock className="w-2.5 h-2.5" />
-                              {lesson.durationMinutes} phút
+                          {editingLessonId === lesson.id ? (
+                            <div className="flex items-center gap-1 bg-slate-900 px-1.5 py-0.5 rounded border border-emerald-500/60" onClick={(e) => e.stopPropagation()}>
+                              <Clock className="w-2.5 h-2.5 text-emerald-400" />
+                              <input
+                                type="number"
+                                min="1"
+                                max="999"
+                                value={tempDuration}
+                                onChange={(e) => setTempDuration(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveDuration(lesson.id);
+                                  if (e.key === 'Escape') setEditingLessonId(null);
+                                }}
+                                autoFocus
+                                className="w-9 px-1 py-0 bg-slate-950 border border-emerald-500/50 rounded text-emerald-300 text-[10px] font-bold text-center focus:outline-none"
+                              />
+                              <span className="text-[9px] text-slate-400">p</span>
+                              <button
+                                onClick={() => handleSaveDuration(lesson.id)}
+                                className="text-emerald-400 hover:text-white p-0.5"
+                                title="Lưu"
+                              >
+                                <Check className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span 
+                              onClick={(e) => handleStartEditDuration(e, lesson.id, lesson.durationMinutes || 15)}
+                              className="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1 cursor-pointer transition-colors group/dur" 
+                              title="Click để sửa thời lượng thực tế"
+                            >
+                              <Clock className="w-2.5 h-2.5 text-slate-500 group-hover/dur:text-emerald-400" />
+                              <span>{lesson.durationMinutes || 15} phút</span>
+                              <Edit3 className="w-2 h-2 text-slate-600 opacity-0 group-hover/dur:opacity-100 transition-opacity" />
                             </span>
                           )}
                           {lesson.attachments && lesson.attachments.length > 0 && (

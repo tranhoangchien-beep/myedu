@@ -654,6 +654,34 @@ export const App: React.FC = () => {
     updateCoursesState(updatedCourses);
   };
 
+  // Update Duration for specific lesson
+  const handleUpdateLessonDuration = (lessonId: string, durationMinutes: number, specificCourseId?: string) => {
+    const targetCourseId = specificCourseId || activeCourseId;
+    if (!targetCourseId || !lessonId || !durationMinutes || durationMinutes <= 0) return;
+
+    let hasChanged = false;
+    const updatedCourses = courses.map((c) => {
+      if (c.id === targetCourseId) {
+        const updatedChapters = (c.chapters || []).map((ch) => ({
+          ...ch,
+          lessons: (ch.lessons || []).map((l) => {
+            if (l.id === lessonId && l.durationMinutes !== durationMinutes) {
+              hasChanged = true;
+              return { ...l, durationMinutes };
+            }
+            return l;
+          }),
+        }));
+        return hasChanged ? { ...c, chapters: updatedChapters, updatedAt: new Date().toISOString() } : c;
+      }
+      return c;
+    });
+
+    if (hasChanged) {
+      updateCoursesState(updatedCourses);
+    }
+  };
+
   // Course CRUD handlers
   const handleAddNewCourse = () => {
     setCourseToEdit(null);
@@ -927,6 +955,7 @@ export const App: React.FC = () => {
                   onToggleComplete={(lId) => handleToggleComplete(lId)}
                   onToggleStar={(lId) => handleToggleStar(lId)}
                   onUpdateNotes={handleUpdateNotes}
+                  onUpdateDuration={handleUpdateLessonDuration}
                   isZenMode={isZenMode}
                   onToggleZenMode={() => setIsZenMode(prev => !prev)}
                   autoPlayNext={autoPlayNext}
@@ -942,6 +971,7 @@ export const App: React.FC = () => {
                     onSelectLesson={(lId) => handleSelectCourseAndLesson(activeCourse.id, lId)}
                     onToggleComplete={(lId) => handleToggleComplete(lId)}
                     onToggleStar={(lId) => handleToggleStar(lId)}
+                    onUpdateDuration={handleUpdateLessonDuration}
                     onBackToCourseList={() => setCurrentView('home')}
                     onOpenBulkImportForCourse={(cId) => {
                       setBulkCourseId(cId);

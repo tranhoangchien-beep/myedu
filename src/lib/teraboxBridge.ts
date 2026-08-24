@@ -104,10 +104,47 @@ export interface DispatchProgressItem {
 }
 
 /**
+ * Bóc tách đường dẫn tải luồng trực tiếp (Dlink) từ link chia sẻ TeraBox qua Resolver API
+ */
+export async function resolveTeraBoxDirectLink(
+  teraboxUrl: string,
+  token?: string
+): Promise<{ success: boolean; dlink?: string; filename?: string; error?: string }> {
+  try {
+    const res = await fetch('/api/terabox/resolve', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url: teraboxUrl, token }),
+    });
+
+    const json = await res.json();
+    if (json.success && json.dlink) {
+      return {
+        success: true,
+        dlink: json.dlink,
+        filename: json.filename,
+      };
+    } else {
+      return {
+        success: false,
+        error: json.error || 'Không thể bóc tách luồng tải trực tiếp từ TeraBox',
+      };
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Lỗi kết nối tới bộ giải mã TeraBox Resolver',
+    };
+  }
+}
+
+/**
  * Gửi lệnh Remote Upload sang Streamtape API
  */
 export async function dispatchToStreamtape(
-  teraboxUrl: string,
+  directDownloadUrl: string,
   fileName: string,
   config: CloudApiConfig
 ): Promise<{ success: boolean; streamtapeUrl?: string; error?: string }> {
@@ -119,7 +156,7 @@ export async function dispatchToStreamtape(
     const apiUrl = `https://api.streamtape.com/remotedl/add?login=${encodeURIComponent(
       config.streamtapeLogin
     )}&key=${encodeURIComponent(config.streamtapeKey)}&url=${encodeURIComponent(
-      teraboxUrl
+      directDownloadUrl
     )}&name=${encodeURIComponent(fileName)}`;
 
     const res = await fetch(apiUrl, { method: 'GET' });

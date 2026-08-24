@@ -18,6 +18,7 @@ import {
   parseTeraBoxInput, 
   getStoredCloudConfig, 
   saveStoredCloudConfig, 
+  resolveTeraBoxDirectLink,
   dispatchToStreamtape, 
   dispatchToAbyss,
   createLessonsFromDispatch,
@@ -93,10 +94,20 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
       setProgressItems([...updatedProgress]);
 
       let hasSuccess = false;
+      let directUrl = item.teraboxUrl;
 
-      // 1. Đẩy sang Streamtape nếu được chọn
+      // Bước 1: Thử bóc tách Direct Download Link từ TeraBox qua Resolver
+      const resolveRes = await resolveTeraBoxDirectLink(item.teraboxUrl, config.teraboxToken);
+      if (resolveRes.success && resolveRes.dlink) {
+        directUrl = resolveRes.dlink;
+        if (resolveRes.filename) {
+          item.title = resolveRes.filename.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '').trim();
+        }
+      }
+
+      // Bước 2: Đẩy sang Streamtape nếu được chọn
       if (destination === 'streamtape' || destination === 'both') {
-        const stRes = await dispatchToStreamtape(item.teraboxUrl, `${item.title}.mp4`, config);
+        const stRes = await dispatchToStreamtape(directUrl, `${item.title}.mp4`, config);
         if (stRes.success && stRes.streamtapeUrl) {
           item.streamtapeUrl = stRes.streamtapeUrl;
           hasSuccess = true;
@@ -105,9 +116,9 @@ export const TeraBoxImportModal: React.FC<TeraBoxImportModalProps> = ({
         }
       }
 
-      // 2. Đẩy sang Abyss nếu được chọn
+      // Bước 3: Đẩy sang Abyss nếu được chọn
       if (destination === 'abyss' || destination === 'both') {
-        const abRes = await dispatchToAbyss(item.teraboxUrl, `${item.title}.mp4`, config);
+        const abRes = await dispatchToAbyss(directUrl, `${item.title}.mp4`, config);
         if (abRes.success && abRes.abyssUrl) {
           item.abyssUrl = abRes.abyssUrl;
           hasSuccess = true;

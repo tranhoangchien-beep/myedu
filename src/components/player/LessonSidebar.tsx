@@ -86,11 +86,11 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
           {onEditCourse && (
             <button
               onClick={() => onEditCourse(course)}
-              title="Chỉnh sửa toàn bộ thông tin & giáo trình khóa này"
-              className="py-1 px-2.5 rounded-lg bg-teal-500/10 hover:bg-teal-500 text-teal-400 hover:text-slate-950 font-bold text-xs flex items-center gap-1 border border-teal-500/30 hover:border-teal-500 transition-all shadow-sm"
+              title="Chỉnh sửa toàn bộ thông tin & giáo trình khóa học này"
+              className="py-1 px-2.5 rounded-lg bg-teal-500/10 hover:bg-teal-500 text-teal-400 hover:text-slate-950 font-bold text-xs flex items-center gap-1.5 border border-teal-500/30 hover:border-teal-500 transition-all shadow-sm"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Sửa Khóa</span>
+              <span>Sửa Khóa Học</span>
             </button>
           )}
         </div>

@@ -56,13 +56,26 @@ function teraboxResolverPlugin(): Plugin {
             let json = await fetchRes.json();
 
             if (!json || json.errno !== 0 || !json.list || json.list.length === 0) {
+              apiUrl = `https://www.terabox.com/share/list?app_id=250528&shorturl=${encodeURIComponent(shorturlNo1)}&root=1`;
+              fetchRes = await fetch(apiUrl, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                  'Accept': 'application/json, text/plain, */*',
+                  'Referer': 'https://www.terabox.com/',
+                  'Cookie': 'lang=en',
+                }
+              });
+              json = await fetchRes.json();
+            }
+
+            if (!json || json.errno !== 0 || !json.list || json.list.length === 0) {
               apiUrl = `https://www.terabox.com/share/list?app_id=250528&shorturl=${encodeURIComponent(shorturlWith1)}&root=1`;
               fetchRes = await fetch(apiUrl, {
                 headers: {
                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
                   'Accept': 'application/json, text/plain, */*',
                   'Referer': 'https://www.terabox.com/',
-                  'Cookie': cookieHeader || 'lang=en',
+                  'Cookie': 'lang=en',
                 }
               });
               json = await fetchRes.json();
@@ -150,13 +163,26 @@ function teraboxResolverPlugin(): Plugin {
             let json = await fetchRes.json();
 
             if (!json || json.errno !== 0 || !json.list || json.list.length === 0) {
+              apiUrl = `https://www.terabox.com/share/list?app_id=250528&shorturl=${encodeURIComponent(shorturlNo1)}&root=1`;
+              fetchRes = await fetch(apiUrl, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                  'Accept': 'application/json, text/plain, */*',
+                  'Referer': 'https://www.terabox.com/',
+                  'Cookie': 'lang=en',
+                }
+              });
+              json = await fetchRes.json();
+            }
+
+            if (!json || json.errno !== 0 || !json.list || json.list.length === 0) {
               apiUrl = `https://www.terabox.com/share/list?app_id=250528&shorturl=${encodeURIComponent(shorturlWith1)}&root=1`;
               fetchRes = await fetch(apiUrl, {
                 headers: {
                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
                   'Accept': 'application/json, text/plain, */*',
                   'Referer': 'https://www.terabox.com/',
-                  'Cookie': cookieHeader || 'lang=en',
+                  'Cookie': 'lang=en',
                 }
               });
               json = await fetchRes.json();

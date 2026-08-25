@@ -22,10 +22,10 @@ export function getStoredCloudConfig(): CloudApiConfig {
     // ignore
   }
   return {
-    streamtapeLogin: '',
-    streamtapeKey: '',
-    abyssApiKey: '',
-    teraboxToken: '',
+    streamtapeLogin: 'b594c70e5a75cdfaa252',
+    streamtapeKey: 'Ore0rexG6gSk2Q',
+    abyssApiKey: 'ba8dac0020fbdbe8b3b931285e5acb42',
+    teraboxToken: 'YyBEzQx5eHui1iqLnLGobVhdjc_6HrAdN3ni2iD5',
   };
 }
 

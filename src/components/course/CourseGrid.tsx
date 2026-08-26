@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Course } from '../../types';
+import { matchCourseByQuery } from '../../lib/storage';
 import { CourseCard } from './CourseCard';
 import { FilterHub } from './FilterHub';
 import { 
@@ -125,20 +126,9 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
         }
       }
 
-      // 4. Filter by search query (Title, Description, Tags, Instructor, Lessons)
+      // 4. Filter by search query (Title, Description, Tags, Instructor, Source, Lessons, with Vietnamese accent-insensitivity)
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchTitle = course.title.toLowerCase().includes(q);
-        const matchDesc = (course.description || '').toLowerCase().includes(q);
-        const matchInstructor = (course.instructor || '').toLowerCase().includes(q);
-        const matchSource = (course.sourcePlatform || '').toLowerCase().includes(q);
-        const matchTags = course.tags && course.tags.some(t => t.toLowerCase().includes(q));
-        
-        const matchLessons = course.chapters.some(ch =>
-          ch.lessons.some(l => l.title.toLowerCase().includes(q))
-        );
-
-        return matchTitle || matchDesc || matchInstructor || matchSource || matchTags || matchLessons;
+        return matchCourseByQuery(course, searchQuery);
       }
 
       return true;
@@ -423,8 +413,8 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
                     <th className="py-3.5 px-5 text-right">Thao Tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {paginatedCourses.map((c) => {
+                <tbody className="divide-y divide-cyan-500/10">
+                  {paginatedCourses.map((c, index) => {
                     const total = (c.chapters || []).reduce((acc, ch) => acc + (ch.lessons || []).length, 0);
                     const completed = (c.chapters || []).reduce(
                       (acc, ch) => acc + (ch.lessons || []).filter(l => l.isCompleted).length,
@@ -433,12 +423,17 @@ export const CourseGrid: React.FC<CourseGridProps> = ({
                     const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
                     const isSelected = selectedCourseIds.includes(c.id);
                     const hasImgFailed = failedImageUrls[c.id] || !c.thumbnailUrl;
+                    const isEven = index % 2 === 1;
 
                     return (
                       <tr 
                         key={c.id} 
                         className={`transition-colors group ${
-                          isSelected ? 'bg-emerald-950/25 hover:bg-emerald-950/40' : 'hover:bg-slate-850/50'
+                          isSelected 
+                            ? 'bg-cyan-950/45 hover:bg-cyan-950/60' 
+                            : isEven 
+                              ? 'bg-[#0d1430]/70 hover:bg-[#131f47]/80' 
+                              : 'bg-[#060813]/40 hover:bg-[#0c122e]/70'
                         }`}
                       >
                         {/* Checkbox Column */}

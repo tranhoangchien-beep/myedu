@@ -179,16 +179,16 @@ export const FilterHub: React.FC<FilterHubProps> = ({
     selectedInstructor !== 'Tất cả';
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl backdrop-blur-md">
+    <div className="bg-[#0a0f24]/85 backdrop-blur-xl border border-cyan-500/20 rounded-3xl p-5 sm:p-6 space-y-4 shadow-[0_0_30px_rgba(0,240,255,0.05)]">
       
       {/* 1. Category Filter Row */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-            <Tags className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <Tags className="w-4 h-4 text-cyan-400" />
             <span>Chủ Đề / Danh Mục:</span>
             {selectedCategory !== 'Tất cả' && (
-              <span className="text-[11px] font-normal text-emerald-400 lowercase">
+              <span className="text-[11px] font-mono text-cyan-400 lowercase">
                 (đang lọc: {selectedCategory})
               </span>
             )}
@@ -197,7 +197,7 @@ export const FilterHub: React.FC<FilterHubProps> = ({
           {isFiltered && (
             <button
               onClick={onResetFilters}
-              className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1.5 font-bold transition-colors px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20"
+              className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1.5 font-mono font-bold transition-all px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.15)]"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Đặt lại bộ lọc</span>
@@ -214,16 +214,16 @@ export const FilterHub: React.FC<FilterHubProps> = ({
               <button
                 key={item.name}
                 onClick={() => onSelectCategory(item.name)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer select-none ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all flex items-center gap-1.5 cursor-pointer select-none border ${
                   isSelected
-                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25 font-bold scale-[1.02]'
-                    : 'bg-slate-950/80 text-slate-400 border border-slate-800 hover:text-white hover:bg-slate-800/80'
+                    ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.4)] font-bold scale-[1.02]'
+                    : 'bg-[#060813] text-slate-400 border-cyan-500/15 hover:text-cyan-300 hover:border-cyan-500/40 hover:bg-[#0d1430]'
                 }`}
               >
                 {item.name === 'Tất cả' && <Sparkles className="w-3 h-3" />}
                 <span>{item.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  isSelected ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-slate-400'
+                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                  isSelected ? 'bg-slate-950/40 text-slate-950' : 'bg-[#0a0f24] text-cyan-400 border border-cyan-500/20'
                 }`}>
                   {item.count}
                 </span>
@@ -234,16 +234,16 @@ export const FilterHub: React.FC<FilterHubProps> = ({
       </div>
 
       {/* 2. Linked Secondary Filters: Source Platform & Instructors */}
-      <div className="pt-3 border-t border-slate-800/80 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      <div className="pt-3 border-t border-cyan-500/15 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         
         {/* Linked Source Platform Filter */}
         <div className="space-y-2 flex-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <Globe className="w-3.5 h-3.5 text-teal-400" />
             <span>Nền Tảng / Nguồn Mua:</span>
             {selectedCategory !== 'Tất cả' && (
-              <span className="text-[10px] font-normal text-slate-500">
-                (thuộc chủ đề "{selectedCategory}")
+              <span className="text-[10px] font-mono text-slate-500">
+                (thuộc "{selectedCategory}")
               </span>
             )}
           </span>
@@ -256,15 +256,15 @@ export const FilterHub: React.FC<FilterHubProps> = ({
                 <button
                   key={item.name}
                   onClick={() => onSelectSource(item.name)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1 rounded-xl text-xs font-mono font-medium transition-all flex items-center gap-1.5 border ${
                     isSelected
-                      ? 'bg-teal-500 text-slate-950 font-bold shadow-sm'
-                      : 'bg-slate-950/70 text-slate-400 border border-slate-800/80 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? 'bg-teal-400 text-slate-950 border-teal-300 font-bold shadow-[0_0_10px_rgba(45,212,191,0.3)]'
+                      : 'bg-[#060813] text-slate-400 border-cyan-500/15 hover:text-slate-200 hover:border-cyan-500/30'
                   }`}
                 >
                   <span>{item.name}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isSelected ? 'bg-slate-950/30 text-slate-950 font-bold' : 'text-slate-500 bg-slate-900'
+                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                    isSelected ? 'bg-slate-950/40 text-slate-950 font-bold' : 'text-teal-400 bg-[#0a0f24] border border-teal-500/20'
                   }`}>
                     {item.count}
                   </span>
@@ -276,12 +276,12 @@ export const FilterHub: React.FC<FilterHubProps> = ({
 
         {/* Linked Instructor Filter Dropdown */}
         <div className="space-y-2 lg:min-w-[280px]">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-cyan-400" />
             <span>Tác Giả / Giảng Viên:</span>
             {dynamicInstructors.length > 1 && (
-              <span className="text-[10px] font-normal text-emerald-400">
-                ({dynamicInstructors.length - 1} giảng viên phù hợp)
+              <span className="text-[10px] font-mono text-cyan-400">
+                ({dynamicInstructors.length - 1} giảng viên)
               </span>
             )}
           </span>
@@ -290,17 +290,17 @@ export const FilterHub: React.FC<FilterHubProps> = ({
             <select
               value={selectedInstructor}
               onChange={(e) => onSelectInstructor(e.target.value)}
-              className="w-full appearance-none bg-slate-950 border border-slate-800 text-xs text-slate-200 font-semibold rounded-2xl px-3.5 py-2 pr-8 focus:outline-none focus:border-emerald-500 hover:border-slate-700 transition-colors shadow-inner"
+              className="w-full appearance-none bg-[#060813] border border-cyan-500/20 text-xs font-mono text-slate-200 font-semibold rounded-2xl px-3.5 py-2 pr-8 focus:outline-none focus:border-cyan-400 hover:border-cyan-500/40 transition-colors shadow-inner"
             >
               {dynamicInstructors.map((item) => (
-                <option key={item.name} value={item.name}>
+                <option key={item.name} value={item.name} className="bg-[#060813]">
                   {item.name === 'Tất cả' 
                     ? `Tất cả giảng viên (${item.count} khóa)` 
                     : `${item.name} (${item.count} khóa)`}
                 </option>
               ))}
             </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-cyan-400">
               <ChevronDown className="w-4 h-4" />
             </div>
           </div>

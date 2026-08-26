@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { Course } from '../../types';
+import { normalizeDurationMinutes } from '../../lib/storage';
 import { 
-  ChevronLeft, 
+  X, 
   CheckCircle2, 
-  Circle, 
-  Star, 
+  ChevronDown, 
+  ChevronRight, 
   Play, 
-  Clock, 
-  PlusCircle,
-  FolderOpen,
-  FileText,
-  Layers,
-  Paperclip,
-  Edit3,
-  Check
+  FileText, 
+  Layers, 
+  Paperclip, 
+  Target,
+  Clock,
+  Sparkles,
+  BookOpen,
+  Edit3
 } from 'lucide-react';
 
 interface LessonSidebarProps {
@@ -21,11 +22,12 @@ interface LessonSidebarProps {
   currentLessonId: string;
   onSelectLesson: (lessonId: string) => void;
   onToggleComplete: (lessonId: string) => void;
-  onToggleStar: (lessonId: string) => void;
+  onToggleStar?: (lessonId: string) => void;
   onUpdateDuration?: (lessonId: string, durationMinutes: number) => void;
-  onBackToCourseList: () => void;
-  onOpenBulkImportForCourse: (courseId: string) => void;
+  onBackToCourseList?: () => void;
+  onOpenBulkImportForCourse?: (courseId: string) => void;
   onEditCourse?: (course: Course) => void;
+  onCloseSidebar?: () => void;
 }
 
 export const LessonSidebar: React.FC<LessonSidebarProps> = ({
@@ -33,29 +35,10 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
   currentLessonId,
   onSelectLesson,
   onToggleComplete,
-  onToggleStar,
-  onUpdateDuration,
-  onBackToCourseList,
-  onOpenBulkImportForCourse,
   onEditCourse,
+  onCloseSidebar,
 }) => {
-  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
-  const [tempDuration, setTempDuration] = useState<string>('');
-
-  const handleStartEditDuration = (e: React.MouseEvent, lessonId: string, currentDuration: number) => {
-    e.stopPropagation();
-    setEditingLessonId(lessonId);
-    setTempDuration(String(currentDuration || 15));
-  };
-
-  const handleSaveDuration = (lessonId: string) => {
-    const parsed = parseInt(tempDuration, 10);
-    if (!isNaN(parsed) && parsed > 0 && onUpdateDuration) {
-      onUpdateDuration(lessonId, parsed);
-    }
-    setEditingLessonId(null);
-  };
-  // Compute progress
+  // Compute overall progress metrics
   let totalLessons = 0;
   let completedCount = 0;
 
@@ -68,147 +51,239 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
 
   const percent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
-  return (
-    <div className="bg-slate-900/95 border border-slate-800/90 rounded-2xl p-4 flex flex-col h-[calc(100vh-6.5rem)] shadow-2xl backdrop-blur-md">
-      
-      {/* Header & Back Button */}
-      <div className="pb-3 border-b border-slate-800/80 mb-3 flex-shrink-0">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <button
-            onClick={onBackToCourseList}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors group"
-          >
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span>Về danh sách</span>
-          </button>
+  // Track collapsed chapters (default: open all or open active chapter)
+  const [collapsedChapters, setCollapsedChapters] = useState<Record<string, boolean>>({});
 
-          {/* Quick Edit Course Button */}
-          {onEditCourse && (
-            <button
-              onClick={() => onEditCourse(course)}
-              title="Chỉnh sửa toàn bộ thông tin & giáo trình khóa học này"
-              className="py-1 px-2.5 rounded-lg bg-teal-500/10 hover:bg-teal-500 text-teal-400 hover:text-slate-950 font-bold text-xs flex items-center gap-1.5 border border-teal-500/30 hover:border-teal-500 transition-all shadow-sm"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Sửa Khóa Học</span>
-            </button>
-          )}
+  const toggleChapter = (chId: string) => {
+    setCollapsedChapters(prev => ({
+      ...prev,
+      [chId]: !prev[chId]
+    }));
+  };
+
+  return (
+    <div className="bg-[#0a0f24]/95 border border-cyan-500/20 rounded-3xl flex flex-col h-[calc(100vh-6.5rem)] shadow-[0_0_35px_rgba(0,240,255,0.06)] backdrop-blur-xl overflow-hidden font-sans select-none">
+      
+      {/* 1. COURSERA SYLLABUS HEADER */}
+      <div className="p-4 sm:p-5 border-b border-cyan-500/15 flex-shrink-0 bg-[#060813]/60 space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 mb-1">
+              <BookOpen className="w-3 h-3" />
+              <span>Mục Lục Khóa Học // TABLE OF CONTENTS</span>
+            </span>
+            <h2 className="font-extrabold text-sm sm:text-base text-white line-clamp-2 leading-tight tracking-tight" title={course.title}>
+              {course.title}
+            </h2>
+          </div>
+
+          {/* Close Sidebar button (Coursera [X] button with tooltip) */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {onEditCourse && (
+              <button
+                onClick={() => onEditCourse(course)}
+                title="Chỉnh sửa khóa học"
+                className="p-1.5 rounded-xl bg-[#060813] text-slate-400 hover:text-cyan-300 hover:bg-[#0e1633] border border-cyan-500/20 transition-all"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {onCloseSidebar && (
+              <button
+                onClick={onCloseSidebar}
+                title="Thu gọn mục lục khóa học"
+                className="p-1.5 rounded-xl bg-[#060813] hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-300 border border-cyan-500/20 transition-all group"
+              >
+                <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </button>
+            )}
+          </div>
         </div>
 
-        <h2 className="font-bold text-sm text-white line-clamp-2 leading-tight" title={course.title}>
-          {course.title}
-        </h2>
+        {/* 2. COURSERA DAILY GOAL / TARGET WIDGET */}
+        <div className="p-3 rounded-2xl bg-[#060813] border border-cyan-500/25 flex items-center justify-between gap-3 shadow-inner">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 flex-shrink-0">
+              <Target className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white leading-tight">Mục tiêu khóa học</p>
+              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                Hoàn thành <span className="text-cyan-300 font-bold">{completedCount}/{totalLessons} bài</span>
+              </p>
+            </div>
+          </div>
 
-        {/* Progress Bar */}
-        <div className="mt-3 space-y-1.5">
-          <div className="flex justify-between text-xs">
-            <span className="text-slate-400 font-medium">Tiến độ khóa học</span>
-            <span className="text-emerald-400 font-bold">{completedCount}/{totalLessons} ({percent}%)</span>
+          {/* Progress Ring / Percentage Pill */}
+          <div className="flex items-center gap-1.5 flex-shrink-0 font-mono">
+            <span className="text-xs font-extrabold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 shadow-[0_0_10px_rgba(0,255,157,0.2)]">
+              {percent}%
+            </span>
           </div>
-          <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
-              style={{ width: `${percent}%` }}
-            />
-          </div>
+        </div>
+
+        {/* Slim Progress Bar */}
+        <div className="w-full h-1.5 bg-[#060813] rounded-full overflow-hidden border border-cyan-500/20">
+          <div
+            className="h-full bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(0,240,255,0.4)]"
+            style={{ width: `${percent}%` }}
+          />
         </div>
       </div>
 
-      {/* Chapters and Lessons List (Full Scrollable Area) */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1.5 custom-scrollbar">
-        {course.chapters.map((chapter) => (
-          <div key={chapter.id} className="space-y-1.5">
-            {/* Chapter Header */}
-            <div className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-bold text-slate-300 uppercase tracking-wider bg-slate-950/80 rounded-xl border border-slate-800/60 sticky top-0 z-10 backdrop-blur-sm">
-              <FolderOpen className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-              <span className="truncate">{chapter.title}</span>
-              <span className="text-[10px] text-slate-500 font-normal ml-auto">({chapter.lessons.length})</span>
-            </div>
+      {/* 3. COURSERA MODULES & LESSONS ACCORDION LIST */}
+      <div className="flex-1 overflow-y-auto space-y-3 p-3 custom-scrollbar">
+        {course.chapters.map((chapter, chIdx) => {
+          const isCollapsed = collapsedChapters[chapter.id];
+          const completedInChapter = chapter.lessons.filter(l => l.isCompleted).length;
+          const totalInChapter = chapter.lessons.length;
+          const isChapterComplete = totalInChapter > 0 && completedInChapter === totalInChapter;
 
-            {/* Lessons List */}
-            <div className="space-y-1 pl-1">
-              {chapter.lessons.map((lesson) => {
-                const isActive = lesson.id === currentLessonId;
-
-                return (
-                  <div
-                    key={lesson.id}
-                    className={`group/item flex items-center justify-between p-2.5 rounded-xl border text-xs transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-emerald-500/15 border-emerald-500/50 text-white shadow-md ring-1 ring-emerald-500/20'
-                        : 'bg-slate-950/40 border-slate-800/60 text-slate-300 hover:bg-slate-800/60 hover:border-slate-700'
-                    }`}
-                    onClick={() => onSelectLesson(lesson.id)}
-                    title={lesson.title}
-                  >
-                    {/* Left: Format Icon / Title */}
-                    <div className="flex items-start gap-2.5 flex-1 min-w-0 pr-2">
-                      <div className="flex-shrink-0 mt-0.5">
-                        {lesson.type === 'article' ? (
-                          <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                            isActive ? 'bg-teal-500/20 text-teal-300 font-bold animate-pulse' : 'bg-slate-800 text-teal-400'
-                          }`}>
-                            <FileText className="w-2.5 h-2.5" />
-                          </div>
-                        ) : lesson.type === 'mixed' ? (
-                          <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                            isActive ? 'bg-amber-500/20 text-amber-300 font-bold animate-pulse' : 'bg-slate-800 text-amber-400'
-                          }`}>
-                            <Layers className="w-2.5 h-2.5" />
-                          </div>
-                        ) : isActive ? (
-                          <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center animate-pulse">
-                            <Play className="w-2.5 h-2.5 fill-current" />
-                          </div>
-                        ) : (
-                          <div className="w-4 h-4 rounded-full bg-slate-800 text-slate-500 flex items-center justify-center group-hover/item:text-slate-300">
-                            <Play className="w-2.5 h-2.5 fill-current" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p className={`font-medium line-clamp-2 leading-snug ${isActive ? 'text-emerald-300 font-bold' : ''}`}>
-                          {lesson.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          {lesson.type === 'article' && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                              Bài đọc
-                            </span>
-                          )}
-                          {lesson.attachments && lesson.attachments.length > 0 && (
-                            <span className="text-[10px] text-slate-500 flex items-center gap-0.5" title={`${lesson.attachments.length} tài liệu đính kèm`}>
-                              <Paperclip className="w-2.5 h-2.5 text-emerald-400" />
-                              {lesson.attachments.length}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Checkmark Action */}
-                    <div className="flex items-center flex-shrink-0 self-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => onToggleComplete(lesson.id)}
-                        title={lesson.isCompleted ? 'Đánh dấu chưa học' : 'Đánh dấu đã hoàn thành'}
-                        className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
-                      >
-                        {lesson.isCompleted ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 fill-emerald-400/20" />
-                        ) : (
-                          <Circle className="w-4 h-4 text-slate-600 hover:text-slate-400" />
-                        )}
-                      </button>
-                    </div>
+          return (
+            <div key={chapter.id} className="rounded-2xl bg-[#060813]/60 border border-cyan-500/15 overflow-hidden transition-all shadow-sm">
+              
+              {/* Module / Chapter Accordion Header */}
+              <button
+                type="button"
+                onClick={() => toggleChapter(chapter.id)}
+                className="w-full p-3 bg-[#060813] hover:bg-[#0e1633] flex items-center justify-between gap-2 text-left transition-colors border-b border-cyan-500/10 group"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider">
+                      Mô-đun {chIdx + 1}
+                    </span>
+                    {isChapterComplete && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                        Đã xong
+                      </span>
+                    )}
                   </div>
-                );
-              })}
+                  <h3 className="text-xs font-bold text-slate-200 group-hover:text-white transition-colors truncate mt-0.5">
+                    {chapter.title}
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0 text-slate-500 group-hover:text-slate-300">
+                  <span className="text-[11px] font-mono text-slate-400 font-medium">
+                    {completedInChapter}/{totalInChapter}
+                  </span>
+                  {isCollapsed ? (
+                    <ChevronRight className="w-4 h-4 text-cyan-400/80 transition-transform" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-cyan-400 transition-transform" />
+                  )}
+                </div>
+              </button>
+
+              {/* Lessons in Module */}
+              {!isCollapsed && (
+                <div className="divide-y divide-cyan-500/10">
+                  {chapter.lessons.map((lesson) => {
+                    const isActive = lesson.id === currentLessonId;
+
+                    return (
+                      <div
+                        key={lesson.id}
+                        onClick={() => onSelectLesson(lesson.id)}
+                        className={`group flex items-start gap-3 p-3 text-xs transition-all cursor-pointer relative ${
+                          isActive
+                            ? 'bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-transparent border-l-4 border-cyan-400 text-white font-medium shadow-inner'
+                            : 'hover:bg-[#0e1633]/60 text-slate-300 hover:text-white border-l-4 border-transparent'
+                        }`}
+                      >
+                        {/* Coursera Checkbox Status Circle */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleComplete(lesson.id);
+                          }}
+                          title={lesson.isCompleted ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu đã hoàn thành'}
+                          className="mt-0.5 flex-shrink-0 p-0.5 rounded-full hover:scale-110 transition-transform"
+                        >
+                          {lesson.isCompleted ? (
+                            <div className="w-4 h-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-[0_0_8px_rgba(0,255,157,0.5)]">
+                              <CheckCircle2 className="w-3.5 h-3.5 fill-current" />
+                            </div>
+                          ) : (
+                            <div className={`w-4 h-4 rounded-full border-2 transition-colors ${
+                              isActive ? 'border-cyan-400 bg-cyan-500/20' : 'border-slate-600 group-hover:border-slate-400'
+                            }`} />
+                          )}
+                        </button>
+
+                        {/* Title & Subtitle Badge (Coursera Style: "Video • 6 phút") */}
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <p className={`line-clamp-2 leading-snug transition-colors ${
+                            isActive ? 'font-bold text-cyan-300' : 'font-medium text-slate-200 group-hover:text-white'
+                          }`}>
+                            {lesson.title}
+                          </p>
+
+                          <div className="flex items-center gap-2 flex-wrap text-[11px] font-mono text-slate-400">
+                            {/* Format Icon & Type */}
+                            <span className="flex items-center gap-1 font-semibold">
+                              {lesson.type === 'article' ? (
+                                <>
+                                  <FileText className="w-3 h-3 text-cyan-400" />
+                                  <span>Bài đọc</span>
+                                </>
+                              ) : lesson.type === 'mixed' ? (
+                                <>
+                                  <Layers className="w-3 h-3 text-amber-400" />
+                                  <span>Bài học tổng hợp</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="w-3 h-3 text-cyan-400 fill-cyan-400/30" />
+                                  <span>Video</span>
+                                </>
+                              )}
+                            </span>
+
+                            <span>&bull;</span>
+
+                            {/* Duration */}
+                            {(() => {
+                              const norm = normalizeDurationMinutes(lesson.durationMinutes, 15);
+                              const formatted = norm >= 60
+                                ? `${Math.floor(norm / 60)}h ${norm % 60 > 0 ? `${norm % 60}p` : ''}`
+                                : `${norm} phút`;
+                              return (
+                                <span className="flex items-center gap-1 text-slate-400">
+                                  <Clock className="w-3 h-3 text-slate-500" />
+                                  <span>{formatted}</span>
+                                </span>
+                              );
+                            })()}
+
+                            {/* Attachments indicator */}
+                            {lesson.attachments && lesson.attachments.length > 0 && (
+                              <>
+                                <span>&bull;</span>
+                                <span className="flex items-center gap-1 text-cyan-400/80 font-medium" title={`${lesson.attachments.length} tài liệu đính kèm`}>
+                                  <Paperclip className="w-2.5 h-2.5" />
+                                  <span>{lesson.attachments.length} tệp</span>
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
     </div>
   );
 };
+

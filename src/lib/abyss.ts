@@ -282,3 +282,51 @@ export function isValidAbyssInput(input: string): boolean {
   const parsed = parseUniversalVideo(input);
   return parsed.provider !== 'unknown' && parsed.embedUrl !== '';
 }
+
+/**
+ * Tự động nhận diện đâu là Streamtape và đâu là Abyss,
+ * Luôn đặt Streamtape làm nguồn phát chính (primary), và Abyss làm nguồn dự phòng (mirror/fallback).
+ * Nếu người dùng dán ngược (Ô chính = Abyss, Ô phụ = Streamtape) hoặc bất kỳ thứ tự nào:
+ * -> Tự động hoán đổi về đúng chuẩn: Primary = Streamtape, Mirror = Abyss.
+ */
+export function normalizeLessonVideoSources(
+  sourceA?: string,
+  sourceB?: string
+): { primary: string; mirror?: string } {
+  const sA = (sourceA || '').trim();
+  const sB = (sourceB || '').trim();
+
+  if (!sA && !sB) {
+    return { primary: '', mirror: undefined };
+  }
+  if (sA && !sB) {
+    return { primary: sA, mirror: undefined };
+  }
+  if (!sA && sB) {
+    return { primary: sB, mirror: undefined };
+  }
+
+  const pA = parseUniversalVideo(sA).provider;
+  const pB = parseUniversalVideo(sB).provider;
+
+  // Trường hợp 1: Có cả 2 nguồn, một nguồn là Streamtape và nguồn kia là Abyss
+  if (pA === 'abyss' && pB === 'streamtape') {
+    return { primary: sB, mirror: sA };
+  }
+  if (pA === 'streamtape' && pB === 'abyss') {
+    return { primary: sA, mirror: sB };
+  }
+
+  // Trường hợp 2: sB là Streamtape còn sA là nguồn khác
+  if (pB === 'streamtape' && pA !== 'streamtape') {
+    return { primary: sB, mirror: sA };
+  }
+
+  // Trường hợp 3: sA là Abyss còn sB là nguồn khác không phải Streamtape
+  if (pA === 'abyss' && pB && pB !== 'abyss') {
+    return { primary: sB, mirror: sA };
+  }
+
+  // Mặc định giữ nguyên sA làm chính, sB làm dự phòng
+  return { primary: sA, mirror: sB };
+}

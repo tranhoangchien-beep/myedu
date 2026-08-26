@@ -29,7 +29,7 @@ import { Breadcrumb } from './components/layout/Breadcrumb';
 import { MasterLoginView } from './components/auth/MasterLoginView';
 import { isAuthenticated, verifySessionToken, clearAuthenticatedSession } from './lib/auth';
 import { fetchFromCloud, syncToCloud, subscribeToCloudChanges, isFirebaseConfigured } from './lib/firebase';
-import { Edit3, Zap } from 'lucide-react';
+import { Edit3, Zap, BookOpen, Menu, Flag } from 'lucide-react';
 
 export const App: React.FC = () => {
   // Authentication State (Master QTV Gate)
@@ -66,7 +66,6 @@ export const App: React.FC = () => {
   const [selectedInstructor, setSelectedInstructor] = useState<string>('Tất cả');
 
   // Player preferences
-  const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [autoPlayNext, setAutoPlayNext] = useState<boolean>(true);
 
   // Sub-Modals
@@ -78,6 +77,7 @@ export const App: React.FC = () => {
   const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
 
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
+  const [isSyllabusCollapsed, setIsSyllabusCollapsed] = useState<boolean>(false);
 
   const isInitialSyncDoneRef = useRef<boolean>(false);
   const lastLocalWriteTimeRef = useRef<number>(0);
@@ -562,9 +562,18 @@ export const App: React.FC = () => {
         return;
       }
 
-      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+      if (e.key === '?') {
         e.preventDefault();
         setIsShortcutsOpen(prev => !prev);
+      } else if (e.key === '/') {
+        if (currentView === 'home' || currentView === 'favorites') {
+          e.preventDefault();
+          const el = document.getElementById('global-search-input') as HTMLInputElement;
+          if (el) {
+            el.focus();
+            el.select();
+          }
+        }
       }
 
       if (currentView === 'player') {
@@ -574,23 +583,19 @@ export const App: React.FC = () => {
         } else if (e.key === 'p' || e.key === 'P') {
           e.preventDefault();
           handlePrevLesson();
-        } else if (e.key === 'z' || e.key === 'Z') {
+        } else if (e.key === 'm' || e.key === 'M') {
           e.preventDefault();
-          setIsZenMode(prev => !prev);
+          setIsSyllabusCollapsed(prev => !prev);
         } else if (e.key === 'Escape') {
-          if (isZenMode) {
-            setIsZenMode(false);
-          } else {
-            setCurrentView('home');
-            window.location.hash = '#/';
-          }
+          setCurrentView('home');
+          window.location.hash = '#/';
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, isZenMode, handleNextLesson, handlePrevLesson]);
+  }, [currentView, handleNextLesson, handlePrevLesson]);
 
   // Navigate to player with selected course & lesson
   const handleSelectCourseAndLesson = (courseId: string, lessonId?: string) => {
@@ -890,33 +895,37 @@ export const App: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-slate-950">
       
       {/* Dynamic Global Navbar */}
-      {!isZenMode && (
-        <Navbar
-          currentView={currentView}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onNavigateHome={() => {
+      <Navbar
+        currentView={currentView}
+        searchQuery={searchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          if (q.trim() && currentView !== 'home' && currentView !== 'studio') {
             setCurrentView('home');
             window.location.hash = '#/';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          onOpenStudio={() => {
-            setCurrentView('studio');
-            window.location.hash = '#/studio';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          onOpenShortcuts={() => setIsShortcutsOpen(true)}
-          onLogout={() => {
-            clearAuthenticatedSession();
-            setIsAuth(false);
-          }}
-          totalCoursesCount={courses.length}
-          userStats={userStats}
-        />
-      )}
+          }
+        }}
+        onNavigateHome={() => {
+          setCurrentView('home');
+          window.location.hash = '#/';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenStudio={() => {
+          setCurrentView('studio');
+          window.location.hash = '#/studio';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        onLogout={() => {
+          clearAuthenticatedSession();
+          setIsAuth(false);
+        }}
+        totalCoursesCount={courses.length}
+        userStats={userStats}
+      />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      {/* Main Content Area (Synchronized wide container for all views) */}
+      <main className="flex-1 max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-5">
         
         {/* VIEW 1: Home Course Catalog */}
         {currentView === 'home' && (
@@ -963,33 +972,77 @@ export const App: React.FC = () => {
           <div className="space-y-4">
             
             {/* Interactive Hierarchical Breadcrumb */}
-            {!isZenMode && (
-              <div className="pb-1 border-b border-slate-800/80">
-                <Breadcrumb
-                  category={activeCourse.category}
-                  courseTitle={activeCourse.title}
-                  courseId={activeCourse.id}
-                  chapterTitle={activeChapter?.title}
-                  lessonTitle={activeLesson.title}
-                  onNavigateHome={() => {
-                    setCurrentView('home');
-                    window.location.hash = '#/';
-                  }}
-                  onSelectCategory={(cat) => {
-                    handleSelectCategory(cat);
-                    setCurrentView('home');
-                    window.location.hash = '#/';
-                  }}
-                  onSelectCourse={(cId) => handleSelectCourseAndLesson(cId)}
-                />
-              </div>
-            )}
+            <div className="pb-1 border-b border-slate-800/80">
+              <Breadcrumb
+                category={activeCourse.category}
+                courseTitle={activeCourse.title}
+                courseId={activeCourse.id}
+                chapterTitle={activeChapter?.title}
+                lessonTitle={activeLesson.title}
+                onNavigateHome={() => {
+                  setCurrentView('home');
+                  window.location.hash = '#/';
+                }}
+                onSelectCategory={(cat) => {
+                  handleSelectCategory(cat);
+                  setCurrentView('home');
+                  window.location.hash = '#/';
+                }}
+                onSelectCourse={(cId) => handleSelectCourseAndLesson(cId)}
+              />
+            </div>
 
-            {/* Single Persistent Player Layout (Prevents video reload when Zen Mode is toggled) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              <div className={`transition-all duration-300 space-y-5 ${
-                isZenMode ? 'lg:col-span-12 max-w-6xl mx-auto w-full pt-1' : 'lg:col-span-8'
-              }`}>
+            {/* Single Persistent Coursera Player Layout (Left: Mục Lục, Center: Cinema Player, Right: Utility Rail) */}
+            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 items-start">
+              
+              {/* Left Column: Coursera Collapsible Table of Contents (Mục Lục) */}
+              {!isSyllabusCollapsed ? (
+                <div className="w-full lg:w-80 xl:w-[340px] flex-shrink-0 sticky top-20 animate-fade-in">
+                  <LessonSidebar
+                    course={activeCourse}
+                    currentLessonId={activeLesson.id}
+                    onSelectLesson={(lId) => handleSelectCourseAndLesson(activeCourse.id, lId)}
+                    onToggleComplete={(lId) => handleToggleComplete(lId)}
+                    onToggleStar={(lId) => handleToggleStar(lId)}
+                    onUpdateDuration={handleUpdateLessonDuration}
+                    onBackToCourseList={() => setCurrentView('home')}
+                    onEditCourse={handleEditCourse}
+                    onCloseSidebar={() => setIsSyllabusCollapsed(true)}
+                  />
+                </div>
+              ) : (
+                <div className="w-14 sm:w-16 flex-shrink-0 sticky top-20 bg-[#0a0f24]/95 border border-cyan-500/20 rounded-3xl p-2.5 flex flex-col items-center gap-5 shadow-[0_0_25px_rgba(0,240,255,0.06)] backdrop-blur-xl h-[calc(100vh-6.5rem)] animate-fade-in select-none">
+                  <button
+                    onClick={() => setIsSyllabusCollapsed(false)}
+                    className="p-2.5 rounded-2xl bg-[#060813] hover:bg-cyan-500/20 text-cyan-400 hover:text-white border border-cyan-500/25 transition-all shadow-sm group"
+                    title="Mở mục lục khóa học (Mục lục)"
+                  >
+                    <Menu className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  </button>
+
+                  <div className="flex flex-col items-center gap-1.5 pt-2 border-t border-cyan-500/15 w-full">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-pink-500/20 to-cyan-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+                      <Flag className="w-4 h-4 fill-pink-400/20" />
+                    </div>
+                    <span className="text-[11px] font-mono font-extrabold text-slate-300">
+                      {(() => {
+                        let done = 0;
+                        let total = 0;
+                        activeCourse.chapters.forEach(ch => {
+                          ch.lessons.forEach(l => {
+                            total += 1;
+                            if (l.isCompleted) done += 1;
+                          });
+                        });
+                        return `${done}/${total}`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Center Column: Coursera Cinema Player & Action Controls */}
+              <div className="transition-all duration-300 flex-1 min-w-0 w-full">
                 <AbyssPlayer
                   course={activeCourse}
                   currentLesson={activeLesson}
@@ -1001,31 +1054,11 @@ export const App: React.FC = () => {
                   onToggleStar={(lId) => handleToggleStar(lId)}
                   onUpdateNotes={handleUpdateNotes}
                   onUpdateDuration={handleUpdateLessonDuration}
-                  isZenMode={isZenMode}
-                  onToggleZenMode={() => setIsZenMode(prev => !prev)}
                   autoPlayNext={autoPlayNext}
                   onToggleAutoPlayNext={() => setAutoPlayNext(prev => !prev)}
                 />
               </div>
 
-              {!isZenMode && (
-                <div className="lg:col-span-4 sticky top-20">
-                  <LessonSidebar
-                    course={activeCourse}
-                    currentLessonId={activeLesson.id}
-                    onSelectLesson={(lId) => handleSelectCourseAndLesson(activeCourse.id, lId)}
-                    onToggleComplete={(lId) => handleToggleComplete(lId)}
-                    onToggleStar={(lId) => handleToggleStar(lId)}
-                    onUpdateDuration={handleUpdateLessonDuration}
-                    onBackToCourseList={() => setCurrentView('home')}
-                    onOpenBulkImportForCourse={(cId) => {
-                      setBulkCourseId(cId);
-                      setIsBulkModalOpen(true);
-                    }}
-                    onEditCourse={handleEditCourse}
-                  />
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1051,6 +1084,8 @@ export const App: React.FC = () => {
             categories={categories}
             sources={sources}
             instructors={instructors}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
             onBackToLearning={() => {
               setCurrentView('home');
               window.location.hash = '#/';
@@ -1123,11 +1158,9 @@ export const App: React.FC = () => {
       />
 
       {/* Footer */}
-      {!isZenMode && (
-        <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-          <p>MyEdu Personal Learning Workspace &bull; Powered by Google Antigravity 2.0 &bull; Abyss Video Cloud</p>
-        </footer>
-      )}
+      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+        <p>MyEdu Personal Learning Workspace &bull; Powered by Google Antigravity 2.0 &bull; Abyss Video Cloud</p>
+      </footer>
 
     </div>
   );

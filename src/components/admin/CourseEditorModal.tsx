@@ -27,11 +27,11 @@ import {
   HardDrive,
   RefreshCw
 } from 'lucide-react';
-import { extractAbyssId, parseUniversalVideo } from '../../lib/abyss';
+import { extractAbyssId, normalizeLessonVideoSources, parseUniversalVideo } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
 import { RichTextEditor } from '../common/RichTextEditor';
-import { QuickBulkEmbedModal } from './QuickBulkEmbedModal';
 import { TeraBoxImportModal } from './TeraBoxImportModal';
+import { normalizeDurationMinutes } from '../../lib/storage';
 
 interface CourseEditorModalProps {
   isOpen: boolean;
@@ -93,9 +93,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
   const draggedChapterIdxRef = useRef<number | null>(null);
 
-  // Modal alert confirmation for unsaved changes & Quick Abyss / TeraBox Embed Modal
+  // Modal alert confirmation for unsaved changes & TeraBox Embed Modal
   const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
-  const [isQuickEmbedOpen, setIsQuickEmbedOpen] = useState<boolean>(false);
   const [isTeraBoxModalOpen, setIsTeraBoxModalOpen] = useState<boolean>(false);
   const [activeEditingCourseId, setActiveEditingCourseId] = useState<string | null>(null);
 
@@ -180,10 +179,13 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
               finalTitle = actualTitle;
               finalSource = actualSource;
             }
+            const { primary, mirror } = normalizeLessonVideoSources(finalSource, les.mirrorVideoSource);
+
             return {
               ...les,
               title: finalTitle,
-              videoSource: finalSource
+              videoSource: primary,
+              mirrorVideoSource: mirror
             };
           })
         }));
@@ -314,6 +316,18 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     const finalId = activeEditingCourseId || (courseToEdit ? courseToEdit.id : `course-${Date.now()}`);
     setActiveEditingCourseId(finalId);
 
+    const normalizedChapters = chapters.map(ch => ({
+      ...ch,
+      lessons: ch.lessons.map(les => {
+        const { primary, mirror } = normalizeLessonVideoSources(les.videoSource, les.mirrorVideoSource);
+        return {
+          ...les,
+          videoSource: primary || undefined,
+          mirrorVideoSource: mirror || undefined,
+        };
+      })
+    }));
+
     const savedCourse: Course = {
       id: finalId,
       title: title.trim(),
@@ -323,7 +337,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
       sourcePlatform: sourcePlatform || 'Khác',
       thumbnailUrl: thumbnailUrl.trim() || undefined,
       tags,
-      chapters,
+      chapters: normalizedChapters,
       createdAt: courseToEdit ? courseToEdit.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -476,6 +490,27 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     }));
   };
 
+  // Tự động hoán đổi và chuẩn hóa nguồn video (Luôn ưu tiên Streamtape làm chính, Abyss làm dự phòng)
+  const handleNormalizeActiveLessonSources = () => {
+    if (!activeSelection) return;
+    const { chId, lessonId } = activeSelection;
+    setChapters(prev => prev.map(ch => {
+      if (ch.id !== chId) return ch;
+      return {
+        ...ch,
+        lessons: ch.lessons.map(l => {
+          if (l.id !== lessonId) return l;
+          const { primary, mirror } = normalizeLessonVideoSources(l.videoSource, l.mirrorVideoSource);
+          return {
+            ...l,
+            videoSource: primary || undefined,
+            mirrorVideoSource: mirror || undefined,
+          };
+        })
+      };
+    }));
+  };
+
   const handleDeleteLesson = (chId: string, lessonId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const targetChapter = chapters.find(ch => ch.id === chId);
@@ -590,16 +625,28 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
     if (!activeLesson) return;
     const newAtt: Attachment = {
       id: `att-${Date.now()}`,
-      name: 'Tài liệu mới (Slide / Code)',
-      url: 'https://drive.google.com',
-      type: 'drive',
+      name: 'Tài liệu học tập (PDF)',
+      url: '',
+      type: 'pdf', // Mặc định tất cả đều là PDF
     };
     handleUpdateActiveLesson('attachments', [...(activeLesson.attachments || []), newAtt]);
   };
 
   const handleUpdateAttachment = (attId: string, field: keyof Attachment, value: string) => {
     if (!activeLesson) return;
-    const updated = (activeLesson.attachments || []).map(a => a.id === attId ? { ...a, [field]: value } : a);
+    const updated = (activeLesson.attachments || []).map(a => {
+      if (a.id === attId) {
+        const next = { ...a, [field]: value };
+        if (field === 'url') {
+          const u = value.toLowerCase();
+          if (u.includes('terabox') || u.includes('1024tera') || u.includes('terasharelink') || u.includes('mirrobox') || u.includes('nephobox')) {
+            next.type = 'terabox';
+          }
+        }
+        return next;
+      }
+      return a;
+    });
     handleUpdateActiveLesson('attachments', updated);
   };
 
@@ -612,25 +659,27 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const totalLessonsCount = chapters.reduce((acc, ch) => acc + ch.lessons.length, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden animate-fade-in">
-      <div className="relative w-full max-w-7xl h-[92vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md">
+      <div className="relative w-full max-w-7xl bg-[#0a0f24]/95 border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(0,240,255,0.12)] overflow-hidden flex flex-col h-[92vh]">
+        {/* Top Glowing Strip */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400" />
         
-        {/* Top Header Bar: Clean & Zero Layout Shift */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/90 gap-4 flex-wrap">
+        {/* Studio Modal Header */}
+        <div className="p-4 sm:p-5 border-b border-cyan-500/15 flex items-center justify-between bg-[#060813]/80 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-lg shadow-emerald-500/20 flex-shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-400 to-emerald-400 text-slate-950 flex items-center justify-center font-bold shadow-[0_0_15px_rgba(0,240,255,0.3)] flex-shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-base sm:text-lg text-white tracking-tight truncate max-w-md">
+                <h2 className="font-extrabold text-base sm:text-lg text-white tracking-tight truncate max-w-md font-mono">
                   {title || (courseToEdit ? 'Chỉnh Sửa Khóa Học' : 'Tạo Khóa Học Mới')}
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 font-bold flex-shrink-0">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#060813] text-cyan-300 font-mono font-bold border border-cyan-500/30 flex-shrink-0">
                   {totalLessonsCount} bài
                 </span>
               </div>
-              <p className="text-xs text-slate-400 truncate">
+              <p className="text-xs font-mono text-slate-400 truncate">
                 Mục lục bên trái & Soạn thảo chi tiết bài giảng bên phải
               </p>
             </div>
@@ -638,14 +687,14 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
 
           {/* Section Navigation & Safe Close Button */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="flex items-center bg-slate-900 p-1 rounded-2xl border border-slate-800">
+            <div className="flex items-center bg-[#060813] p-1 rounded-2xl border border-cyan-500/20 font-mono">
               <button
                 type="button"
                 onClick={() => setStudioSection('curriculum')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
                   studioSection === 'curriculum'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                    : 'text-slate-400 hover:text-white border-transparent'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
@@ -655,10 +704,10 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
               <button
                 type="button"
                 onClick={() => setStudioSection('info')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
                   studioSection === 'info'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                    : 'text-slate-400 hover:text-white border-transparent'
                 }`}
               >
                 <Settings className="w-3.5 h-3.5" />
@@ -670,7 +719,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
             <button
               type="button"
               onClick={handleSafeClose}
-              className="p-2 rounded-2xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-2xl text-slate-400 hover:text-white hover:bg-[#060813] transition-colors"
               title="Đóng cửa sổ soạn thảo"
             >
               <X className="w-5 h-5" />
@@ -692,53 +741,51 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                 }`}
               >
                 {/* Column 1 Header */}
-                <div className="p-3 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between w-full">
+                <div className="p-3 bg-slate-900/90 border-b border-slate-800 space-y-2.5 w-full flex-shrink-0">
                   {!isSidebarCollapsed ? (
                     <>
-                      <div className="flex items-center gap-2">
-                        <FolderOpen className="w-4 h-4 text-teal-400" />
-                        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                          Mục Lục ({chapters.length} chương)
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => setIsTeraBoxModalOpen(true)}
-                          title="Bắn/Đẩy video từ kho TeraBox (1TB) sang Streamtape & Abyss"
-                          className="px-2 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all border border-cyan-500/30 shadow-sm"
-                        >
-                          <HardDrive className="w-3 h-3 text-cyan-400" />
-                          <span>Nạp TeraBox</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setIsQuickEmbedOpen(true)}
-                          title="Nhập nhanh hàng loạt bài giảng copy từ Streamtape / Abyss"
-                          className="px-2 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all border border-emerald-500/30 shadow-sm"
-                        >
-                          <Zap className="w-3 h-3 text-emerald-400 fill-emerald-400/20" />
-                          <span>Nhập Nhanh</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleAddChapter}
-                          className="px-2 py-1 rounded-xl bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Thêm Chương</span>
-                        </button>
+                      {/* Row 1: Title & Collapse Button */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FolderOpen className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                          <span className="text-xs font-mono font-bold text-slate-200 uppercase tracking-wider truncate">
+                            Mục Lục Khóa Học
+                          </span>
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 whitespace-nowrap">
+                            {chapters.length} chương • {totalLessonsCount} bài
+                          </span>
+                        </div>
 
                         <button
                           type="button"
                           onClick={() => setIsSidebarCollapsed(true)}
                           title="Thu gọn mục lục"
-                          className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                          className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors flex-shrink-0"
                         >
                           <PanelLeftClose className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Row 2: Action Buttons (Nạp TeraBox & Thêm Chương) */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsTeraBoxModalOpen(true)}
+                          title="Bắn / Đẩy video tự động từ kho TeraBox sang Streamtape & Abyss"
+                          className="py-2 px-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all border border-cyan-500/30 shadow-[0_0_15px_rgba(0,240,255,0.1)] group"
+                        >
+                          <HardDrive className="w-3.5 h-3.5 text-cyan-400 group-hover:text-slate-950 transition-colors" />
+                          <span>Nạp TeraBox</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleAddChapter}
+                          title="Thêm một chương bài giảng mới"
+                          className="py-2 px-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)] group"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-emerald-400 group-hover:text-slate-950 transition-colors" />
+                          <span>Thêm Chương</span>
                         </button>
                       </div>
                     </>
@@ -747,7 +794,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                       type="button"
                       onClick={() => setIsSidebarCollapsed(false)}
                       title="Mở rộng mục lục"
-                      className="p-1.5 mx-auto rounded-lg text-teal-400 hover:text-white hover:bg-slate-800"
+                      className="p-1.5 mx-auto rounded-lg text-cyan-400 hover:text-white hover:bg-slate-800 transition-colors"
                     >
                       <PanelLeftOpen className="w-4 h-4" />
                     </button>
@@ -1032,7 +1079,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                             </label>
                             <input
                               type="number"
-                              value={activeLesson.durationMinutes || 15}
+                              value={normalizeDurationMinutes(activeLesson.durationMinutes, 15)}
                               onChange={(e) => handleUpdateActiveLesson('durationMinutes', parseInt(e.target.value) || 0)}
                               className="w-16 px-2 py-1 text-xs bg-slate-900 border border-slate-800 rounded-xl text-white text-center font-bold"
                             />
@@ -1086,12 +1133,16 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
                             <Video className="w-4 h-4" />
-                            <span>Nguồn Video Bài Giảng (Abyss, YouTube, TikTok, Vimeo, Drive, MP4 hoặc Iframe)</span>
+                            <span>Nguồn Video Chính (Ưu tiên Streamtape / Mặc định)</span>
                           </label>
                           
                           {activeLesson.videoSource && (
                             <span className={`text-[10px] font-mono font-bold px-3 py-1 rounded-xl border whitespace-nowrap ${
-                              parseUniversalVideo(activeLesson.videoSource).provider === 'youtube'
+                              parseUniversalVideo(activeLesson.videoSource).provider === 'streamtape'
+                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                : parseUniversalVideo(activeLesson.videoSource).provider === 'abyss'
+                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                : parseUniversalVideo(activeLesson.videoSource).provider === 'youtube'
                                 ? 'bg-red-500/10 text-red-400 border-red-500/20'
                                 : parseUniversalVideo(activeLesson.videoSource).provider === 'tiktok'
                                 ? 'bg-pink-500/10 text-pink-400 border-pink-500/20'
@@ -1101,7 +1152,7 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                                 ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                 : parseUniversalVideo(activeLesson.videoSource).provider === 'mp4'
                                 ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
                             }`}>
                               {parseUniversalVideo(activeLesson.videoSource).label}
                             </span>
@@ -1113,7 +1164,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                             type="text"
                             value={activeLesson.videoSource || ''}
                             onChange={(e) => handleUpdateActiveLesson('videoSource', e.target.value)}
-                            placeholder="Nguồn chính: Dán link Streamtape, Abyss, YouTube, Vimeo, MP4 hoặc <iframe...>"
+                            onBlur={handleNormalizeActiveLessonSources}
+                            placeholder="Nguồn chính: Streamtape, Abyss, YouTube, MP4 (Hệ thống luôn ưu tiên Streamtape)..."
                             className="w-full px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 rounded-2xl text-slate-200 placeholder-slate-500 focus:border-emerald-500 font-mono text-[11px]"
                           />
                         </div>
@@ -1123,10 +1175,14 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                           <div className="flex items-center justify-between">
                             <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
                               <RefreshCw className="w-3 h-3 text-amber-400" />
-                              <span>Nguồn Dự Phòng (Mirror Fallback - ví dụ Abyss khi chính là Streamtape)</span>
+                              <span>Nguồn Dự Phòng (Mirror Fallback - Abyss / Nguồn phụ)</span>
                             </label>
                             {activeLesson.mirrorVideoSource && (
-                              <span className="text-[10px] font-mono text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/30">
+                              <span className={`text-[10px] font-mono px-2.5 py-0.5 rounded-lg border ${
+                                parseUniversalVideo(activeLesson.mirrorVideoSource).provider === 'abyss'
+                                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                  : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                              }`}>
                                 {parseUniversalVideo(activeLesson.mirrorVideoSource).label}
                               </span>
                             )}
@@ -1135,7 +1191,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                             type="text"
                             value={activeLesson.mirrorVideoSource || ''}
                             onChange={(e) => handleUpdateActiveLesson('mirrorVideoSource', e.target.value)}
-                            placeholder="Nguồn dự phòng: Dán link Abyss / Streamtape / YouTube..."
+                            onBlur={handleNormalizeActiveLessonSources}
+                            placeholder="Nguồn dự phòng: Dán link Abyss / Streamtape / YouTube (Tự động chuyển về Abyss khi chính là Streamtape)..."
                             className="w-full px-4 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:border-amber-500 font-mono text-[11px]"
                           />
                         </div>
@@ -1183,47 +1240,64 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                         </p>
                       ) : (
                         <div className="space-y-2.5">
-                          {activeLesson.attachments.map((att) => (
-                            <div 
-                              key={att.id}
-                              className="flex flex-wrap items-center gap-2 bg-slate-900/90 p-2.5 rounded-2xl border border-slate-800"
-                            >
-                              <input
-                                type="text"
-                                value={att.name}
-                                onChange={(e) => handleUpdateAttachment(att.id, 'name', e.target.value)}
-                                placeholder="Tên tài liệu..."
-                                className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 flex-1 min-w-[160px] focus:border-emerald-500"
-                              />
+                          {activeLesson.attachments.map((att) => {
+                            const isTeraBox = att.type === 'terabox' || att.url?.includes('terabox') || att.url?.includes('1024tera') || att.url?.includes('terasharelink');
 
-                              <input
-                                type="url"
-                                value={att.url}
-                                onChange={(e) => handleUpdateAttachment(att.id, 'url', e.target.value)}
-                                placeholder="https://..."
-                                className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-300 font-mono text-[11px] flex-1 min-w-[180px] focus:border-emerald-500"
-                              />
-
-                              <select
-                                value={att.type || 'link'}
-                                onChange={(e) => handleUpdateAttachment(att.id, 'type', e.target.value as any)}
-                                className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-300 focus:border-emerald-500"
+                            return (
+                              <div 
+                                key={att.id}
+                                className={`flex flex-wrap items-center gap-2 p-2.5 rounded-2xl border transition-all ${
+                                  isTeraBox 
+                                    ? 'bg-[#060813] border-cyan-500/40 shadow-[0_0_15px_rgba(0,240,255,0.08)]' 
+                                    : 'bg-slate-900/90 border-slate-800'
+                                }`}
                               >
-                                <option value="pdf">📄 PDF</option>
-                                <option value="drive">📁 Google Drive</option>
-                                <option value="github">🐙 GitHub</option>
-                                <option value="link">🔗 Link ngoài</option>
-                              </select>
+                                {isTeraBox && (
+                                  <span className="px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-mono font-bold flex items-center gap-1 flex-shrink-0">
+                                    <HardDrive className="w-3 h-3 text-cyan-400" />
+                                    <span>TeraBox</span>
+                                  </span>
+                                )}
 
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteAttachment(att.id)}
-                                className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
+                                <input
+                                  type="text"
+                                  value={att.name}
+                                  onChange={(e) => handleUpdateAttachment(att.id, 'name', e.target.value)}
+                                  placeholder="Tên tài liệu đính kèm..."
+                                  className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 flex-1 min-w-[160px] focus:border-emerald-500 font-medium"
+                                />
+
+                                <input
+                                  type="url"
+                                  value={att.url}
+                                  onChange={(e) => handleUpdateAttachment(att.id, 'url', e.target.value)}
+                                  placeholder="https://..."
+                                  className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-300 font-mono text-[11px] flex-1 min-w-[180px] focus:border-emerald-500"
+                                />
+
+                                <select
+                                  value={att.type || (isTeraBox ? 'terabox' : 'pdf')}
+                                  onChange={(e) => handleUpdateAttachment(att.id, 'type', e.target.value as any)}
+                                  className="text-xs bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-300 focus:border-emerald-500 font-bold cursor-pointer"
+                                >
+                                  <option value="pdf">📄 PDF (Mặc định)</option>
+                                  <option value="terabox">🖴 TeraBox</option>
+                                  <option value="drive">📁 Google Drive</option>
+                                  <option value="github">🐙 GitHub</option>
+                                  <option value="link">🔗 Link ngoài</option>
+                                </select>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAttachment(att.id)}
+                                  className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors flex-shrink-0"
+                                  title="Xóa tài liệu này"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -1414,15 +1488,6 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
             </div>
           </div>
         )}
-
-        {/* Quick Streamtape / Abyss Multi-Embed Bulk Import Modal */}
-        <QuickBulkEmbedModal
-          isOpen={isQuickEmbedOpen}
-          onClose={() => setIsQuickEmbedOpen(false)}
-          chapters={chapters}
-          defaultChapterId={activeSelection?.chId || chapters[0]?.id}
-          onImportLessons={handleImportBulkLessonsToChapter}
-        />
 
         {/* TeraBox Cloud Dispatcher & Import Modal */}
         <TeraBoxImportModal

@@ -25,28 +25,28 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
   return (
     <nav 
       aria-label="Breadcrumb"
-      className="flex items-center gap-1.5 text-xs text-slate-400 py-1 px-1 overflow-x-auto whitespace-nowrap custom-scrollbar"
+      className="flex items-center gap-1.5 text-xs font-mono text-slate-400 py-1.5 px-3 bg-[#0a0f24]/80 backdrop-blur-md rounded-xl border border-cyan-500/20 shadow-[0_0_15px_rgba(0,240,255,0.03)] overflow-x-auto whitespace-nowrap custom-scrollbar mb-4"
     >
       {/* 1. Trang Chủ */}
       <button
         onClick={onNavigateHome}
-        className="flex items-center gap-1.5 font-medium hover:text-emerald-400 text-slate-400 transition-colors py-1 px-1.5 rounded-lg hover:bg-slate-800/60"
+        className="flex items-center gap-1.5 font-medium hover:text-cyan-300 text-slate-400 transition-colors py-1 px-1.5 rounded-lg hover:bg-cyan-500/10"
         title="Quay lại danh sách khóa học"
       >
-        <Home className="w-3.5 h-3.5" />
+        <Home className="w-3.5 h-3.5 text-cyan-400" />
         <span>Trang Chủ</span>
       </button>
 
       {/* 2. Danh Mục (Category) */}
       {category && (
         <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-cyan-500/40 flex-shrink-0" />
           <button
             onClick={() => onSelectCategory && onSelectCategory(category)}
-            className="flex items-center gap-1 font-medium text-slate-400 hover:text-emerald-400 transition-colors py-1 px-1.5 rounded-lg hover:bg-slate-800/60 max-w-[140px] truncate"
+            className="flex items-center gap-1 font-medium text-slate-300 hover:text-cyan-300 transition-colors py-1 px-1.5 rounded-lg hover:bg-cyan-500/10 max-w-[140px] truncate"
             title={`Lọc theo danh mục: ${category}`}
           >
-            <Tags className="w-3 h-3 text-teal-400 flex-shrink-0" />
+            <Tags className="w-3 h-3 text-cyan-400 flex-shrink-0" />
             <span className="truncate">{category}</span>
           </button>
         </>
@@ -55,13 +55,13 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
       {/* 3. Khóa Học (Course) */}
       {courseTitle && (
         <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-cyan-500/40 flex-shrink-0" />
           <button
             onClick={() => courseId && onSelectCourse && onSelectCourse(courseId)}
-            className="flex items-center gap-1 font-medium text-slate-300 hover:text-emerald-400 transition-colors py-1 px-1.5 rounded-lg hover:bg-slate-800/60 max-w-[180px] sm:max-w-[240px] truncate"
+            className="flex items-center gap-1 font-semibold text-slate-200 hover:text-cyan-300 transition-colors py-1 px-1.5 rounded-lg hover:bg-cyan-500/10 max-w-[180px] sm:max-w-[240px] truncate"
             title={`Khóa học: ${courseTitle}`}
           >
-            <BookOpen className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+            <BookOpen className="w-3 h-3 text-cyan-400 flex-shrink-0" />
             <span className="truncate">{courseTitle}</span>
           </button>
         </>
@@ -70,7 +70,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
       {/* 4. Chương (Chapter - Optional) */}
       {chapterTitle && (
         <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-600 flex-shrink-0 hidden md:block" />
+          <ChevronRight className="w-3.5 h-3.5 text-cyan-500/40 flex-shrink-0 hidden md:block" />
           <span 
             className="hidden md:flex items-center gap-1 text-slate-400 max-w-[160px] truncate"
             title={`Chương: ${chapterTitle}`}
@@ -84,12 +84,12 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
       {/* 5. Bài Giảng Hiện Tại (Active Lesson) */}
       {lessonTitle && (
         <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-cyan-500/40 flex-shrink-0" />
           <span 
-            className="flex items-center gap-1 font-bold text-emerald-300 max-w-[200px] sm:max-w-[280px] truncate bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 shadow-sm"
+            className="flex items-center gap-1 font-bold text-cyan-300 max-w-[200px] sm:max-w-[280px] truncate bg-cyan-500/15 px-2.5 py-0.5 rounded-lg border border-cyan-500/30 shadow-[0_0_10px_rgba(0,240,255,0.15)]"
             title={`Bài học hiện tại: ${lessonTitle}`}
           >
-            <PlayCircle className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+            <PlayCircle className="w-3 h-3 text-cyan-400 flex-shrink-0" />
             <span className="truncate">{lessonTitle}</span>
           </span>
         </>
@@ -97,3 +97,4 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
     </nav>
   );
 };
+

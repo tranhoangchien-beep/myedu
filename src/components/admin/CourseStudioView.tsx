@@ -49,19 +49,21 @@ import {
   Smile,
   CheckCheck
 } from 'lucide-react';
-import { INITIAL_SAMPLE_COURSES, validateCoursesSchema } from '../../lib/storage';
+import { INITIAL_SAMPLE_COURSES, validateCoursesSchema, normalizeDurationMinutes, matchCourseByQuery } from '../../lib/storage';
 
 interface CourseStudioViewProps {
   courses: Course[];
   categories: string[];
   sources: string[];
   instructors?: string[];
+  searchQuery?: string;
+  onSearchChange?: (q: string) => void;
   onBackToLearning: () => void;
   onAddNewCourse: () => void;
   onEditCourse: (course: Course) => void;
   onDeleteCourse: (courseId: string) => void;
   onDuplicateCourse?: (course: Course) => void;
-  onOpenBulkImport: (courseId?: string) => void;
+  onOpenBulkImport?: (courseId?: string) => void;
   onAddCategory: (cat: string) => void;
   onRenameCategory: (oldCat: string, newCat: string) => void;
   onDeleteCategory: (cat: string) => void;
@@ -112,6 +114,8 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   categories,
   sources,
   instructors = [],
+  searchQuery = '',
+  onSearchChange,
   onBackToLearning,
   onAddNewCourse,
   onEditCourse,
@@ -135,7 +139,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   const [activeTab, setActiveTab] = useState<'courses' | 'taxonomies' | 'backup'>('courses');
   
   // Table Search, Filter & Sort states
-  const [searchStudio, setSearchStudio] = useState<string>('');
+  const [searchStudio, setSearchStudio] = useState<string>(searchQuery);
+
+  useEffect(() => {
+    if (searchQuery !== undefined && searchQuery !== searchStudio) {
+      setSearchStudio(searchQuery);
+    }
+  }, [searchQuery]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
@@ -221,7 +231,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
           if (l.isCompleted) completedLessons++;
           if (l.type === 'article') articleLessons++;
           else videoLessons++;
-          totalMinutes += (l.durationMinutes || 15);
+          totalMinutes += normalizeDurationMinutes(l.durationMinutes, 15);
         });
       });
     });
@@ -264,15 +274,9 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   const filteredAndSortedCourses = useMemo(() => {
     return courses
       .filter((c) => {
-        // Text Search
+        // Text Search with accent-insensitivity, tag & lesson deep matching
         if (searchStudio.trim()) {
-          const q = searchStudio.toLowerCase();
-          const match = 
-            c.title.toLowerCase().includes(q) ||
-            c.category.toLowerCase().includes(q) ||
-            (c.instructor && c.instructor.toLowerCase().includes(q)) ||
-            (c.sourcePlatform && c.sourcePlatform.toLowerCase().includes(q));
-          if (!match) return false;
+          if (!matchCourseByQuery(c, searchStudio)) return false;
         }
 
         // Category Filter
@@ -629,32 +633,35 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in relative pb-28">
+    <div className="w-full text-slate-100 space-y-6 animate-fade-in relative pb-28">
       
       {/* Studio Header Bar */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-5 sm:p-6 rounded-3xl shadow-xl backdrop-blur-md">
+      <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0a0f24]/90 border border-cyan-500/30 p-5 sm:p-6 rounded-3xl shadow-[0_0_40px_rgba(0,240,255,0.08)] backdrop-blur-xl relative overflow-hidden">
+        {/* Top Glowing Strip */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400" />
+
         <div className="flex items-center gap-3">
           <button
             onClick={onBackToLearning}
-            className="p-2.5 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors flex items-center gap-2 text-xs font-bold"
+            className="p-2.5 rounded-2xl bg-[#060813] hover:bg-[#0e1633] text-slate-400 hover:text-cyan-300 border border-cyan-500/20 transition-colors flex items-center gap-2 text-xs font-mono font-bold"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Về Trang Học Tập</span>
+            <span>Về Học Tập</span>
           </button>
           
-          <div className="h-6 w-[1px] bg-slate-800 mx-1 hidden sm:block" />
+          <div className="h-6 w-[1px] bg-cyan-500/20 mx-1 hidden sm:block" />
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
-                Trung Tâm Quản Trị Khóa Học
+              <h1 className="text-lg sm:text-xl font-extrabold text-white tracking-tight font-mono">
+                Trung Tâm Quản Trị // STUDIO HUD
               </h1>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">
-                COURSE STUDIO 2.0
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 font-bold border border-cyan-500/30 font-mono">
+                CONTROL v2.0
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Không gian quản trị toàn diện: Tạo khóa học, nạp bài hàng loạt, phân loại & sao lưu
+            <p className="text-xs font-mono text-slate-400 mt-0.5">
+              Quản trị toàn diện: Tạo khóa học, nạp video đa luồng song song, phân loại & vault
             </p>
           </div>
         </div>
@@ -662,29 +669,21 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
         {/* Primary Action Buttons */}
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
-            onClick={() => onOpenBulkImport()}
-            className="px-4 py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-800 text-teal-300 hover:text-teal-200 border border-teal-500/30 text-xs font-bold flex items-center gap-2 transition-all shadow-sm"
-          >
-            <UploadCloud className="w-4 h-4 text-teal-400" />
-            <span>Nạp Hàng Loạt (Bulk Abyss)</span>
-          </button>
-
-          <button
             onClick={onAddNewCourse}
-            className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
+            className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-extrabold text-xs font-mono flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(0,240,255,0.35)] hover:shadow-[0_0_30px_rgba(0,240,255,0.55)] active:scale-[0.98]"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Tạo Khóa Học Mới</span>
           </button>
         </div>
       </div>
 
       {/* FEATURE 1: MINI KPI METRICS BAR */}
-      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-mono">
         
         {/* Metric 1: Total Courses */}
-        <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 flex items-center gap-3.5 shadow-md">
-          <div className="w-11 h-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold flex-shrink-0">
+        <div className="p-4 rounded-3xl bg-[#0a0f24]/80 border border-cyan-500/20 flex items-center gap-3.5 shadow-[0_0_20px_rgba(0,240,255,0.03)] hover:border-cyan-500/40 transition-colors">
+          <div className="w-11 h-11 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold flex-shrink-0 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
             <BookOpen className="w-5 h-5" />
           </div>
           <div className="min-w-0">
@@ -694,8 +693,8 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
         </div>
 
         {/* Metric 2: Total Lessons */}
-        <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 flex items-center gap-3.5 shadow-md">
-          <div className="w-11 h-11 rounded-2xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 font-bold flex-shrink-0">
+        <div className="p-4 rounded-3xl bg-[#0a0f24]/80 border border-cyan-500/20 flex items-center gap-3.5 shadow-[0_0_20px_rgba(0,240,255,0.03)] hover:border-teal-500/40 transition-colors">
+          <div className="w-11 h-11 rounded-2xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 font-bold flex-shrink-0 shadow-[0_0_10px_rgba(45,212,191,0.2)]">
             <Layers className="w-5 h-5" />
           </div>
           <div className="min-w-0">
@@ -703,35 +702,35 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
             <p className="text-lg sm:text-xl font-extrabold text-white">
               {kpiMetrics.totalLessons} <span className="text-xs font-normal text-slate-400">bài</span>
               <span className="text-[10px] text-teal-400 font-medium ml-1.5 hidden sm:inline">
-                ({kpiMetrics.videoLessons} video • {kpiMetrics.articleLessons} bài đọc)
+                ({kpiMetrics.videoLessons} v • {kpiMetrics.articleLessons} doc)
               </span>
             </p>
           </div>
         </div>
 
         {/* Metric 3: Overall Progress */}
-        <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 flex items-center gap-3.5 shadow-md">
-          <div className="w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold flex-shrink-0">
+        <div className="p-4 rounded-3xl bg-[#0a0f24]/80 border border-cyan-500/20 flex items-center gap-3.5 shadow-[0_0_20px_rgba(0,240,255,0.03)] hover:border-purple-500/40 transition-colors">
+          <div className="w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold flex-shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex justify-between items-center">
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Tiến Độ Chung</p>
-              <span className="text-xs font-extrabold text-purple-400">{kpiMetrics.overallProgress}%</span>
+              <span className="text-xs font-extrabold text-cyan-300">{kpiMetrics.overallProgress}%</span>
             </div>
-            <div className="w-full h-1.5 bg-slate-950 rounded-full mt-1.5 overflow-hidden border border-slate-800">
-              <div className="h-full bg-gradient-to-r from-purple-500 to-emerald-400 rounded-full" style={{ width: `${kpiMetrics.overallProgress}%` }} />
+            <div className="w-full h-1.5 bg-[#060813] rounded-full mt-1.5 overflow-hidden border border-cyan-500/20">
+              <div className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(0,240,255,0.3)]" style={{ width: `${kpiMetrics.overallProgress}%` }} />
             </div>
           </div>
         </div>
 
         {/* Metric 4: Taxonomies Summary */}
-        <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 flex items-center gap-3.5 shadow-md">
-          <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 font-bold flex-shrink-0">
+        <div className="p-4 rounded-3xl bg-[#0a0f24]/80 border border-cyan-500/20 flex items-center gap-3.5 shadow-[0_0_20px_rgba(0,240,255,0.03)] hover:border-amber-500/40 transition-colors">
+          <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 font-bold flex-shrink-0 shadow-[0_0_10px_rgba(251,191,36,0.2)]">
             <Tags className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Phân Loại & Giảng Viên</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Phân Loại</p>
             <p className="text-lg sm:text-xl font-extrabold text-white">
               {kpiMetrics.totalTaxonomies} <span className="text-xs font-normal text-slate-400">mục</span>
               <span className="text-[10px] text-amber-400 font-medium ml-1.5 hidden sm:inline">
@@ -744,50 +743,44 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
       </div>
 
       {/* Main Studio Content Area */}
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 flex-wrap">
+        <div className="flex items-center gap-2 border-b border-cyan-500/15 pb-3 flex-wrap font-mono">
           <button
             onClick={() => setActiveTab('courses')}
-            className={`px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+            className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all border ${
               activeTab === 'courses'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span>Danh Sách Khóa Học</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950/40 text-inherit font-bold">
-              {courses.length}
-            </span>
+            <span>Danh Sách Khóa Học ({courses.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('taxonomies')}
-            className={`px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+            className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all border ${
               activeTab === 'taxonomies'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
             }`}
           >
             <Tags className="w-4 h-4" />
-            <span>Phân Loại & Giảng Viên</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950/40 text-inherit font-bold">
-              {kpiMetrics.totalTaxonomies}
-            </span>
+            <span>Phân Loại & Giảng Viên ({kpiMetrics.totalTaxonomies})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('backup')}
-            className={`px-4 py-2 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+            className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all border ${
               activeTab === 'backup'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
             }`}
           >
             <Database className="w-4 h-4" />
-            <span>Dữ Liệu & Sao Lưu JSON</span>
+            <span>Vault & Cloud Sync</span>
           </button>
         </div>
 
@@ -796,32 +789,38 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
           <div className="space-y-4">
             
             {/* FEATURE 2: ADVANCED TABLE FILTER & SORT CONTROLS BAR */}
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-3xl space-y-3.5 shadow-md">
+            <div className="bg-[#0a0f24]/85 border border-cyan-500/20 p-4 sm:p-5 rounded-3xl space-y-4 shadow-[0_0_30px_rgba(0,240,255,0.05)] backdrop-blur-xl">
               
               {/* Row 1: Search & Quick Status Filters */}
               <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
                 
                 {/* Search Input with Shortcut (/) hint */}
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-cyan-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     ref={searchInputRef}
                     type="text"
                     value={searchStudio}
-                    onChange={(e) => setSearchStudio(e.target.value)}
+                    onChange={(e) => {
+                      setSearchStudio(e.target.value);
+                      if (onSearchChange) onSearchChange(e.target.value);
+                    }}
                     placeholder="Tìm kiếm khóa học theo tên, giảng viên, nguồn... (Nhấn / để tìm nhanh)"
-                    className="w-full pl-10 pr-12 py-2 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500"
+                    className="w-full pl-10 pr-12 py-2.5 bg-[#060813] border border-cyan-500/20 rounded-2xl text-xs font-mono text-slate-200 placeholder-slate-600 focus:border-cyan-400 focus:outline-none shadow-inner"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                     {searchStudio ? (
                       <button 
-                        onClick={() => setSearchStudio('')} 
+                        onClick={() => {
+                          setSearchStudio('');
+                          if (onSearchChange) onSearchChange('');
+                        }} 
                         className="text-slate-500 hover:text-white p-0.5"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     ) : (
-                      <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-slate-500 bg-slate-900 border border-slate-800 rounded">
+                      <kbd className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono text-cyan-400 bg-[#0a0f24] border border-cyan-500/30 rounded">
                         /
                       </kbd>
                     )}
@@ -829,35 +828,43 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                 </div>
 
                 {/* Quick Status Filter Tabs */}
-                <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800 self-start lg:self-auto overflow-x-auto max-w-full">
+                <div className="flex items-center bg-[#060813] p-1.5 rounded-2xl border border-cyan-500/20 self-start lg:self-auto overflow-x-auto max-w-full font-mono gap-1">
                   <button
                     onClick={() => setStatusFilter('all')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                      statusFilter === 'all' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                      statusFilter === 'all'
+                        ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                        : 'text-slate-400 hover:text-white border-transparent'
                     }`}
                   >
                     Tất cả ({courses.length})
                   </button>
                   <button
                     onClick={() => setStatusFilter('in-progress')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                      statusFilter === 'in-progress' ? 'bg-teal-500/20 text-teal-300 font-bold' : 'text-slate-400 hover:text-slate-200'
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                      statusFilter === 'in-progress'
+                        ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 border-teal-300 shadow-[0_0_15px_rgba(45,212,191,0.3)]'
+                        : 'text-slate-400 hover:text-white border-transparent'
                     }`}
                   >
                     Đang học
                   </button>
                   <button
                     onClick={() => setStatusFilter('not-started')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                      statusFilter === 'not-started' ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-slate-400 hover:text-slate-200'
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                      statusFilter === 'not-started'
+                        ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                        : 'text-slate-400 hover:text-white border-transparent'
                     }`}
                   >
                     Chưa học
                   </button>
                   <button
                     onClick={() => setStatusFilter('completed')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                      statusFilter === 'completed' ? 'bg-emerald-500/20 text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                      statusFilter === 'completed'
+                        ? 'bg-gradient-to-r from-emerald-400 to-green-500 text-slate-950 border-emerald-300 shadow-[0_0_15px_rgba(0,255,157,0.3)]'
+                        : 'text-slate-400 hover:text-white border-transparent'
                     }`}
                   >
                     Đã xong (100%)
@@ -867,18 +874,18 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               </div>
 
               {/* Row 2: Secondary Filters, Sort & Page Size */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/80 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-cyan-500/15 text-xs font-mono">
                 <div className="flex items-center gap-2 flex-wrap">
                   
                   {/* Category Dropdown Filter */}
                   <select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 text-xs text-slate-300 font-semibold rounded-xl px-3 py-1.5 focus:border-emerald-500"
+                    className="bg-[#060813] border border-cyan-500/20 text-xs text-cyan-300 font-bold rounded-xl px-3 py-2 focus:border-cyan-400 focus:outline-none"
                   >
-                    <option value="all">Tất cả chủ đề ({categories.length})</option>
+                    <option value="all" className="bg-[#060813]">Tất cả chủ đề ({categories.length})</option>
                     {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      <option key={cat} value={cat} className="bg-[#060813]">{cat}</option>
                     ))}
                   </select>
 
@@ -886,11 +893,11 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                   <select
                     value={sourceFilter}
                     onChange={(e) => setSourceFilter(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 text-xs text-slate-300 font-semibold rounded-xl px-3 py-1.5 focus:border-emerald-500"
+                    className="bg-[#060813] border border-cyan-500/20 text-xs text-teal-300 font-bold rounded-xl px-3 py-2 focus:border-cyan-400 focus:outline-none"
                   >
-                    <option value="all">Tất cả nguồn ({sources.length})</option>
+                    <option value="all" className="bg-[#060813]">Tất cả nguồn ({sources.length})</option>
                     {sources.map(src => (
-                      <option key={src} value={src}>{src}</option>
+                      <option key={src} value={src} className="bg-[#060813]">{src}</option>
                     ))}
                   </select>
 
@@ -902,9 +909,9 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                         setStatusFilter('all');
                         setSearchStudio('');
                       }}
-                      className="text-amber-400 hover:text-amber-300 text-xs font-semibold px-2 py-1"
+                      className="text-amber-400 hover:text-amber-300 text-xs font-bold px-2 py-1 transition-colors"
                     >
-                      Xóa lọc
+                      ✕ Xóa lọc
                     </button>
                   )}
                 </div>
@@ -913,33 +920,33 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
                     <span className="text-slate-400 flex items-center gap-1">
-                      <ArrowUpDown className="w-3.5 h-3.5 text-teal-400" />
+                      <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />
                       <span>Sắp xếp:</span>
                     </span>
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as SortOption)}
-                      className="bg-slate-950 border border-slate-800 text-xs text-white font-bold rounded-xl px-3 py-1.5 focus:border-emerald-500"
+                      className="bg-[#060813] border border-cyan-500/20 text-xs text-white font-bold rounded-xl px-3 py-2 focus:border-cyan-400 focus:outline-none"
                     >
-                      <option value="updated-desc">Mới cập nhật</option>
-                      <option value="title-asc">Tên (A ➔ Z)</option>
-                      <option value="progress-desc">Tiến độ (Cao ➔ Thấp)</option>
-                      <option value="progress-asc">Tiến độ (Thấp ➔ Cao)</option>
-                      <option value="lessons-desc">Nhiều bài học nhất</option>
+                      <option value="updated-desc" className="bg-[#060813]">Mới cập nhật</option>
+                      <option value="title-asc" className="bg-[#060813]">Tên (A ➔ Z)</option>
+                      <option value="progress-desc" className="bg-[#060813]">Tiến độ (Cao ➔ Thấp)</option>
+                      <option value="progress-asc" className="bg-[#060813]">Tiến độ (Thấp ➔ Cao)</option>
+                      <option value="lessons-desc" className="bg-[#060813]">Nhiều bài học nhất</option>
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
+                  <div className="flex items-center gap-1.5 border-l border-cyan-500/20 pl-3">
                     <span className="text-slate-500 text-[11px]">Xem:</span>
                     <select
                       value={pageSize}
                       onChange={(e) => setPageSize(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-                      className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-xl px-2 py-1 focus:border-emerald-500 font-semibold"
+                      className="bg-[#060813] border border-cyan-500/20 text-xs text-cyan-300 rounded-xl px-2.5 py-1.5 focus:border-cyan-400 focus:outline-none font-bold"
                     >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                      <option value="all">Tất cả</option>
+                      <option value={10} className="bg-[#060813]">10</option>
+                      <option value={20} className="bg-[#060813]">20</option>
+                      <option value={50} className="bg-[#060813]">50</option>
+                      <option value="all" className="bg-[#060813]">Tất cả</option>
                     </select>
                   </div>
                 </div>
@@ -948,21 +955,21 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
             </div>
 
             {/* Courses Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+            <div className="bg-[#0a0f24]/85 border border-cyan-500/20 rounded-3xl overflow-hidden shadow-[0_0_35px_rgba(0,240,255,0.06)] backdrop-blur-xl">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-800">
+                <table className="w-full text-left text-xs text-slate-300 font-mono">
+                  <thead className="bg-[#060813] text-slate-400 text-[11px] uppercase tracking-wider border-b border-cyan-500/20">
                     <tr>
                       {/* Checkbox Select All Column */}
                       <th className="py-3.5 px-4 w-10 text-center">
                         <button
                           type="button"
                           onClick={handleToggleSelectAll}
-                          className="p-1 rounded text-slate-400 hover:text-emerald-400"
+                          className="p-1 rounded text-slate-400 hover:text-cyan-400"
                           title="Chọn tất cả khóa học trên trang này"
                         >
                           {selectedCourseIds.length > 0 && selectedCourseIds.length === paginatedCourses.length ? (
-                            <CheckSquare className="w-4 h-4 text-emerald-400" />
+                            <CheckSquare className="w-4 h-4 text-cyan-400" />
                           ) : (
                             <Square className="w-4 h-4" />
                           )}
@@ -976,15 +983,15 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                       <th className="py-3.5 px-5 text-right">Thao Tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-cyan-500/10">
                     {paginatedCourses.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-slate-500">
+                        <td colSpan={7} className="py-12 text-center text-slate-500 font-mono">
                           Không tìm thấy khóa học nào khớp với điều kiện lọc.
                         </td>
                       </tr>
                     ) : (
-                      paginatedCourses.map((c) => {
+                      paginatedCourses.map((c, index) => {
                         const total = (c.chapters || []).reduce((acc, ch) => acc + (ch.lessons || []).length, 0);
                         const completed = (c.chapters || []).reduce(
                           (acc, ch) => acc + (ch.lessons || []).filter(l => l.isCompleted).length,
@@ -993,12 +1000,17 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                         const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
                         const isSelected = selectedCourseIds.includes(c.id);
                         const hasImgFailed = failedImageUrls[c.id] || !c.thumbnailUrl;
+                        const isEven = index % 2 === 1;
 
                         return (
                           <tr 
                             key={c.id} 
                             className={`transition-colors group ${
-                              isSelected ? 'bg-emerald-950/25 hover:bg-emerald-950/40' : 'hover:bg-slate-850/50'
+                              isSelected 
+                                ? 'bg-cyan-500/20 hover:bg-cyan-500/25 text-cyan-200' 
+                                : isEven 
+                                  ? 'bg-[#0d1430]/70 hover:bg-[#131f47]/80' 
+                                  : 'bg-[#060813]/40 hover:bg-[#0c122e]/70'
                             }`}
                           >
                             {/* Checkbox Single Column */}
@@ -1006,10 +1018,10 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleToggleSelectCourse(c.id)}
-                                className="p-1 rounded text-slate-400 hover:text-emerald-400"
+                                className="p-1 rounded text-slate-400 hover:text-cyan-400"
                               >
                                 {isSelected ? (
-                                  <CheckSquare className="w-4 h-4 text-emerald-400" />
+                                  <CheckSquare className="w-4 h-4 text-cyan-400" />
                                 ) : (
                                   <Square className="w-4 h-4" />
                                 )}
@@ -1019,7 +1031,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                             {/* FEATURE 3: OPTIMIZED 16:9 THUMBNAIL WITH THEMATIC GRADIENT FALLBACK */}
                             <td className="py-4 px-4 max-w-sm">
                               <div className="flex items-center gap-3">
-                                <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800 shadow-sm relative flex items-center justify-center">
+                                <div className="w-14 h-9 sm:w-16 sm:h-10 rounded-xl overflow-hidden bg-[#060813] flex-shrink-0 border border-cyan-500/30 shadow-[0_0_10px_rgba(0,240,255,0.1)] relative flex items-center justify-center">
                                   {!hasImgFailed ? (
                                     <img 
                                       src={c.thumbnailUrl} 
@@ -1028,7 +1040,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                       onError={() => setFailedImageUrls(prev => ({ ...prev, [c.id]: true }))}
                                     />
                                   ) : (
-                                    <div className="w-full h-full bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
+                                    <div className="w-full h-full bg-gradient-to-tr from-[#060813] via-[#0a0f24] to-[#131b3e] flex items-center justify-center">
                                       {getCategoryIcon(c.category)}
                                     </div>
                                   )}
@@ -1037,13 +1049,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                 <div className="min-w-0">
                                   <p 
                                     onClick={() => onSelectCourseAndLesson(c.id)}
-                                    className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer"
+                                    className="font-bold text-sm text-white group-hover:text-cyan-300 transition-colors line-clamp-1 cursor-pointer"
                                   >
                                     {c.title}
                                   </p>
                                   {c.instructor && (
                                     <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                                      <User className="w-3 h-3 text-emerald-400" />
+                                      <User className="w-3 h-3 text-cyan-400" />
                                       <span>{c.instructor}</span>
                                     </p>
                                   )}
@@ -1053,14 +1065,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
                             {/* Category */}
                             <td className="py-4 px-4">
-                              <span className="inline-block px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                              <span className="inline-block px-2.5 py-1 rounded-xl bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-xs font-bold">
                                 {c.category}
                               </span>
                             </td>
 
                             {/* Source Platform */}
                             <td className="py-4 px-4">
-                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                              <span className="inline-flex items-center gap-1.5 text-xs text-teal-300 font-medium">
                                 <Globe className="w-3.5 h-3.5 text-teal-400" />
                                 <span>{c.sourcePlatform || 'Chưa đặt'}</span>
                               </span>
@@ -1069,7 +1081,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                             {/* Structure */}
                             <td className="py-4 px-4">
                               <div className="text-xs text-slate-300 font-medium whitespace-nowrap">
-                                <span className="text-white font-bold">{c.chapters.length}</span> chương &bull; <span className="text-white font-bold">{total}</span> bài
+                                <span className="text-cyan-300 font-bold">{c.chapters.length}</span> chương &bull; <span className="text-white font-bold">{total}</span> bài
                               </div>
                             </td>
 
@@ -1078,10 +1090,10 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               <div className="w-28 space-y-1.5">
                                 <div className="flex justify-between text-[11px]">
                                   <span className="text-slate-400">{completed}/{total}</span>
-                                  <span className="text-emerald-400 font-bold">{pct}%</span>
+                                  <span className="text-cyan-300 font-bold">{pct}%</span>
                                 </div>
-                                <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                                  <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style={{ width: `${pct}%` }} />
+                                <div className="w-full h-1.5 bg-[#060813] rounded-full overflow-hidden border border-cyan-500/20">
+                                  <div className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full shadow-[0_0_8px_rgba(0,240,255,0.4)]" style={{ width: `${pct}%` }} />
                                 </div>
                               </div>
                             </td>
@@ -1091,7 +1103,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   onClick={() => onSelectCourseAndLesson(c.id)}
-                                  className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm"
+                                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-extrabold text-xs transition-all shadow-[0_0_12px_rgba(0,240,255,0.3)]"
                                 >
                                   Vào Học
                                 </button>
@@ -1099,7 +1111,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                 <button
                                   onClick={() => onEditCourse(c)}
                                   title="Chỉnh sửa thông tin & giáo trình"
-                                  className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 transition-colors"
+                                  className="p-2 rounded-xl bg-[#060813] hover:bg-[#0e1633] text-teal-300 border border-cyan-500/20 hover:border-cyan-400 transition-colors"
                                 >
                                   <Edit3 className="w-4 h-4" />
                                 </button>
@@ -1108,24 +1120,16 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                   <button
                                     onClick={() => onDuplicateCourse(c)}
                                     title="Nhân bản (Tạo bản sao khóa học này)"
-                                    className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-purple-400 border border-slate-800 transition-colors"
+                                    className="p-2 rounded-xl bg-[#060813] hover:bg-[#0e1633] text-purple-400 border border-purple-500/20 hover:border-purple-400 transition-colors"
                                   >
                                     <Copy className="w-4 h-4" />
                                   </button>
                                 )}
 
                                 <button
-                                  onClick={() => onOpenBulkImport(c.id)}
-                                  title="Nạp thêm bài học vào khóa này"
-                                  className="p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-slate-800 transition-colors"
-                                >
-                                  <PlusCircle className="w-4 h-4" />
-                                </button>
-
-                                <button
                                   onClick={() => setCourseToDelete(c)}
                                   title="Xóa khóa học này"
-                                  className="p-1.5 rounded-xl bg-slate-950 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800 transition-colors"
+                                  className="p-2 rounded-xl bg-[#060813] hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-cyan-500/20 hover:border-rose-500/40 transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -1141,16 +1145,16 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
               {/* SMART PAGINATION CONTROLS */}
               {pageSize !== 'all' && totalPages > 1 && (
-                <div className="p-4 bg-slate-950/90 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div className="p-4 bg-[#060813] border-t border-cyan-500/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
                   <div className="text-slate-400">
-                    Hiển thị <span className="text-white font-bold">{(currentPage - 1) * pageSize + 1}</span> - <span className="text-white font-bold">{Math.min(currentPage * pageSize, filteredAndSortedCourses.length)}</span> trên <span className="text-white font-bold">{filteredAndSortedCourses.length}</span> khóa học
+                    Hiển thị <span className="text-cyan-300 font-bold">{(currentPage - 1) * pageSize + 1}</span> - <span className="text-cyan-300 font-bold">{Math.min(currentPage * pageSize, filteredAndSortedCourses.length)}</span> trên <span className="text-white font-bold">{filteredAndSortedCourses.length}</span> khóa học
                   </div>
 
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                      className="px-3 py-1.5 rounded-xl bg-[#0a0f24] border border-cyan-500/20 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#0e1633] hover:border-cyan-400 flex items-center gap-1 font-bold"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
                       <span>Trước</span>
@@ -1163,10 +1167,10 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                           <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`w-7 h-7 rounded-xl font-bold text-xs transition-all ${
+                            className={`w-7 h-7 rounded-xl font-bold text-xs transition-all border ${
                               currentPage === pageNum
-                                ? 'bg-emerald-600 text-white shadow-md'
-                                : 'text-slate-400 hover:text-white hover:bg-slate-850'
+                                ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_10px_rgba(0,240,255,0.3)]'
+                                : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
                             }`}
                           >
                             {pageNum}
@@ -1178,7 +1182,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-800 flex items-center gap-1 font-semibold"
+                      className="px-3 py-1.5 rounded-xl bg-[#0a0f24] border border-cyan-500/20 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#0e1633] hover:border-cyan-400 flex items-center gap-1 font-bold"
                     >
                       <span>Sau</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -1195,48 +1199,48 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
           <div className="space-y-6">
             
             {/* Sub-tabs with Playful Glow Badges */}
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3 flex-wrap">
+            <div className="flex items-center gap-2 border-b border-cyan-500/15 pb-3 flex-wrap font-mono">
               <button
                 onClick={() => setTaxonomySubTab('instructors')}
-                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all border ${
                   taxonomySubTab === 'instructors'
-                    ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 shadow-lg shadow-amber-950/30'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 border-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+                    : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
                 }`}
               >
-                <User className="w-4 h-4 text-amber-400" />
+                <User className="w-4 h-4" />
                 <span>Tác Giả / Giảng Viên</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-950/40 text-inherit font-extrabold">
                   {instructors.length}
                 </span>
               </button>
 
               <button
                 onClick={() => setTaxonomySubTab('categories')}
-                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all border ${
                   taxonomySubTab === 'categories'
-                    ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-950/30'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                    : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
                 }`}
               >
-                <Tags className="w-4 h-4 text-emerald-400" />
+                <Tags className="w-4 h-4" />
                 <span>Danh Mục Chủ Đề</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-950/40 text-inherit font-extrabold">
                   {categories.length}
                 </span>
               </button>
 
               <button
                 onClick={() => setTaxonomySubTab('sources')}
-                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all ${
+                className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all border ${
                   taxonomySubTab === 'sources'
-                    ? 'bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border border-teal-500/40 shadow-lg shadow-teal-950/30'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 border-teal-300 shadow-[0_0_15px_rgba(45,212,191,0.3)]'
+                    : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
                 }`}
               >
-                <Globe className="w-4 h-4 text-teal-400" />
+                <Globe className="w-4 h-4" />
                 <span>Nền Tảng / Nguồn Mua</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-extrabold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-950/40 text-inherit font-extrabold">
                   {sources.length}
                 </span>
               </button>
@@ -1244,10 +1248,10 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
             {/* SUBTAB 1: INSTRUCTORS & EXPERTS (PLAYFUL PROFILE BADGES) */}
             {taxonomySubTab === 'instructors' && (
-              <div className="space-y-5 animate-fade-in">
+              <div className="space-y-5 animate-fade-in font-mono">
                 
                 {/* Search & Add Dual Combo Bar */}
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+                <div className="p-4 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-[0_0_25px_rgba(0,240,255,0.05)] backdrop-blur-xl">
                   <div className="relative flex-1">
                     <Search className="w-4 h-4 text-amber-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
@@ -1258,7 +1262,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                         if (e.key === 'Enter') handleAddInstructorSubmit();
                       }}
                       placeholder="🔍 Gõ tên giảng viên để tìm kiếm hoặc thêm mới... (Enter để thêm)"
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:border-amber-500/70"
+                      className="w-full pl-10 pr-10 py-2.5 bg-[#060813] border border-cyan-500/20 rounded-2xl text-xs text-white placeholder-slate-600 focus:border-amber-400 focus:outline-none shadow-inner"
                     />
                     {instSearchOrAdd && (
                       <button
@@ -1274,14 +1278,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                   <div className="flex items-center gap-2">
                     {instSearchOrAdd.trim() && (
                       isInstructorExisting ? (
-                        <div className="px-4 py-2 rounded-2xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                        <div className="px-4 py-2 rounded-2xl bg-[#060813] text-slate-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
                           <CheckCheck className="w-4 h-4 text-emerald-400" />
                           <span>Đã có trong danh sách</span>
                         </div>
                       ) : (
                         <button
                           onClick={() => handleAddInstructorSubmit()}
-                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-amber-500/20 whitespace-nowrap transition-all"
+                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-[0_0_15px_rgba(251,191,36,0.3)] whitespace-nowrap transition-all"
                         >
                           <Plus className="w-4 h-4" />
                           <span>Thêm: "{instSearchOrAdd.trim()}"</span>
@@ -1290,7 +1294,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                     )}
 
                     {/* Filter Pills */}
-                    <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                    <div className="flex items-center bg-[#060813] p-1 rounded-2xl border border-cyan-500/20">
                       <button
                         onClick={() => setInstUsageFilter('all')}
                         className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
@@ -1310,7 +1314,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                       <button
                         onClick={() => setInstUsageFilter('empty')}
                         className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
-                          instUsageFilter === 'empty' ? 'bg-slate-800 text-slate-300' : 'text-slate-500 hover:text-slate-300'
+                          instUsageFilter === 'empty' ? 'bg-cyan-500/15 text-cyan-300' : 'text-slate-500 hover:text-slate-300'
                         }`}
                       >
                         0 khóa
@@ -1322,12 +1326,12 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                 {/* PLAYFUL INSTRUCTOR PROFILE CARDS GRID */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredInstructors.length === 0 ? (
-                    <div className="col-span-full py-12 text-center bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-2">
+                    <div className="col-span-full py-12 text-center bg-[#0a0f24]/60 border border-cyan-500/20 rounded-3xl p-6 space-y-2">
                       <p className="text-xs text-slate-400">Không tìm thấy giảng viên nào khớp với "{instSearchOrAdd}".</p>
                       {instSearchOrAdd.trim() && !isInstructorExisting && (
                         <button
                           onClick={() => handleAddInstructorSubmit()}
-                          className="px-4 py-2 rounded-2xl bg-amber-500 text-slate-950 text-xs font-bold inline-flex items-center gap-1.5"
+                          className="px-4 py-2 rounded-2xl bg-amber-400 text-slate-950 text-xs font-bold inline-flex items-center gap-1.5"
                         >
                           <Plus className="w-4 h-4" />
                           <span>Tạo mới giảng viên "{instSearchOrAdd.trim()}"</span>
@@ -1339,7 +1343,6 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                       const count = courses.filter(c => c.instructor === inst).length;
                       const isEditing = editingInstIndex === idx;
                       
-                      // Split title/role if in parentheses: "Alex Đặng (Tech Lead)"
                       const matchRole = inst.match(/^(.*?)\s*\((.*?)\)$/);
                       const mainName = matchRole ? matchRole[1] : inst;
                       const roleName = matchRole ? matchRole[2] : null;
@@ -1347,7 +1350,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                       return (
                         <div
                           key={inst}
-                          className="relative group p-4 rounded-3xl bg-slate-900/90 border border-slate-800/90 hover:border-amber-500/40 shadow-md hover:shadow-xl hover:shadow-amber-950/20 transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
+                          className="relative group p-4 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 hover:border-amber-400/60 shadow-[0_0_20px_rgba(0,240,255,0.03)] hover:shadow-[0_0_25px_rgba(251,191,36,0.12)] transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
                         >
                           {isEditing ? (
                             <div className="space-y-2">
@@ -1355,7 +1358,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                 type="text"
                                 value={editingInstValue}
                                 onChange={(e) => setEditingInstValue(e.target.value)}
-                                className="w-full px-3 py-2 bg-slate-950 border border-amber-500 rounded-xl text-xs text-white font-bold"
+                                className="w-full px-3 py-2 bg-[#060813] border border-amber-400 rounded-xl text-xs text-white font-bold"
                                 autoFocus
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') handleSaveEditInstructor(inst);
@@ -1365,13 +1368,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               <div className="flex justify-end gap-1.5">
                                 <button
                                   onClick={() => setEditingInstIndex(null)}
-                                  className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-xs"
+                                  className="px-2.5 py-1 rounded-xl bg-[#060813] text-slate-400 text-xs"
                                 >
                                   Hủy
                                 </button>
                                 <button
                                   onClick={() => handleSaveEditInstructor(inst)}
-                                  className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 text-xs font-bold"
+                                  className="px-3 py-1 rounded-xl bg-amber-400 text-slate-950 text-xs font-bold"
                                 >
                                   Lưu
                                 </button>
@@ -1382,7 +1385,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               <div className="flex items-start gap-3">
                                 {/* Vibrant Avatar Badge */}
                                 <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${getVibrantGradient(mainName)} p-[1.5px] flex-shrink-0 shadow-md`}>
-                                  <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center font-extrabold text-xs text-white tracking-wider">
+                                  <div className="w-full h-full bg-[#060813] rounded-[14px] flex items-center justify-center font-extrabold text-xs text-white tracking-wider">
                                     {getInitials(mainName)}
                                   </div>
                                 </div>
@@ -1393,7 +1396,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                   </h4>
                                   
                                   {roleName && (
-                                    <span className="inline-block text-[10px] font-semibold text-slate-400 bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800 mt-1 truncate max-w-full">
+                                    <span className="inline-block text-[10px] font-semibold text-slate-400 bg-[#060813] px-2 py-0.5 rounded-full border border-cyan-500/20 mt-1 truncate max-w-full">
                                       {roleName}
                                     </span>
                                   )}
@@ -1401,14 +1404,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               </div>
 
                               {/* Footer count & actions */}
-                              <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
+                              <div className="flex items-center justify-between pt-2 border-t border-cyan-500/15 text-xs">
                                 {count > 0 ? (
                                   <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                                     <Flame className="w-3 h-3 text-emerald-400" />
                                     <span>{count} khóa học</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-500 border border-slate-800">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[#060813] text-slate-500 border border-cyan-500/20">
                                     <span>0 khóa</span>
                                   </span>
                                 )}
@@ -1419,14 +1422,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                       setEditingInstIndex(idx);
                                       setEditingInstValue(inst);
                                     }}
-                                    className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800/80 transition-colors"
+                                    className="p-1.5 rounded-xl bg-[#060813] text-slate-400 hover:text-white hover:bg-[#0e1633] border border-cyan-500/20 transition-colors"
                                     title="Sửa tên giảng viên này"
                                   >
                                     <Edit3 className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={() => handleDeleteInstructorPrompt(inst)}
-                                    className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800/80 transition-colors"
+                                    className="p-1.5 rounded-xl bg-[#060813] text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-cyan-500/20 transition-colors"
                                     title="Xóa giảng viên này"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -1443,14 +1446,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               </div>
             )}
 
-            {/* SUBTAB 2: CATEGORIES & TOPICS (PLAYFUL CARDS WITH 3D ICONS) */}
+            {/* SUBTAB 2: CATEGORIES & TOPICS */}
             {taxonomySubTab === 'categories' && (
-              <div className="space-y-5 animate-fade-in">
+              <div className="space-y-5 animate-fade-in font-mono">
                 
                 {/* Search & Add Dual Combo Bar */}
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+                <div className="p-4 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-[0_0_25px_rgba(0,240,255,0.05)] backdrop-blur-xl">
                   <div className="relative flex-1">
-                    <Search className="w-4 h-4 text-emerald-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-cyan-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={catSearchOrAdd}
@@ -1459,7 +1462,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                         if (e.key === 'Enter') handleAddCategorySubmit();
                       }}
                       placeholder="🔍 Gõ tên danh mục để tìm kiếm hoặc thêm mới... (Enter để thêm)"
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:border-emerald-500/70"
+                      className="w-full pl-10 pr-10 py-2.5 bg-[#060813] border border-cyan-500/20 rounded-2xl text-xs text-white placeholder-slate-600 focus:border-cyan-400 focus:outline-none shadow-inner"
                     />
                     {catSearchOrAdd && (
                       <button
@@ -1475,14 +1478,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                   <div className="flex items-center gap-2">
                     {catSearchOrAdd.trim() && (
                       isCatExisting ? (
-                        <div className="px-4 py-2 rounded-2xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                        <div className="px-4 py-2 rounded-2xl bg-[#060813] text-slate-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
                           <CheckCheck className="w-4 h-4 text-emerald-400" />
                           <span>Đã có trong danh sách</span>
                         </div>
                       ) : (
                         <button
                           onClick={() => handleAddCategorySubmit()}
-                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 whitespace-nowrap transition-all"
+                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-teal-400 hover:from-cyan-300 hover:to-teal-300 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-[0_0_15px_rgba(0,240,255,0.3)] whitespace-nowrap transition-all"
                         >
                           <Plus className="w-4 h-4" />
                           <span>Thêm: "{catSearchOrAdd.trim()}"</span>
@@ -1491,11 +1494,11 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                     )}
 
                     {/* Filter Pills */}
-                    <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                    <div className="flex items-center bg-[#060813] p-1 rounded-2xl border border-cyan-500/20">
                       <button
                         onClick={() => setCatUsageFilter('all')}
                         className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
-                          catUsageFilter === 'all' ? 'bg-emerald-500/20 text-emerald-300' : 'text-slate-500 hover:text-slate-300'
+                          catUsageFilter === 'all' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-500 hover:text-slate-300'
                         }`}
                       >
                         Tất cả ({categories.length})
@@ -1529,7 +1532,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                     return (
                       <div
                         key={cat}
-                        className="group p-4 rounded-3xl bg-slate-900/90 border border-slate-800/90 hover:border-emerald-500/40 shadow-md hover:shadow-xl hover:shadow-emerald-950/20 transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
+                        className="group p-4 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 hover:border-cyan-400/60 shadow-[0_0_20px_rgba(0,240,255,0.03)] hover:shadow-[0_0_25px_rgba(0,240,255,0.12)] transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
                       >
                         {isEditing ? (
                           <div className="space-y-2">
@@ -1537,7 +1540,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               type="text"
                               value={editingCatValue}
                               onChange={(e) => setEditingCatValue(e.target.value)}
-                              className="w-full px-3 py-2 bg-slate-950 border border-emerald-500 rounded-xl text-xs text-white font-bold"
+                              className="w-full px-3 py-2 bg-[#060813] border border-cyan-400 rounded-xl text-xs text-white font-bold"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveEditCategory(cat);
@@ -1547,13 +1550,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                             <div className="flex justify-end gap-1.5">
                               <button
                                 onClick={() => setEditingCatIndex(null)}
-                                className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-xs"
+                                className="px-2.5 py-1 rounded-xl bg-[#060813] text-slate-400 text-xs"
                               >
                                 Hủy
                               </button>
                               <button
                                 onClick={() => handleSaveEditCategory(cat)}
-                                className="px-3 py-1 rounded-xl bg-emerald-500 text-slate-950 text-xs font-bold"
+                                className="px-3 py-1 rounded-xl bg-cyan-400 text-slate-950 text-xs font-bold"
                               >
                                 Lưu
                               </button>
@@ -1563,21 +1566,21 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                           <>
                             <div className="flex items-center gap-3">
                               <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${getVibrantGradient(cat)} p-[1.5px] flex-shrink-0 shadow-md`}>
-                                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                                <div className="w-full h-full bg-[#060813] rounded-[14px] flex items-center justify-center">
                                   {getCategoryIcon(cat)}
                                 </div>
                               </div>
 
                               <div className="min-w-0 flex-1">
-                                <h4 className="font-extrabold text-sm text-white group-hover:text-emerald-300 transition-colors truncate">
+                                <h4 className="font-extrabold text-sm text-white group-hover:text-cyan-300 transition-colors truncate">
                                   {cat}
                                 </h4>
                                 <p className="text-[11px] text-slate-400 mt-0.5">Chủ đề đào tạo</p>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
-                              <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            <div className="flex items-center justify-between pt-2 border-t border-cyan-500/15 text-xs">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
                                 <span>{count} khóa học</span>
                               </span>
 
@@ -1587,13 +1590,15 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                     setEditingCatIndex(idx);
                                     setEditingCatValue(cat);
                                   }}
-                                  className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800/80 transition-colors"
+                                  className="p-1.5 rounded-xl bg-[#060813] text-slate-400 hover:text-white hover:bg-[#0e1633] border border-cyan-500/20 transition-colors"
+                                  title="Sửa tên danh mục này"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteCategoryPrompt(cat)}
-                                  className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800/80 transition-colors"
+                                  className="p-1.5 rounded-xl bg-[#060813] text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-cyan-500/20 transition-colors"
+                                  title="Xóa danh mục này"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -1608,12 +1613,12 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               </div>
             )}
 
-            {/* SUBTAB 3: SOURCES & PLATFORMS (BRAND STYLE CARDS) */}
+            {/* SUBTAB 3: SOURCES & PLATFORMS */}
             {taxonomySubTab === 'sources' && (
-              <div className="space-y-5 animate-fade-in">
+              <div className="space-y-5 animate-fade-in font-mono">
                 
                 {/* Search & Add Dual Combo Bar */}
-                <div className="p-4 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+                <div className="p-4 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-[0_0_25px_rgba(0,240,255,0.05)] backdrop-blur-xl">
                   <div className="relative flex-1">
                     <Search className="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
@@ -1624,7 +1629,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                         if (e.key === 'Enter') handleAddSourceSubmit();
                       }}
                       placeholder="🔍 Gõ tên nguồn để tìm kiếm hoặc thêm mới... (Enter để thêm)"
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:border-teal-500/70"
+                      className="w-full pl-10 pr-10 py-2.5 bg-[#060813] border border-cyan-500/20 rounded-2xl text-xs text-white placeholder-slate-600 focus:border-teal-400 focus:outline-none shadow-inner"
                     />
                     {sourceSearchOrAdd && (
                       <button
@@ -1640,14 +1645,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                   <div className="flex items-center gap-2">
                     {sourceSearchOrAdd.trim() && (
                       isSourceExisting ? (
-                        <div className="px-4 py-2 rounded-2xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
+                        <div className="px-4 py-2 rounded-2xl bg-[#060813] text-slate-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
                           <CheckCheck className="w-4 h-4 text-teal-400" />
                           <span>Đã có trong danh sách</span>
                         </div>
                       ) : (
                         <button
                           onClick={() => handleAddSourceSubmit()}
-                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-lg shadow-teal-500/20 whitespace-nowrap transition-all"
+                          className="px-4 py-2 rounded-2xl bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 shadow-[0_0_15px_rgba(45,212,191,0.3)] whitespace-nowrap transition-all"
                         >
                           <Plus className="w-4 h-4" />
                           <span>Thêm: "{sourceSearchOrAdd.trim()}"</span>
@@ -1656,7 +1661,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                     )}
 
                     {/* Filter Pills */}
-                    <div className="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                    <div className="flex items-center bg-[#060813] p-1 rounded-2xl border border-cyan-500/20">
                       <button
                         onClick={() => setSourceUsageFilter('all')}
                         className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
@@ -1694,7 +1699,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                     return (
                       <div
                         key={src}
-                        className="group p-4 rounded-3xl bg-slate-900/90 border border-slate-800/90 hover:border-teal-500/40 shadow-md hover:shadow-xl hover:shadow-teal-950/20 transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
+                        className="group p-4 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 hover:border-teal-400/60 shadow-[0_0_20px_rgba(0,240,255,0.03)] hover:shadow-[0_0_25px_rgba(45,212,191,0.12)] transition-all duration-300 flex flex-col justify-between gap-3 hover:-translate-y-1"
                       >
                         {isEditing ? (
                           <div className="space-y-2">
@@ -1702,7 +1707,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               type="text"
                               value={editingSourceValue}
                               onChange={(e) => setEditingSourceValue(e.target.value)}
-                              className="w-full px-3 py-2 bg-slate-950 border border-teal-500 rounded-xl text-xs text-white font-bold"
+                              className="w-full px-3 py-2 bg-[#060813] border border-teal-400 rounded-xl text-xs text-white font-bold"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveEditSource(src);
@@ -1712,13 +1717,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                             <div className="flex justify-end gap-1.5">
                               <button
                                 onClick={() => setEditingSourceIndex(null)}
-                                className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-400 text-xs"
+                                className="px-2.5 py-1 rounded-xl bg-[#060813] text-slate-400 text-xs"
                               >
                                 Hủy
                               </button>
                               <button
                                 onClick={() => handleSaveEditSource(src)}
-                                className="px-3 py-1 rounded-xl bg-teal-500 text-slate-950 text-xs font-bold"
+                                className="px-3 py-1 rounded-xl bg-teal-400 text-slate-950 text-xs font-bold"
                               >
                                 Lưu
                               </button>
@@ -1728,7 +1733,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                           <>
                             <div className="flex items-center gap-3">
                               <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${getVibrantGradient(src)} p-[1.5px] flex-shrink-0 shadow-md`}>
-                                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-teal-400">
+                                <div className="w-full h-full bg-[#060813] rounded-[14px] flex items-center justify-center text-teal-400">
                                   <Globe className="w-5 h-5" />
                                 </div>
                               </div>
@@ -1741,7 +1746,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
+                            <div className="flex items-center justify-between pt-2 border-t border-cyan-500/15 text-xs">
                               <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30">
                                 <span>{count} khóa học</span>
                               </span>
@@ -1752,13 +1757,15 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                                     setEditingSourceIndex(idx);
                                     setEditingSourceValue(src);
                                   }}
-                                  className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800/80 transition-colors"
+                                  className="p-1.5 rounded-xl bg-[#060813] text-slate-400 hover:text-white hover:bg-[#0e1633] border border-cyan-500/20 transition-colors"
+                                  title="Sửa tên nguồn này"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteSourcePrompt(src)}
-                                  className="p-1.5 rounded-xl bg-slate-950 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-800/80 transition-colors"
+                                  className="p-1.5 rounded-xl bg-[#060813] text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-cyan-500/20 transition-colors"
+                                  title="Xóa nguồn này"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -1778,13 +1785,13 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
         {/* TAB 3: BACKUP & STORAGE HEALTH METERS */}
         {activeTab === 'backup' && (
-          <div className="space-y-6">
+          <div className="space-y-6 font-mono">
             
             {/* FEATURE 3: STORAGE USAGE & HEALTH STATUS METER */}
-            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+            <div className="p-6 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 space-y-4 shadow-[0_0_35px_rgba(0,240,255,0.06)] backdrop-blur-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-cyan-500/15 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold">
                     <HardDrive className="w-5 h-5" />
                   </div>
                   <div>
@@ -1796,23 +1803,23 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                       </span>
                     </h3>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Dữ liệu được lưu trữ trực tiếp trên trình duyệt thiết bị của bạn, bảo mật tuyệt đối và không phụ thuộc server.
+                      Dữ liệu được lưu trữ an toàn trên thiết bị & tự động đồng bộ Cloud Firestore tức thì.
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right">
                   <span className="text-xs text-slate-400">Đang dùng: </span>
-                  <span className="text-sm font-extrabold text-teal-400">{storageMetrics.usedKB} KB</span>
+                  <span className="text-sm font-extrabold text-cyan-300">{storageMetrics.usedKB} KB</span>
                   <span className="text-xs text-slate-500"> / {storageMetrics.quotaMB} MB (~{storageMetrics.percentUsed}%)</span>
                 </div>
               </div>
 
               {/* Progress bar */}
               <div className="space-y-1.5">
-                <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                <div className="w-full h-2 bg-[#060813] rounded-full overflow-hidden border border-cyan-500/20">
                   <div 
-                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500" 
+                    className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(0,240,255,0.4)]" 
                     style={{ width: `${Math.max(2, storageMetrics.percentUsed)}%` }} 
                   />
                 </div>
@@ -1825,14 +1832,14 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
             </div>
 
             {backupSuccess && (
-              <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2.5 font-medium animate-fade-in">
+              <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2.5 font-bold animate-fade-in shadow-[0_0_15px_rgba(0,255,157,0.2)]">
                 <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <span>{backupSuccess}</span>
               </div>
             )}
 
             {backupError && (
-              <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2.5 font-medium animate-fade-in">
+              <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2.5 font-bold animate-fade-in">
                 <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
                 <span>{backupError}</span>
               </div>
@@ -1841,8 +1848,8 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* Card 1: Export Backup JSON */}
-              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+              <div className="p-6 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 space-y-4 shadow-[0_0_25px_rgba(0,240,255,0.04)] backdrop-blur-xl">
+                <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold">
                   <Download className="w-5 h-5" />
                 </div>
                 <div>
@@ -1853,7 +1860,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                 </div>
                 <button
                   onClick={handleExportBackup}
-                  className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all"
+                  className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-cyan-400 to-teal-400 hover:from-cyan-300 hover:to-teal-300 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,240,255,0.3)] transition-all"
                 >
                   <Download className="w-4 h-4" />
                   <span>Tải Xuống Tệp Sao Lưu (.json)</span>
@@ -1861,8 +1868,8 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               </div>
 
               {/* Card 2: Restore / Import JSON */}
-              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-                <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
+              <div className="p-6 rounded-3xl bg-[#0a0f24]/85 border border-cyan-500/20 space-y-4 shadow-[0_0_25px_rgba(0,240,255,0.04)] backdrop-blur-xl">
+                <div className="w-10 h-10 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-300 flex items-center justify-center font-bold">
                   <Upload className="w-5 h-5" />
                 </div>
                 <div>
@@ -1882,7 +1889,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-teal-500/40 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                  className="w-full py-2.5 rounded-2xl bg-[#060813] hover:bg-[#0e1633] text-teal-300 border border-teal-500/40 font-bold text-xs flex items-center justify-center gap-2 transition-colors"
                 >
                   <Upload className="w-4 h-4" />
                   <span>Chọn Tệp JSON Để Khôi Phục</span>
@@ -1892,7 +1899,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
             </div>
 
             {/* Reset Factory Sample Data */}
-            <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-6 rounded-3xl bg-[#0a0f24]/60 border border-cyan-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
                 <h4 className="text-xs font-bold text-slate-300 flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 text-amber-400" />
@@ -1905,7 +1912,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
               <button
                 onClick={handleResetToSample}
-                className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-amber-950/40 text-amber-400 border border-amber-500/30 text-xs font-bold transition-colors whitespace-nowrap"
+                className="px-4 py-2 rounded-xl bg-[#060813] hover:bg-amber-950/40 text-amber-400 border border-amber-500/30 text-xs font-bold transition-colors whitespace-nowrap"
               >
                 Khôi Phục Mẫu
               </button>
@@ -1918,20 +1925,20 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
       {/* FEATURE 4: FLOATING BATCH ACTION TOOLBAR (When 1+ courses selected) */}
       {selectedCourseIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 border border-emerald-500/50 rounded-3xl p-3 sm:px-6 shadow-2xl shadow-emerald-950/50 backdrop-blur-md flex items-center gap-3 sm:gap-5 animate-slide-up flex-wrap justify-center">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0a0f24]/95 border border-cyan-500/40 rounded-3xl p-3 sm:px-6 shadow-[0_0_40px_rgba(0,240,255,0.2)] backdrop-blur-md flex items-center gap-3 sm:gap-5 animate-slide-up flex-wrap justify-center font-mono">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
             <span className="text-xs font-bold text-white">
-              Đã chọn <span className="text-emerald-400 font-extrabold">{selectedCourseIds.length}</span> khóa học
+              Đã chọn <span className="text-cyan-300 font-extrabold">{selectedCourseIds.length}</span> khóa học
             </span>
           </div>
 
-          <div className="h-4 w-[1px] bg-slate-800 hidden sm:block" />
+          <div className="h-4 w-[1px] bg-cyan-500/20 hidden sm:block" />
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setIsBatchCategoryModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-teal-300 border border-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-1.5 rounded-xl bg-[#060813] hover:bg-[#0e1633] text-teal-300 border border-cyan-500/20 text-xs font-bold flex items-center gap-1.5 transition-colors"
             >
               <Tags className="w-3.5 h-3.5 text-teal-400" />
               <span>Đổi Danh Mục</span>
@@ -1939,7 +1946,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
             <button
               onClick={handleExportSelectedCourses}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-1.5 rounded-xl bg-[#060813] hover:bg-[#0e1633] text-slate-200 border border-cyan-500/20 text-xs font-bold flex items-center gap-1.5 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Xuất JSON</span>
@@ -1947,7 +1954,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
             <button
               onClick={() => setIsBulkDeleteConfirmOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-rose-600/25 transition-colors"
+              className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Xóa Đã Chọn</span>
@@ -1955,7 +1962,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
             <button
               onClick={() => setSelectedCourseIds([])}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#060813] transition-colors"
               title="Bỏ chọn tất cả (Esc)"
             >
               <X className="w-4 h-4" />
@@ -1966,10 +1973,10 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
       {/* FEATURE 5: CUSTOM DARK DELETE MODAL (SINGLE COURSE) */}
       {courseToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-3xl p-6 space-y-4 shadow-2xl shadow-rose-950/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-mono">
+          <div className="relative w-full max-w-md bg-[#0a0f24]/95 border border-rose-500/40 rounded-3xl p-6 space-y-4 shadow-[0_0_40px_rgba(244,63,94,0.2)]">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold flex-shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold flex-shrink-0 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div className="min-w-0">
@@ -1982,10 +1989,10 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+            <div className="p-4 rounded-2xl bg-[#060813] border border-cyan-500/20 space-y-2">
               <p className="font-bold text-sm text-white line-clamp-1">{courseToDelete.title}</p>
               <p className="text-xs text-slate-400">
-                Chứa <span className="text-emerald-400 font-bold">{courseToDelete.chapters.length} chương</span> và <span className="text-emerald-400 font-bold">{courseToDelete.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0)} bài giảng</span>.
+                Chứa <span className="text-cyan-300 font-bold">{courseToDelete.chapters.length} chương</span> và <span className="text-cyan-300 font-bold">{courseToDelete.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0)} bài giảng</span>.
               </p>
             </div>
 
@@ -1993,7 +2000,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               <button
                 type="button"
                 onClick={() => setCourseToDelete(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+                className="px-4 py-2 rounded-xl bg-[#060813] hover:bg-[#0e1633] text-white text-xs font-bold transition-colors"
               >
                 Hủy Bỏ
               </button>
@@ -2004,7 +2011,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
                   onDeleteCourse(courseToDelete.id);
                   setCourseToDelete(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-md shadow-rose-600/20"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-[0_0_15px_rgba(244,63,94,0.3)]"
               >
                 Xóa Khóa Học
               </button>
@@ -2015,8 +2022,8 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
       {/* FEATURE 5: CUSTOM DARK DELETE MODAL (BULK COURSES) */}
       {isBulkDeleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-3xl p-6 space-y-4 shadow-2xl shadow-rose-950/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-mono">
+          <div className="relative w-full max-w-md bg-[#0a0f24]/95 border border-rose-500/40 rounded-3xl p-6 space-y-4 shadow-[0_0_40px_rgba(244,63,94,0.2)]">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold flex-shrink-0">
                 <AlertTriangle className="w-6 h-6" />
@@ -2031,7 +2038,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+            <div className="p-4 rounded-2xl bg-[#060813] border border-cyan-500/20 text-xs text-slate-300 leading-relaxed">
               Bạn có chắc chắn muốn xóa vĩnh viễn <strong className="text-rose-400">{selectedCourseIds.length} khóa học</strong> đã chọn khỏi thư viện học tập cá nhân không?
             </div>
 
@@ -2039,7 +2046,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsBulkDeleteConfirmOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors"
+                className="px-4 py-2 rounded-xl bg-[#060813] hover:bg-[#0e1633] text-white text-xs font-bold transition-colors"
               >
                 Hủy Bỏ
               </button>
@@ -2047,7 +2054,7 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               <button
                 type="button"
                 onClick={handleExecuteBulkDelete}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-md shadow-rose-600/20"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors shadow-[0_0_15px_rgba(244,63,94,0.3)]"
               >
                 Xóa {selectedCourseIds.length} Khóa
               </button>
@@ -2058,10 +2065,10 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
 
       {/* BATCH MOVE CATEGORY MODAL */}
       {isBatchCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md bg-slate-900 border border-teal-500/40 rounded-3xl p-6 space-y-4 shadow-2xl shadow-teal-950/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-mono">
+          <div className="relative w-full max-w-md bg-[#0a0f24]/95 border border-cyan-500/30 rounded-3xl p-6 space-y-4 shadow-[0_0_40px_rgba(0,240,255,0.15)]">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center font-bold flex-shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold flex-shrink-0 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
                 <Tags className="w-6 h-6" />
               </div>
               <div>
@@ -2081,10 +2088,10 @@ export const CourseStudioView: React.FC<CourseStudioViewProps> = ({
               <select
                 value={batchTargetCategory}
                 onChange={(e) => setBatchTargetCategory(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-xs text-white font-bold rounded-2xl p-3 focus:border-teal-500"
+                className="w-full bg-[#060813] border border-cyan-500/20 text-xs text-cyan-300 font-bold rounded-2xl p-3 focus:border-cyan-400 focus:outline-none"
               >
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat} className="bg-[#060813]">{cat}</option>
                 ))}
               </select>
             </div>

@@ -108,36 +108,40 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="relative w-full max-w-lg bg-[#0a0f24]/95 border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(0,240,255,0.12)] overflow-hidden flex flex-col max-h-[85vh]">
+        {/* Top Glowing Strip */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400" />
         
         {/* Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/70">
+        <div className="p-4 border-b border-cyan-500/15 flex items-center justify-between bg-[#060813]/80">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold shadow-lg shadow-emerald-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 to-emerald-400 text-slate-950 flex items-center justify-center font-bold shadow-[0_0_15px_rgba(0,240,255,0.3)]">
               <Tags className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-bold text-sm text-white">Quản Lý Danh Mục & Nguồn Khóa Học</h2>
-              <p className="text-xs text-slate-400">Các thay đổi sẽ cập nhật tự động lên toàn bộ bộ lọc và khóa học</p>
+              <h2 className="font-extrabold text-sm text-white font-mono uppercase tracking-wide">
+                Quản Lý Danh Mục & Nguồn // TAXONOMY
+              </h2>
+              <p className="text-xs font-mono text-slate-400">Tự động cập nhật bộ lọc và thẻ khóa học trên toàn hệ thống</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#060813] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-slate-950 p-1.5 border-b border-slate-800/80 gap-1 text-xs">
+        <div className="flex bg-[#060813] p-1.5 border-b border-cyan-500/15 gap-1.5 text-xs font-mono">
           <button
             onClick={() => setActiveTab('categories')}
-            className={`flex-1 py-2 font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2 font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all border ${
               activeTab === 'categories'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-cyan-400 to-teal-400 text-slate-950 border-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.3)]'
+                : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
             }`}
           >
             <Tags className="w-3.5 h-3.5" />
@@ -146,10 +150,10 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
 
           <button
             onClick={() => setActiveTab('sources')}
-            className={`flex-1 py-2 font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2 font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all border ${
               activeTab === 'sources'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 border-teal-300 shadow-[0_0_15px_rgba(45,212,191,0.3)]'
+                : 'text-slate-400 hover:text-white border-transparent hover:bg-[#0a0f24]'
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
@@ -158,7 +162,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         </div>
 
         {/* Tab Body */}
-        <div className="p-5 overflow-y-auto space-y-4 flex-1">
+        <div className="p-5 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
           
           {/* TAB 1: CATEGORIES */}
           {activeTab === 'categories' && (
@@ -169,12 +173,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                   type="text"
                   value={newCatInput}
                   onChange={(e) => setNewCatInput(e.target.value)}
-                  placeholder="Thêm danh mục mới (ví dụ: Thiết kế UI/UX, Tài chính...)"
-                  className="flex-1 px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:border-emerald-500/60"
+                  placeholder="Thêm danh mục mới (ví dụ: UI/UX, AI, Trading...)"
+                  className="flex-1 px-3.5 py-2.5 text-xs font-mono bg-[#060813] border border-cyan-500/20 rounded-xl text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center gap-1"
+                  className="px-5 py-2.5 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-extrabold text-xs font-mono rounded-xl shadow-[0_0_15px_rgba(0,240,255,0.3)] transition-all flex items-center gap-1"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Thêm</span>
@@ -189,7 +193,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                   return (
                     <div
                       key={cat}
-                      className="flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 text-xs"
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#060813] border border-cyan-500/15 hover:border-cyan-500/35 text-xs transition-colors"
                     >
                       {editingCatIndex === idx ? (
                         <div className="flex-1 flex items-center gap-2 mr-2">
@@ -197,21 +201,21 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                             type="text"
                             value={editingCatValue}
                             onChange={(e) => setEditingCatValue(e.target.value)}
-                            className="flex-1 px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white"
+                            className="flex-1 px-2.5 py-1 text-xs font-mono bg-[#0a0f24] border border-cyan-400 rounded-lg text-white"
                             autoFocus
                           />
                           <button
                             type="button"
                             onClick={() => handleSaveEditCat(cat)}
-                            className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                            className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 font-mono">
                           <span className="font-bold text-white">{cat}</span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#0a0f24] text-cyan-300 border border-cyan-500/20">
                             {count} khóa học
                           </span>
                         </div>
@@ -226,7 +230,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                               setEditingCatValue(cat);
                             }}
                             title="Đổi tên danh mục"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-[#0a0f24]"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -257,12 +261,12 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                   type="text"
                   value={newSourceInput}
                   onChange={(e) => setNewSourceInput(e.target.value)}
-                  placeholder="Thêm nguồn mới (ví dụ: Udemy, VietJack, KTcity...)"
-                  className="flex-1 px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:border-emerald-500/60"
+                  placeholder="Thêm nguồn mới (ví dụ: Udemy, Coursera, VietJack...)"
+                  className="flex-1 px-3.5 py-2.5 text-xs font-mono bg-[#060813] border border-teal-500/20 rounded-xl text-white placeholder-slate-500 focus:border-teal-400 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center gap-1"
+                  className="px-5 py-2.5 bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-950 font-extrabold text-xs font-mono rounded-xl shadow-[0_0_15px_rgba(45,212,191,0.3)] transition-all flex items-center gap-1"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Thêm</span>
@@ -277,7 +281,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                   return (
                     <div
                       key={src}
-                      className="flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 text-xs"
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#060813] border border-teal-500/15 hover:border-teal-500/35 text-xs transition-colors"
                     >
                       {editingSourceIndex === idx ? (
                         <div className="flex-1 flex items-center gap-2 mr-2">
@@ -285,21 +289,21 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                             type="text"
                             value={editingSourceValue}
                             onChange={(e) => setEditingSourceValue(e.target.value)}
-                            className="flex-1 px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white"
+                            className="flex-1 px-2.5 py-1 text-xs font-mono bg-[#0a0f24] border border-teal-400 rounded-lg text-white"
                             autoFocus
                           />
                           <button
                             type="button"
                             onClick={() => handleSaveEditSource(src)}
-                            className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                            className="p-1.5 rounded-lg bg-teal-500/20 text-teal-300 hover:bg-teal-500/30"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 font-mono">
                           <span className="font-bold text-white">{src}</span>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-teal-400">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#0a0f24] text-teal-400 border border-teal-500/20">
                             {count} khóa học
                           </span>
                         </div>
@@ -314,7 +318,7 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
                               setEditingSourceValue(src);
                             }}
                             title="Đổi tên nguồn"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-teal-300 hover:bg-[#0a0f24]"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
@@ -339,11 +343,11 @@ export const CategoryManagerModal: React.FC<CategoryManagerModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950 flex justify-end">
+        <div className="p-4 border-t border-cyan-500/15 bg-[#060813] flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl"
+            className="px-5 py-2.5 bg-[#0a0f24] hover:bg-[#0e1633] border border-cyan-500/20 text-slate-300 font-mono text-xs rounded-xl"
           >
             Đóng
           </button>

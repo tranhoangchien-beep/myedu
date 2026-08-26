@@ -1,4 +1,5 @@
 import { Course, ContinueProgress, CategoryType, UserStats, Chapter, Lesson } from '../types';
+import { normalizeLessonVideoSources } from './abyss';
 
 const STORAGE_KEY_COURSES = 'myedu_courses_v1';
 const STORAGE_KEY_CONTINUE = 'myedu_continue_progress_v1';
@@ -2048,6 +2049,89 @@ export const INITIAL_SAMPLE_COURSES: Course[] = [
 ];
 
 /**
+ * Chuẩn hóa thời lượng bài học (tự động chuyển ms hoặc giây từ TeraBox sang phút)
+ */
+export function normalizeDurationMinutes(val: any, defaultMinutes: number = 15): number {
+  if (val === undefined || val === null) return defaultMinutes;
+  const num = typeof val === 'number' ? val : parseFloat(String(val));
+  if (isNaN(num) || num <= 0) return defaultMinutes;
+
+  // 1. Milliseconds từ TeraBox API (ví dụ 501249 ms = 501.2 giây = 8.35 phút)
+  if (num > 10000) {
+    return Math.max(1, Math.round(num / 60000));
+  }
+  // 2. Seconds (ví dụ 501s = 8.35 phút, 1800s = 30 phút)
+  if (num > 180) {
+    return Math.max(1, Math.round(num / 60));
+  }
+  // 3. Minutes (1 - 180)
+  return Math.max(1, Math.round(num));
+}
+
+/**
+ * Chuẩn hóa chuỗi tiếng Việt (loại bỏ dấu và chuyển chữ thường) để tìm kiếm cực nhạy
+ */
+export function normalizeVietnameseText(str: string | undefined | null): string {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .trim();
+}
+
+/**
+ * Kiểm tra xem một khóa học có khớp với từ khóa tìm kiếm (hỗ trợ cả có dấu và không dấu, tìm theo tiêu đề, giảng viên, nguồn, tag, bài học)
+ */
+export function matchCourseByQuery(course: Course, rawQuery: string): boolean {
+  if (!rawQuery || !rawQuery.trim()) return true;
+  const q = rawQuery.trim().toLowerCase();
+  const qNorm = normalizeVietnameseText(q);
+
+  const titleNorm = normalizeVietnameseText(course.title);
+  if (course.title.toLowerCase().includes(q) || titleNorm.includes(qNorm)) return true;
+
+  if (course.description) {
+    const descNorm = normalizeVietnameseText(course.description);
+    if (course.description.toLowerCase().includes(q) || descNorm.includes(qNorm)) return true;
+  }
+
+  if (course.category) {
+    const catNorm = normalizeVietnameseText(course.category);
+    if (course.category.toLowerCase().includes(q) || catNorm.includes(qNorm)) return true;
+  }
+
+  if (course.instructor) {
+    const instNorm = normalizeVietnameseText(course.instructor);
+    if (course.instructor.toLowerCase().includes(q) || instNorm.includes(qNorm)) return true;
+  }
+
+  if (course.sourcePlatform) {
+    const srcNorm = normalizeVietnameseText(course.sourcePlatform);
+    if (course.sourcePlatform.toLowerCase().includes(q) || srcNorm.includes(qNorm)) return true;
+  }
+
+  if (Array.isArray(course.tags)) {
+    if (course.tags.some(t => t.toLowerCase().includes(q) || normalizeVietnameseText(t).includes(qNorm))) return true;
+  }
+
+  if (Array.isArray(course.chapters)) {
+    for (const ch of course.chapters) {
+      if (ch.title.toLowerCase().includes(q) || normalizeVietnameseText(ch.title).includes(qNorm)) return true;
+      if (Array.isArray(ch.lessons)) {
+        for (const l of ch.lessons) {
+          if (l.title.toLowerCase().includes(q) || normalizeVietnameseText(l.title).includes(qNorm)) return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Schema Validation & Normalization for Courses & Lessons
  * Đảm bảo 100% dữ liệu không bao giờ bị hỏng hoặc sinh khóa học rác
  */
@@ -2111,7 +2195,7 @@ export function validateSingleCourse(raw: any): Course | null {
             : (les.videoSource ? 'video' : 'article');
           const videoSource = typeof les.videoSource === 'string' ? les.videoSource.trim() : undefined;
           const content = typeof les.content === 'string' ? les.content : undefined;
-          const durationMinutes = typeof les.durationMinutes === 'number' ? les.durationMinutes : 15;
+          const durationMinutes = normalizeDurationMinutes(les.durationMinutes, 15);
           const isCompleted = Boolean(les.isCompleted);
           const isStarred = Boolean(les.isStarred);
           const notes = typeof les.notes === 'string' ? les.notes : undefined;
@@ -2146,11 +2230,15 @@ export function validateSingleCourse(raw: any): Course | null {
             finalVideoSource = actualSource;
           }
 
+          const rawMirror = typeof les.mirrorVideoSource === 'string' ? les.mirrorVideoSource.trim() : undefined;
+          const { primary: normalizedPrimary, mirror: normalizedMirror } = normalizeLessonVideoSources(finalVideoSource, rawMirror);
+
           return {
             id: lesId,
             title: finalTitle,
             type,
-            videoSource: finalVideoSource,
+            videoSource: normalizedPrimary || undefined,
+            mirrorVideoSource: normalizedMirror || undefined,
             content,
             durationMinutes,
             isCompleted,

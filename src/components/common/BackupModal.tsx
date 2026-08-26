@@ -78,35 +78,39 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
-        
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2 text-emerald-400">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+      <div className="relative w-full max-w-md bg-[#0a0f24]/95 border border-cyan-500/30 rounded-2xl shadow-[0_0_40px_rgba(0,240,255,0.15)] p-6 space-y-4">
+        {/* Top Accent */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+
+        <div className="flex items-center justify-between pb-3 border-b border-cyan-500/15">
+          <div className="flex items-center gap-2 text-cyan-400">
             <Database className="w-5 h-5" />
-            <h3 className="font-bold text-white text-base">Sao Lưu & Đồng Bộ Dữ Liệu</h3>
+            <h3 className="font-extrabold text-white text-base font-mono uppercase tracking-wide">
+              Sao Lưu & Vault // BACKUP
+            </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#060813] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-xs text-slate-400 leading-relaxed">
-          Tất cả dữ liệu khóa học, tiến độ và ghi chú được lưu an toàn trên trình duyệt của bạn. Bạn có thể tải file sao lưu để chuyển sang máy tính/điện thoại khác bất kỳ lúc nào.
+        <p className="text-xs text-slate-400 leading-relaxed font-mono">
+          Tất cả dữ liệu khóa học, tiến độ và ghi chú được mã hóa và lưu trữ an toàn. Bạn có thể xuất file JSON để lưu trữ ngoại tuyến hoặc di chuyển thiết bị.
         </p>
 
         {successMessage && (
-          <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
+          <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-xs font-mono text-emerald-300 flex items-center gap-2 shadow-[0_0_10px_rgba(0,255,157,0.2)]">
             <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span>{successMessage}</span>
           </div>
         )}
 
         {errorMessage && (
-          <div className="p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
+          <div className="p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-xs font-mono text-rose-300 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
             <span>{errorMessage}</span>
           </div>
@@ -116,14 +120,14 @@ export const BackupModal: React.FC<BackupModalProps> = ({
           {/* Export Button */}
           <button
             onClick={handleExport}
-            className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between text-xs transition-colors group"
+            className="w-full p-3 rounded-xl bg-[#060813] hover:bg-[#0e1633] border border-cyan-500/20 hover:border-cyan-400/50 text-left flex items-center justify-between text-xs transition-all group shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-colors">
+              <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-400 group-hover:text-slate-950 transition-colors shadow-[0_0_10px_rgba(0,240,255,0.2)]">
                 <Download className="w-4 h-4" />
               </div>
               <div>
-                <p className="font-bold text-white">Xuất File Sao Lưu (.JSON)</p>
+                <p className="font-bold text-white font-mono">Xuất File JSON Vault</p>
                 <p className="text-slate-400 text-[11px]">Tải về toàn bộ {courses.length} khóa học & tiến độ</p>
               </div>
             </div>
@@ -132,14 +136,14 @@ export const BackupModal: React.FC<BackupModalProps> = ({
           {/* Import Button */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between text-xs transition-colors group"
+            className="w-full p-3 rounded-xl bg-[#060813] hover:bg-[#0e1633] border border-cyan-500/20 hover:border-teal-400/50 text-left flex items-center justify-between text-xs transition-all group shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400 group-hover:bg-teal-500 group-hover:text-slate-950 transition-colors">
+              <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400 group-hover:bg-teal-400 group-hover:text-slate-950 transition-colors shadow-[0_0_10px_rgba(45,212,191,0.2)]">
                 <Upload className="w-4 h-4" />
               </div>
               <div>
-                <p className="font-bold text-white">Nhập File Sao Lưu (.JSON)</p>
+                <p className="font-bold text-white font-mono">Nhập Khôi Phục JSON Vault</p>
                 <p className="text-slate-400 text-[11px]">Khôi phục dữ liệu từ tệp sao lưu trước đó</p>
               </div>
             </div>
@@ -155,15 +159,15 @@ export const BackupModal: React.FC<BackupModalProps> = ({
           {/* Reset to Default */}
           <button
             onClick={handleResetSample}
-            className="w-full p-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left flex items-center justify-between text-xs transition-colors group"
+            className="w-full p-3 rounded-xl bg-[#060813] hover:bg-[#0e1633] border border-cyan-500/15 hover:border-amber-400/40 text-left flex items-center justify-between text-xs transition-all group shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-slate-800 text-slate-400 group-hover:bg-amber-500/20 group-hover:text-amber-300 transition-colors">
+              <div className="p-2 rounded-lg bg-slate-900 text-slate-400 group-hover:bg-amber-500/20 group-hover:text-amber-300 transition-colors">
                 <RefreshCw className="w-4 h-4" />
               </div>
               <div>
-                <p className="font-bold text-slate-300 group-hover:text-white">Đặt Lại Dữ Liệu Mẫu</p>
-                <p className="text-slate-500 text-[11px]">Nạp lại các khóa học mẫu ban đầu</p>
+                <p className="font-bold text-slate-300 group-hover:text-white font-mono">Nạp Dữ Liệu Mẫu Mặc Định</p>
+                <p className="text-slate-500 text-[11px]">Tải lại các khóa học mẫu ban đầu</p>
               </div>
             </div>
           </button>
@@ -172,7 +176,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
         <div className="pt-2 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs rounded-xl transition-colors"
+            className="px-5 py-2 bg-[#060813] hover:bg-[#0e1633] border border-cyan-500/20 text-slate-300 font-mono text-xs rounded-xl transition-colors"
           >
             Đóng
           </button>
@@ -181,3 +185,4 @@ export const BackupModal: React.FC<BackupModalProps> = ({
     </div>
   );
 };
+

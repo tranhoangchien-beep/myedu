@@ -240,4 +240,22 @@ Hệ thống được vận hành và phát triển bằng Antigravity 2.0 với
        - Ngăn chặn hoàn toàn hiện tượng dữ liệu hỏng, thiếu chương, mất bài hoặc sinh khóa học rác.
      * **Kiểm định Zero-Defect**: Build pass 100% không lỗi (Vite + TypeScript), cấu trúc dữ liệu toàn vẹn tuyệt đối.
 
-
+208. **Khởi Động Kiến Trúc MyEdu Version 2 - Hệ Thống Cầu Nối Đa Đám Mây (TeraBox ➔ Streamtape & Abyss)**:
+     * **Chỉ đạo chiến lược từ Chủ Dự Án**:
+       - Khắc phục triệt để tình trạng tải video chậm của Abyss bằng việc chuyển đổi sang **Streamtape** làm luồng phát video chính thức.
+       - Sử dụng kho lưu trữ **TeraBox (1TB+)** làm Master Vault trung tâm.
+       - Thiết lập cơ chế cầu nối 3 API tự động: Người dùng chỉ cần dán 1 link tệp đơn, danh sách nhiều link hoặc link thư mục TeraBox ➔ Hệ thống tự động bóc tách danh mục bài học, thời lượng, thumbnail và đẩy song song sang **Streamtape (Nguồn Chính)** + **Abyss (Nguồn Dự Phòng)**.
+     * **1. Thư Ký / Trợ Lý Trưởng**: Phân bổ kế hoạch hành động 5 team, cập nhật nhật ký dự án, kiểm soát tiến độ chuyển đổi Version 2 trên môi trường Local.
+     * **2. Team Phát Triển**:
+       - Xây dựng Local Server Gateway trong `vite.config.ts` (`/api/cloud/config`, `/api/terabox/resolve`, `/api/cloud/dispatch`).
+       - Nâng cấp `teraboxBridge.ts` hỗ trợ bóc tách danh sách tệp/thư mục đệ quy và điều phối đa đám mây tự động.
+       - Nâng cấp `AbyssPlayer.tsx` với bộ nhận diện luồng tốc độ cao Streamtape (`?color=16,185,129`) và nút bấm chuyển đổi nguồn dự phòng Abyss 1-chạm mượt mà.
+     * **3. Team Dữ Liệu**:
+       - Mở rộng xử lý `Lesson`: Tự động gán `videoSource` là Streamtape, `mirrorVideoSource` là Abyss, đính kèm link gốc TeraBox vào `attachments`.
+       - Chuẩn hóa tên bài giảng (loại bỏ đuôi `.mp4`, `.mkv`, làm sạch ký tự lạ).
+     * **4. Team Bảo Mật**:
+       - Thiết lập cơ chế bảo mật cấp cao cho toàn bộ API Credentials (`STREAMTAPE_API_LOGIN`, `STREAMTAPE_API_KEY`, `ABYSS_API_KEY`, `TERABOX_NDUS_TOKEN`).
+       - Toàn bộ keys được cô lập trong môi trường máy chủ cục bộ và `.env.local` (được `.gitignore` bảo vệ 100%), tuyệt đối không để lộ mã khóa lên client frontend bundle.
+     * **5. Team QA & Trải Nghiệm UX**:
+       - Nâng cấp `TeraBoxImportModal.tsx` với giao diện 2 tầng trực quan: Nút `[🔍 Quét & Bóc Tách Thư Mục]` xem trước danh sách bài giảng trước khi tải lên, thanh tiến trình hiển thị trực tiếp trạng thái của cả 2 cloud.
+       - Kiểm định độc lập toàn bộ luồng bóc tách, mã hóa và truyền tải đạt chuẩn Zero-Defect.

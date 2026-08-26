@@ -52,3 +52,17 @@
   - **QA:** Chốt chặn kiểm định độc lập. Bắt buộc test thực tế: *Thêm/Sửa/Xóa ➔ F5 ➔ Ẩn danh ➔ Mobile* trước khi xuất xưởng.
   - **UX:** Đảm bảo công thái học 1 chạm, chống xao nhãng, theme nền tối `#0b0f19` êm mắt khi học đêm.
 
+---
+
+## 6. Danh Mục Kỹ Năng Agent Tinh Hoa (Awesome Agent Skills Integrated)
+Dự án được trang bị hệ thống kỹ năng tiêu chuẩn quốc tế tại `.agents/skills/`:
+1. **`ui-ux-pro-max`** *(NextLevelBuilder)*: Kho tri thức 84 styles UI, 192 bảng màu, 98 quy tắc UX, hiệu ứng mượt mà & công cụ tra cứu tự động. (Giao cho **Team UX & Phát Triển**).
+2. **`ui-styling`** *(NextLevelBuilder)*: Chuẩn hóa linh kiện Radix/shadcn, dark mode & Tailwind CSS utility. (Giao cho **Team Phát Triển**).
+3. **`web-quality-perf`** *(Google Chrome Team - Addy Osmani)*: Tối ưu Core Web Vitals (LCP, INP, CLS), render Iframe mượt mà, chống giật layout & tối ưu hóa bộ nhớ. (Giao cho **Team Phát Triển & UX**).
+4. **`a11y-debugging`** *(Google Chrome Team - Addy Osmani)*: Kiểm tra khả năng tiếp cận, độ tương phản text trên nền tối `#0b0f19`, phím tắt và công thái học chạm. (Giao cho **Team QA & UX**).
+5. **`app-security-hardening`** *(Trail of Bits)*: Iframe Sandboxing nghiêm ngặt, bảo vệ API keys/tokens, mã hóa PBKDF2 100k vòng và chống XSS. (Giao cho **Team Bảo Mật**).
+6. **`vitest-qa-automation`** *(TestMu AI / LambdaTest)*: Quy chuẩn viết và chạy Unit Test/Integration Test cho link parser, cloud sync & schema validation. (Giao cho **Team QA**).
+7. **`pwa-offline-resilience`** *(Google Web Standards)*: Cấu hình Service Worker, IndexedDB caching ngoại tuyến và công thái học chạm trên iPad/Mobile. (Giao cho **Team Phát Triển**).
+
+
+

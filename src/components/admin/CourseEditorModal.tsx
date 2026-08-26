@@ -25,7 +25,9 @@ import {
   Check,
   Zap,
   HardDrive,
-  RefreshCw
+  RefreshCw,
+  Radio,
+  AlertCircle
 } from 'lucide-react';
 import { extractAbyssId, normalizeLessonVideoSources, parseUniversalVideo } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
@@ -956,7 +958,47 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                                         )}
                                       </div>
 
-                                      <span className="truncate text-xs">{lesson.title}</span>
+                                      <span className="truncate text-xs flex-1">{lesson.title}</span>
+
+                                      {/* Visual Stream Status Indicators (2 Luồng, 1 Luồng, 0 Luồng) */}
+                                      {(() => {
+                                        const hasPrimary = Boolean(lesson.videoSource && lesson.videoSource.trim());
+                                        const hasMirror = Boolean(lesson.mirrorVideoSource && lesson.mirrorVideoSource.trim());
+                                        const streamCount = (hasPrimary ? 1 : 0) + (hasMirror ? 1 : 0);
+
+                                        if (lessonType === 'article') return null;
+
+                                        if (streamCount === 2) {
+                                          return (
+                                            <span 
+                                              className="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0 flex items-center gap-1 shadow-sm"
+                                              title="Đầy đủ 2 luồng phát: Streamtape + Abyss"
+                                            >
+                                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                              <span>2 Luồng</span>
+                                            </span>
+                                          );
+                                        }
+                                        if (streamCount === 1) {
+                                          return (
+                                            <span 
+                                              className="px-1.5 py-0.5 text-[9px] font-mono font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0 flex items-center gap-1"
+                                              title={`Mới có 1 luồng: ${hasPrimary ? 'Streamtape' : 'Abyss'} (Khuyên dùng bổ sung thêm 1 luồng)`}
+                                            >
+                                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                              <span>1 Luồng</span>
+                                            </span>
+                                          );
+                                        }
+                                        return (
+                                          <span 
+                                            className="px-1.5 py-0.5 text-[9px] font-mono text-slate-500 rounded bg-slate-800/80 border border-slate-700/60 flex-shrink-0"
+                                            title="Chưa có link video"
+                                          >
+                                            0 Luồng
+                                          </span>
+                                        );
+                                      })()}
                                     </div>
 
                                     {/* Right: Delete button */}
@@ -1128,9 +1170,38 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                     </div>
 
                     {/* Video Configuration (If video or mixed) */}
-                    {(activeLesson.type === 'video' || activeLesson.type === 'mixed' || !activeLesson.type) && (
+                    {(activeLesson.type === 'video' || activeLesson.type === 'mixed' || !activeLesson.type) && (() => {
+                      const hasPrimary = Boolean(activeLesson.videoSource && activeLesson.videoSource.trim());
+                      const hasMirror = Boolean(activeLesson.mirrorVideoSource && activeLesson.mirrorVideoSource.trim());
+                      const streamCount = (hasPrimary ? 1 : 0) + (hasMirror ? 1 : 0);
+
+                      return (
                       <div className="p-5 rounded-3xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-md">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                        {/* Stream Summary Badge */}
+                        <div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800">
+                          <span className="text-xs font-mono font-bold text-slate-300 flex items-center gap-1.5">
+                            <Radio className="w-3.5 h-3.5 text-cyan-400" />
+                            <span>Trạng thái cấu hình phát:</span>
+                          </span>
+                          {streamCount === 2 ? (
+                            <span className="px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>🟢 Đầy đủ 2 Luồng (Streamtape + Abyss)</span>
+                            </span>
+                          ) : streamCount === 1 ? (
+                            <span className="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold flex items-center gap-1.5">
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                              <span>🟡 Mới có 1 Luồng (Khuyên dùng thêm Luồng {hasPrimary ? 'Phụ' : 'Chính'})</span>
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-mono font-bold flex items-center gap-1.5">
+                              <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                              <span>⚪ Chưa cấu hình luồng phát</span>
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
                           <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
                             <Video className="w-4 h-4" />
                             <span>Nguồn Video Chính (Ưu tiên Streamtape / Mặc định)</span>
@@ -1197,7 +1268,8 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                           />
                         </div>
                       </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Rich Text Editor for Article / Reading Content */}
                     {(activeLesson.type === 'article' || activeLesson.type === 'mixed') && (

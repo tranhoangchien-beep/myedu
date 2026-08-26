@@ -81,6 +81,8 @@ export interface TeraBoxParsedItem {
   size?: number;
   duration?: number;
   thumb?: string;
+  isAlreadyOnCloud?: boolean;
+  matchedCloudUrl?: string;
 }
 
 /**
@@ -287,6 +289,7 @@ export async function dispatchCloudVideo(
     abyssFolderId?: string;
     destination: DispatchDestination;
     token?: string;
+    dispatchMode?: 'remote' | 'direct' | 'auto';
     cookieHeader?: string;
     config?: CloudApiConfig;
   }
@@ -315,6 +318,7 @@ export async function dispatchCloudVideo(
         streamtapeFolderId: params.streamtapeFolderId || params.folderId,
         abyssFolderId: params.abyssFolderId,
         destination: params.destination,
+        dispatchMode: params.dispatchMode || 'auto',
         token: params.token || params.config?.teraboxToken,
         cookieHeader: params.cookieHeader,
         streamtapeLogin: params.config?.streamtapeLogin,
@@ -446,6 +450,185 @@ export async function dispatchToAbyss(
       error: err.message || 'Lỗi kết nối Abyss API',
     };
   }
+}
+
+/**
+ * Lấy danh sách tệp video đã có trong thư mục Streamtape (Hỗ trợ Smart De-duplication 0s)
+ */
+export async function getStreamtapeFiles(
+  folderId?: string
+): Promise<{ success: boolean; files?: Array<{ id: string; name: string; size?: number; streamtapeUrl: string }>; error?: string }> {
+  try {
+    const res = await fetch(`/api/streamtape/files${folderId ? `?folder=${encodeURIComponent(folderId)}` : ''}`);
+    const json = await res.json();
+    return json;
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Lỗi lấy danh sách tệp Streamtape' };
+  }
+}
+
+/**
+ * Chuẩn hóa tên bài giảng phục vụ đối chiếu và so khớp mờ (Fuzzy Match)
+ */
+export function normalizeTitleForMatching(raw: string): string {
+  if (!raw) return '';
+  let clean = raw.trim();
+
+  // 1. Giải mã URL Encoding nếu có (ví dụ: %E1%BA%A1 -> ạ)
+  try {
+    if (clean.includes('%')) {
+      clean = decodeURIComponent(clean);
+    }
+  } catch {}
+
+  // 2. Bỏ phần đuôi tệp video
+  clean = clean.replace(/\.(mp4|webm|mkv|avi|mov|flv|wmv|ts|m4v|3gp)$/i, '');
+
+  // 3. Thay thế dấu gạch dưới, gạch ngang đơn lẻ và dấu chấm giữa các từ bằng khoảng trắng
+  clean = clean.replace(/[_\-]+/g, ' ');
+  
+  // 4. Xóa các ký tự đặc biệt thừa và chuẩn hóa khoảng trắng
+  clean = clean.replace(/\s+/g, ' ').trim();
+
+  return clean;
+}
+
+/**
+ * Trích xuất chỉ số thứ tự bài giảng (ví dụ: "4.1", "4.2", "1.3")
+ */
+export function extractLessonIndex(titleOrUrl: string): string | null {
+  if (!titleOrUrl) return null;
+  const decoded = normalizeTitleForMatching(titleOrUrl);
+  // Match "4.1", "4.2.1", "Bài 1", "04.1"
+  const match = decoded.match(/^(\d+(?:\.\d+)+)/) || decoded.match(/^(?:bài|lesson|chương|phần)\s*(\d+(?:\.\d+)*)/i);
+  if (match) return match[1];
+  return null;
+}
+
+/**
+ * So khớp thông minh một file TeraBox với danh sách video đã tồn tại trên Cloud (Streamtape)
+ */
+export function matchExistingCloudVideo(
+  teraboxFilename: string,
+  cloudFiles: Array<{ id: string; name: string; size?: number; streamtapeUrl: string }>
+): { id: string; name: string; streamtapeUrl: string } | null {
+  if (!teraboxFilename || !cloudFiles || cloudFiles.length === 0) return null;
+
+  const targetClean = normalizeTitleForMatching(teraboxFilename).toLowerCase();
+  const targetIndex = extractLessonIndex(teraboxFilename);
+
+  // 1. Match chính xác tên chuẩn hóa
+  const exactMatch = cloudFiles.find(cf => normalizeTitleForMatching(cf.name).toLowerCase() === targetClean);
+  if (exactMatch) return exactMatch;
+
+  // 2. Match theo chỉ số bài giảng (nếu có, ví dụ "4.1" hoặc "4.2")
+  if (targetIndex) {
+    const indexMatch = cloudFiles.find(cf => {
+      const cfIndex = extractLessonIndex(cf.name);
+      return cfIndex === targetIndex;
+    });
+    if (indexMatch) return indexMatch;
+  }
+
+  // 3. Match bao hàm chuỗi (Sub-string match)
+  const partialMatch = cloudFiles.find(cf => {
+    const cfClean = normalizeTitleForMatching(cf.name).toLowerCase();
+    return targetClean.length > 5 && (cfClean.includes(targetClean) || targetClean.includes(cfClean));
+  });
+  if (partialMatch) return partialMatch;
+
+  return null;
+}
+
+export interface MergedLessonItem {
+  id: string;
+  title: string;
+  cleanName: string;
+  streamtapeUrl?: string;
+  abyssUrl?: string;
+  durationMinutes: number;
+}
+
+/**
+ * Bóc tách và Tự động ghép nối thông minh danh sách copy hàng loạt từ Streamtape / Abyss
+ * Nhận diện 1 bài giảng duy nhất có đủ 2 luồng phát (Streamtape Primary + Abyss Mirror)
+ */
+export function parseAndMergeBulkExports(rawText: string): MergedLessonItem[] {
+  if (!rawText || !rawText.trim()) return [];
+
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  const itemsByKey: Map<string, { title: string; streamtapeUrl?: string; abyssUrl?: string }> = new Map();
+
+  for (const line of lines) {
+    // Trường hợp 1: Dòng Abyss Export: "4.1 - Dịch thuật | https://player.abyssplayer.com/eYoBb7tUN | <iframe...>"
+    // hoặc "4.1 - Dịch thuật | https://player.abyssplayer.com/..."
+    if (line.includes('abyssplayer.com') || line.includes('abyss.to')) {
+      const parts = line.split('|').map(p => p.trim());
+      const rawTitle = parts[0] && !parts[0].includes('http') ? parts[0] : '';
+      const urlPart = parts.find(p => p.includes('http') && (p.includes('abyssplayer.com') || p.includes('abyss.to'))) || '';
+      
+      const slugMatch = urlPart.match(/(?:player\.)?abyssplayer\.com\/([a-zA-Z0-9_-]+)/) || urlPart.match(/abyss\.to\/([a-zA-Z0-9_-]+)/);
+      const abyssUrl = slugMatch ? `https://player.abyssplayer.com/${slugMatch[1]}` : urlPart;
+
+      const cleanTitle = normalizeTitleForMatching(rawTitle) || 'Bài Giảng Abyss';
+      const key = extractLessonIndex(cleanTitle) || cleanTitle.toLowerCase();
+
+      const existing = itemsByKey.get(key) || { title: cleanTitle };
+      existing.abyssUrl = abyssUrl;
+      if (!existing.title || existing.title.startsWith('Bài Giảng')) existing.title = cleanTitle;
+      itemsByKey.set(key, existing);
+    }
+    // Trường hợp 2: Dòng Streamtape Export: "https://streamtape.com/e/Ywkb6xZvMBs2rk/4.2._T%E1%BA%A1o_b%E1%BA%A3ng_d%E1%BB%AF_li%E1%BB%87u.mp4"
+    else if (line.includes('streamtape.com')) {
+      const parts = line.split('|').map(p => p.trim());
+      const urlPart = parts.find(p => p.includes('streamtape.com')) || parts[0];
+      const explicitTitle = parts.length > 1 && !parts[0].includes('http') ? parts[0] : '';
+
+      const match = urlPart.match(/streamtape\.com\/(?:e|v)\/([a-zA-Z0-9_-]+)(?:\/([^?\s#]+))?/);
+      if (match) {
+        const videoId = match[1];
+        const rawFilenameInUrl = match[2] ? decodeURIComponent(match[2]) : '';
+        const title = explicitTitle || normalizeTitleForMatching(rawFilenameInUrl) || `Bài Giảng Streamtape (${videoId})`;
+        const streamtapeUrl = `https://streamtape.com/e/${videoId}?color=16,185,129`;
+
+        const key = extractLessonIndex(title) || title.toLowerCase();
+
+        const existing = itemsByKey.get(key) || { title };
+        existing.streamtapeUrl = streamtapeUrl;
+        if (!existing.title || existing.title.startsWith('Bài Giảng')) existing.title = title;
+        itemsByKey.set(key, existing);
+      }
+    }
+    // Trường hợp 3: Dòng tiêu đề | link thông thường
+    else if (line.includes('http')) {
+      const parts = line.split('|').map(p => p.trim());
+      const rawTitle = parts.length > 1 ? parts[0] : '';
+      const url = parts.find(p => p.includes('http')) || '';
+      const title = rawTitle || normalizeTitleForMatching(url.split('/').pop() || '') || 'Bài Giảng';
+      const key = extractLessonIndex(title) || title.toLowerCase();
+
+      const existing = itemsByKey.get(key) || { title };
+      if (url.includes('streamtape.com')) existing.streamtapeUrl = url;
+      else if (url.includes('abyss')) existing.abyssUrl = url;
+      itemsByKey.set(key, existing);
+    }
+  }
+
+  // Chuyển Map thành mảng bài học
+  const results: MergedLessonItem[] = [];
+  let index = 1;
+  itemsByKey.forEach((val) => {
+    results.push({
+      id: `bulk_merged_${Date.now()}_${index++}`,
+      title: val.title,
+      cleanName: val.title,
+      streamtapeUrl: val.streamtapeUrl,
+      abyssUrl: val.abyssUrl,
+      durationMinutes: 15,
+    });
+  });
+
+  return results;
 }
 
 /**

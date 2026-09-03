@@ -32,7 +32,7 @@ import {
 import { extractAbyssId, normalizeLessonVideoSources, parseUniversalVideo } from '../../lib/abyss';
 import { SearchableSelect } from '../common/SearchableSelect';
 import { RichTextEditor } from '../common/RichTextEditor';
-import { TeraBoxImportModal } from './TeraBoxImportModal';
+import { QuickBulkEmbedModal } from './QuickBulkEmbedModal';
 import { normalizeDurationMinutes } from '../../lib/storage';
 
 interface CourseEditorModalProps {
@@ -95,9 +95,9 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
   const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
   const draggedChapterIdxRef = useRef<number | null>(null);
 
-  // Modal alert confirmation for unsaved changes & TeraBox Embed Modal
+  // Modal alert confirmation for unsaved changes & Quick Bulk Embed Modal
   const [showUnsavedConfirmModal, setShowUnsavedConfirmModal] = useState<boolean>(false);
-  const [isTeraBoxModalOpen, setIsTeraBoxModalOpen] = useState<boolean>(false);
+  const [isBulkEmbedModalOpen, setIsBulkEmbedModalOpen] = useState<boolean>(false);
   const [activeEditingCourseId, setActiveEditingCourseId] = useState<string | null>(null);
 
   const handleImportBulkLessonsToChapter = (targetChapterId: string, newLessons: Lesson[]) => {
@@ -768,16 +768,16 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
                         </button>
                       </div>
 
-                      {/* Row 2: Action Buttons (Nạp TeraBox & Thêm Chương) */}
+                      {/* Row 2: Action Buttons (Nhập Nhanh & Thêm Chương) */}
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => setIsTeraBoxModalOpen(true)}
-                          title="Bắn / Đẩy video tự động từ kho TeraBox sang Streamtape & Abyss"
+                          onClick={() => setIsBulkEmbedModalOpen(true)}
+                          title="Nhập nhanh hàng loạt link Abyss, Streamtape, ID hoặc Iframe vào chương"
                           className="py-2 px-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all border border-cyan-500/30 shadow-[0_0_15px_rgba(0,240,255,0.1)] group"
                         >
-                          <HardDrive className="w-3.5 h-3.5 text-cyan-400 group-hover:text-slate-950 transition-colors" />
-                          <span>Nạp TeraBox</span>
+                          <Zap className="w-3.5 h-3.5 text-cyan-400 group-hover:text-slate-950 transition-colors" />
+                          <span>Nhập Nhanh</span>
                         </button>
 
                         <button
@@ -1561,10 +1561,10 @@ export const CourseEditorModal: React.FC<CourseEditorModalProps> = ({
           </div>
         )}
 
-        {/* TeraBox Cloud Dispatcher & Import Modal */}
-        <TeraBoxImportModal
-          isOpen={isTeraBoxModalOpen}
-          onClose={() => setIsTeraBoxModalOpen(false)}
+        {/* Quick Bulk Embed Modal (Abyss / Streamtape Batch Ingestion) */}
+        <QuickBulkEmbedModal
+          isOpen={isBulkEmbedModalOpen}
+          onClose={() => setIsBulkEmbedModalOpen(false)}
           chapters={chapters.map(ch => ({ id: ch.id, title: ch.title }))}
           defaultChapterId={activeSelection?.chId || chapters[0]?.id}
           onImportLessons={handleImportBulkLessonsToChapter}

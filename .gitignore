@@ -36,3 +36,9 @@ bun.lockb
 *.njsproj
 *.sln
 *.sw?
+
+# Backup & Local DB
+_nextjs_backup/
+*.db
+*.db-journal
+.next/

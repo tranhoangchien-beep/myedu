@@ -6,10 +6,10 @@ import fs from 'fs';
 function teraboxResolverPlugin(): Plugin {
   // Server-side secure credentials (never exposed in client bundle)
   let cloudConfig = {
-    streamtapeLogin: process.env.STREAMTAPE_API_LOGIN || 'b594c70e5a75cdfaa252',
-    streamtapeKey: process.env.STREAMTAPE_API_KEY || 'Ore0rexG6gSk2Q',
-    abyssApiKey: process.env.ABYSS_API_KEY || 'ba8dac0020fbdbe8b3b931285e5acb42',
-    teraboxToken: process.env.TERABOX_NDUS_TOKEN || 'YyBEzQx5eHui1iqLnLGobVhdjc_6HrAdN3ni2iD5',
+    streamtapeLogin: process.env.STREAMTAPE_API_LOGIN || '',
+    streamtapeKey: process.env.STREAMTAPE_API_KEY || '',
+    abyssApiKey: process.env.ABYSS_API_KEY || '',
+    teraboxToken: process.env.TERABOX_NDUS_TOKEN || '',
   };
 
   return {
@@ -921,7 +921,7 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173,
+    port: 3000,
     host: true,
     headers: {
       'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, noai, noimageai',

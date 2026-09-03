@@ -3,6 +3,7 @@ import { Course } from '../../types';
 import { normalizeDurationMinutes } from '../../lib/storage';
 import { 
   X, 
+  Check,
   CheckCircle2, 
   ChevronDown, 
   ChevronRight, 
@@ -66,13 +67,13 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
       
       {/* 1. COURSERA SYLLABUS HEADER */}
       <div className="p-4 sm:p-5 border-b border-cyan-500/15 flex-shrink-0 bg-[#060813]/60 space-y-3">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 mb-1">
-              <BookOpen className="w-3 h-3" />
-              <span>Mục Lục Khóa Học // TABLE OF CONTENTS</span>
-            </span>
-            <h2 className="font-extrabold text-sm sm:text-base text-white line-clamp-2 leading-tight tracking-tight" title={course.title}>
+            <div className="flex items-center gap-1.5 mb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400">
+              <BookOpen className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+              <span>Mục Lục Khóa Học</span>
+            </div>
+            <h2 className="font-extrabold text-sm sm:text-base text-white truncate leading-tight tracking-tight" title={course.title}>
               {course.title}
             </h2>
           </div>
@@ -204,8 +205,8 @@ export const LessonSidebar: React.FC<LessonSidebarProps> = ({
                           className="mt-0.5 flex-shrink-0 p-0.5 rounded-full hover:scale-110 transition-transform"
                         >
                           {lesson.isCompleted ? (
-                            <div className="w-4 h-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-[0_0_8px_rgba(0,255,157,0.5)]">
-                              <CheckCircle2 className="w-3.5 h-3.5 fill-current" />
+                            <div className="w-4 h-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-[0_0_8px_rgba(16,185,129,0.7)] ring-1 ring-emerald-400">
+                              <Check className="w-3 h-3 text-slate-950 stroke-[3.5]" />
                             </div>
                           ) : (
                             <div className={`w-4 h-4 rounded-full border-2 transition-colors ${

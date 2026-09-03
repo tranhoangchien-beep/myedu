@@ -315,6 +315,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                   className="w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   allowFullScreen
+                  sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
                 />
               )
             ) : (
@@ -322,7 +323,7 @@ export const AbyssPlayer: React.FC<AbyssPlayerProps> = ({
                 <AlertCircle className="w-12 h-12 text-amber-400 mb-3" />
                 <p className="font-semibold text-slate-200 font-mono">Bài giảng này chưa có link video hoặc nhúng mã</p>
                 <p className="text-xs text-slate-500 mt-1 max-w-md">
-                  Hãy bấm <strong className="text-cyan-400">Quản Trị -&gt; Sửa khóa học</strong> để nạp link TeraBox, Streamtape hoặc Abyss.
+                  Hãy bấm <strong className="text-cyan-400">Quản Trị -&gt; Sửa khóa học</strong> để nạp link Streamtape hoặc Abyss.
                 </p>
               </div>
             )}
